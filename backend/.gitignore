@@ -1,0 +1,18 @@
+# Dependencias descargadas por npm (nunca se suben a GitHub)
+/node_modules
+node_modules/
+
+# Archivos compilados de TypeScript a JavaScript
+/dist
+dist/
+*.tsbuildinfo
+
+# Variables de entorno y secretos (Seguridad RNF05 y RNF06)
+.env
+.env.*
+!.env.example
+
+# Logs de errores y sistema operativo
+npm-debug.log*
+.DS_Store
+Thumbs.db
