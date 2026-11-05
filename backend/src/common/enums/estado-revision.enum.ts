@@ -1,0 +1,6 @@
+export enum EstadoRevision {
+  PENDIENTE = 'PENDIENTE',
+  APROBADO = 'APROBADO',
+  RECHAZADO = 'RECHAZADO',
+  REQUIERE_DATOS = 'REQUIERE_DATOS',
+}
