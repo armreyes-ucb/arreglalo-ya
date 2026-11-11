@@ -1,4 +1,4 @@
-import {
+﻿import {
   Column,
   Entity,
   JoinColumn,
@@ -33,7 +33,7 @@ export class PerfilTrabajador {
   horarios: string | null;
 
   @Column({ name: 'precios_estimados', type: 'jsonb' })
-  preciosEstimados: Record<string, unknown>;
+  preciosEstimados: Record<string, number>;
 
   @Column({ name: 'nivel_verificacion', type: 'int' })
   nivelVerificacion: number;
@@ -84,3 +84,4 @@ export class PerfilTrabajador {
   @OneToMany(() => Documento, (documento) => documento.trabajador)
   documentos?: Relation<Documento[]>;
 }
+

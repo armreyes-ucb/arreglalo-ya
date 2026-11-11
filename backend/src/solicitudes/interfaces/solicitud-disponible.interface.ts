@@ -1,0 +1,19 @@
+import type { EspecialidadTipo } from '../../common/enums/especialidad-tipo.enum.js';
+import type { EstadoSolicitud } from '../../common/enums/estado-solicitud.enum.js';
+import type { ZonaPublica } from '../../common/interfaces/zona-publica.interface.js';
+
+export interface SolicitudDisponible {
+  id: string;
+  zona_id: number;
+  zona: ZonaPublica | null;
+  especialidad: EspecialidadTipo;
+  tipo_problema: string;
+  descripcion: string;
+  fotos_urls: string[];
+  fecha_cita_preferida: Date;
+  urgente: boolean;
+  estado: EstadoSolicitud;
+  creada_en: Date;
+  vence_en: Date;
+  cliente_en_conflictivos: boolean;
+}

@@ -1,0 +1,10 @@
+:host {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+
+.contenido-principal {
+  flex: 1;
+  display: block;
+}

@@ -7,6 +7,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Documentos privados de verificación
+/storage
+
 # Variables de entorno y secretos (Seguridad RNF05 y RNF06)
 .env
 .env.*

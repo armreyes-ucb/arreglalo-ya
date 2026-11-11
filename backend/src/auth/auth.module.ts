@@ -7,6 +7,7 @@ import { Usuario } from '../entities/usuario.entity.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { RolesGuard } from './guards/roles.guard.js';
 import { SmsVerificationService } from './sms-verification.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 
@@ -31,7 +32,8 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
     SmsVerificationService,
     JwtStrategy,
     JwtAuthGuard,
+    RolesGuard,
   ],
-  exports: [AuthService, JwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}
