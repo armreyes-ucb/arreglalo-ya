@@ -27,9 +27,19 @@ export function toSolicitudDetalle(
   zona: Zona | null,
   historial: HistorialEstado[],
   totalOfertas: number,
+  opciones: {
+    direccionOculta?: string | null;
+    whatsappUrl?: string | null;
+  } = {},
 ): SolicitudDetalle {
+  const base = toSolicitudPublica(solicitud, zona);
   return {
-    ...toSolicitudPublica(solicitud, zona),
+    ...base,
+    direccion_oculta:
+      opciones.direccionOculta === undefined
+        ? base.direccion_oculta
+        : opciones.direccionOculta,
+    whatsapp_url: opciones.whatsappUrl ?? null,
     total_ofertas: totalOfertas,
     historial: historial.map(toEventoHistorial),
   };

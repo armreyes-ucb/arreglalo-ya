@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
+import { PagosModule } from './pagos/pagos.module.js';
 import { SolicitudesModule } from './solicitudes/solicitudes.module.js';
 import { TrabajadoresModule } from './trabajadores/trabajadores.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
@@ -50,6 +51,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     TrabajadoresModule,
     VerificacionModule,
     SolicitudesModule,
+    PagosModule,
     UploadsModule,
   ],
   controllers: [AppController],

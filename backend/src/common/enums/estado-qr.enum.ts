@@ -1,0 +1,6 @@
+export enum EstadoQr {
+  PENDIENTE = 'PENDIENTE',
+  PAGADO = 'PAGADO',
+  VENCIDO = 'VENCIDO',
+  DEVUELTO = 'DEVUELTO',
+}

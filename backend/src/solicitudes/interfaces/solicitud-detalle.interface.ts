@@ -8,7 +8,12 @@ export interface EventoHistorial {
   usuario_nombre: string | null;
 }
 
-export interface SolicitudDetalle extends SolicitudPublica {
+export type SolicitudDetalle = Omit<
+  SolicitudPublica,
+  'direccion_oculta'
+> & {
+  direccion_oculta: string | null;
+  whatsapp_url: string | null;
   total_ofertas: number;
   historial: EventoHistorial[];
-}
+};
