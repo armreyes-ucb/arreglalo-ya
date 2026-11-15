@@ -11,6 +11,7 @@ import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
 import type { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
+import type { Suspension } from '../entities/suspension.entity.js';
 import type { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
 import type { Zona } from '../entities/zona.entity.js';
 import type { BuscarTrabajadoresQueryDto } from './dto/buscar-trabajadores-query.dto.js';
@@ -76,6 +77,7 @@ describe('TrabajadoresService - CP26 match', () => {
   let perfilRepository: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
   };
   let zonaRepository: {
     find: ReturnType<typeof vi.fn>;
@@ -83,13 +85,21 @@ describe('TrabajadoresService - CP26 match', () => {
   };
   let trabajadorZonaRepository: { find: ReturnType<typeof vi.fn> };
   let documentoRepository: { find: ReturnType<typeof vi.fn> };
+  let suspensionRepository: {
+    findOne: ReturnType<typeof vi.fn>;
+  };
   let service: TrabajadoresService;
 
   beforeEach(() => {
-    perfilRepository = { find: vi.fn(), findOne: vi.fn() };
+    perfilRepository = {
+      find: vi.fn(),
+      findOne: vi.fn(),
+      save: vi.fn(async (_entidad, datos) => datos),
+    };
     zonaRepository = { find: vi.fn(), findOne: vi.fn() };
     trabajadorZonaRepository = { find: vi.fn() };
     documentoRepository = { find: vi.fn() };
+    suspensionRepository = { findOne: vi.fn() };
     service = new TrabajadoresService(
       perfilRepository as unknown as Repository<PerfilTrabajador>,
       zonaRepository as unknown as Repository<Zona>,
@@ -97,6 +107,7 @@ describe('TrabajadoresService - CP26 match', () => {
       documentoRepository as unknown as Repository<
         import('../entities/documento.entity.js').Documento
       >,
+      suspensionRepository as unknown as Repository<Suspension>,
       {} as DataSource,
     );
   });
@@ -192,5 +203,46 @@ describe('TrabajadoresService - CP26 match', () => {
     ).validarPrecios({});
 
     expect(precios).toEqual({});
+  });
+
+  it('reactiva solo los perfiles suspendidos con la suspensión vencida', async () => {
+    const vencida = crearPerfil('a', 'Suspendido vencido', 4, 2);
+    vencida.estado = EstadoTrabajador.SUSPENDIDO;
+    const vigente = crearPerfil('b', 'Suspendido vigente', 4, 2);
+    vigente.estado = EstadoTrabajador.SUSPENDIDO;
+
+    perfilRepository.find.mockResolvedValue([vencida, vigente]);
+    suspensionRepository.findOne.mockImplementation(
+      ({ where }: { where: { trabajadorId: string } }) =>
+        Promise.resolve(
+          where.trabajadorId === 'a'
+            ? { fin: new Date(Date.now() - 60_000) }
+            : { fin: new Date(Date.now() + 60 * 60_000) },
+        ),
+    );
+
+    const reactivados =
+      await service.reactivarSuspensionesVencidas();
+
+    expect(reactivados).toBe(1);
+    expect(vencida.estado).toBe(EstadoTrabajador.ACTIVO);
+    expect(vigente.estado).toBe(EstadoTrabajador.SUSPENDIDO);
+    expect(perfilRepository.save).toHaveBeenCalledTimes(1);
+    expect(perfilRepository.find).toHaveBeenCalledWith({
+      where: { estado: EstadoTrabajador.SUSPENDIDO },
+    });
+  });
+
+  it('no reactiva un perfil suspendido sin suspensión registrada', async () => {
+    const perfil = crearPerfil('a', 'Sin registro', 4, 2);
+    perfil.estado = EstadoTrabajador.SUSPENDIDO;
+    perfilRepository.find.mockResolvedValue([perfil]);
+    suspensionRepository.findOne.mockResolvedValue(null);
+
+    const reactivados =
+      await service.reactivarSuspensionesVencidas();
+
+    expect(reactivados).toBe(0);
+    expect(perfil.estado).toBe(EstadoTrabajador.SUSPENDIDO);
   });
 });

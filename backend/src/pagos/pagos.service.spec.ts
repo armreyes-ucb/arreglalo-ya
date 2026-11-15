@@ -1,4 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import {
   afterEach,
@@ -10,13 +13,17 @@ import {
 } from 'vitest';
 import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoQr } from '../common/enums/estado-qr.enum.js';
+import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
+import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
+import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
 import { PagosService } from './pagos.service.js';
 
@@ -24,6 +31,7 @@ const PAGO_ID = '77777777-7777-4777-8777-777777777777';
 const SOLICITUD_ID = '44444444-4444-4444-8444-444444444444';
 const CLIENTE_ID = '33333333-3333-4333-8333-333333333333';
 const PERFIL_ID = '22222222-2222-4222-8222-222222222222';
+const USUARIO_TRABAJADOR = '11111111-1111-4111-8111-111111111111';
 const OFERTA_ID = '66666666-6666-4666-8666-666666666666';
 
 function crearSolicitud(
@@ -86,6 +94,23 @@ function crearPago(overrides: Partial<Pago> = {}): Pago {
   };
 }
 
+function crearPerfil(): PerfilTrabajador {
+  return {
+    id: PERFIL_ID,
+    usuarioId: USUARIO_TRABAJADOR,
+    especialidades: [EspecialidadTipo.PLOMERIA],
+    horarios: null,
+    preciosEstimados: {},
+    nivelVerificacion: 3,
+    promedio: 4.5,
+    trabajosCompletados: 10,
+    aceptoContratoDigital: true,
+    estado: 'ACTIVO',
+    fechaPausa: null,
+    venceAntecedentes: '2027-01-01',
+  } as unknown as PerfilTrabajador;
+}
+
 describe('PagosService', () => {
   let manager: {
     findOne: ReturnType<typeof vi.fn>;
@@ -93,7 +118,11 @@ describe('PagosService', () => {
     save: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
   };
-  let dataSource: { transaction: ReturnType<typeof vi.fn> };
+  let dataSource: {
+    transaction: ReturnType<typeof vi.fn>;
+    getRepository: ReturnType<typeof vi.fn>;
+  };
+  let candidatasRepository: { find: ReturnType<typeof vi.fn> };
   let service: PagosService;
 
   beforeEach(() => {
@@ -108,8 +137,10 @@ describe('PagosService', () => {
       }),
       update: vi.fn(),
     };
+    candidatasRepository = { find: vi.fn() };
     dataSource = {
       transaction: vi.fn(async (callback) => callback(manager)),
+      getRepository: vi.fn(() => candidatasRepository),
     };
     service = new PagosService(
       dataSource as unknown as DataSource,
@@ -248,5 +279,474 @@ describe('PagosService', () => {
         pagoId: PAGO_ID,
       }),
     );
+  });
+
+  it('CP30: confirma el 75%, finaliza y transfiere Bs 80 con comisión de Bs 20', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({
+      estadoQr: EstadoQr.PAGADO,
+      yaPagueCliente: true,
+      fechaYaPague: new Date(),
+    });
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      return Promise.resolve(null);
+    });
+
+    const resultado = await service.confirmarPago75(
+      USUARIO_TRABAJADOR,
+      PAGO_ID,
+      { confirmado: true },
+    );
+
+    expect(resultado.estado_solicitud).toBe(
+      EstadoSolicitud.FINALIZADA,
+    );
+    expect(resultado.transferencia).toEqual(
+      expect.objectContaining({
+        monto: 80,
+        comision_plataforma: 20,
+        simulada: true,
+      }),
+    );
+    expect(resultado.transferencia?.comprobante).toMatch(/^SIM-/);
+    expect(solicitud.estado).toBe(EstadoSolicitud.FINALIZADA);
+    expect(solicitud.cerradaEn).not.toBeNull();
+    expect(pago.transferidoAlTrabajador).toBe(true);
+    expect(pago.saldo75ConfirmadoTrabajador).toBe(true);
+    expect(perfil.trabajosCompletados).toBe(11);
+    expect(manager.save).toHaveBeenCalledWith(
+      HistorialEstado,
+      expect.objectContaining({
+        estado: EstadoSolicitud.FINALIZADA,
+      }),
+    );
+  });
+
+  it('CP11: si el trabajador confirma antes, espera la marca del cliente', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({
+      estadoQr: EstadoQr.PAGADO,
+      yaPagueCliente: false,
+    });
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      return Promise.resolve(null);
+    });
+
+    const esperando = await service.confirmarPago75(
+      USUARIO_TRABAJADOR,
+      PAGO_ID,
+      { confirmado: true },
+    );
+
+    expect(esperando.estado_solicitud).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+    expect(esperando.transferencia).toBeNull();
+    expect(pago.saldo75ConfirmadoTrabajador).toBe(true);
+    expect(pago.fechaConfirmacionTrabajador).not.toBeNull();
+
+    const final = await service.marcarYaPague(
+      CLIENTE_ID,
+      PAGO_ID,
+    );
+
+    expect(final.estado_solicitud).toBe(
+      EstadoSolicitud.FINALIZADA,
+    );
+    expect(final.transferencia?.monto).toBe(80);
+    expect(pago.yaPagueCliente).toBe(true);
+  });
+
+  it('CP11: el trabajador confirma después de 48 horas y se finaliza sin marca del cliente', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({
+      estadoQr: EstadoQr.PAGADO,
+      yaPagueCliente: false,
+    });
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      if (entidad === HistorialEstado) {
+        return Promise.resolve({
+          fechaHora: new Date(Date.now() - 49 * 3_600_000),
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const resultado = await service.confirmarPago75(
+      USUARIO_TRABAJADOR,
+      PAGO_ID,
+      { confirmado: true },
+    );
+
+    expect(resultado.estado_solicitud).toBe(
+      EstadoSolicitud.FINALIZADA,
+    );
+    expect(resultado.transferencia?.monto).toBe(80);
+    expect(pago.yaPagueCliente).toBe(false);
+  });
+
+  it('CP11: el cliente marca ya pagué después de 48 horas y se finaliza', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({
+      estadoQr: EstadoQr.PAGADO,
+      yaPagueCliente: false,
+    });
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      if (entidad === HistorialEstado) {
+        return Promise.resolve({
+          fechaHora: new Date(Date.now() - 49 * 3_600_000),
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const resultado = await service.marcarYaPague(
+      CLIENTE_ID,
+      PAGO_ID,
+    );
+
+    expect(resultado.estado_solicitud).toBe(
+      EstadoSolicitud.FINALIZADA,
+    );
+    expect(resultado.transferencia?.comprobante).toMatch(/^SIM-/);
+    expect(pago.saldo75ConfirmadoTrabajador).toBe(false);
+  });
+
+  it('CP31: el reporte del trabajador crea el reclamo e incrementa el contador', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({ estadoQr: EstadoQr.PAGADO });
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      return Promise.resolve(null);
+    });
+
+    const resultado = await service.confirmarPago75(
+      USUARIO_TRABAJADOR,
+      PAGO_ID,
+      { confirmado: false, motivo: 'El cliente no pagó el saldo' },
+    );
+
+    expect(resultado.estado_solicitud).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+    expect(resultado.transferencia).toBeNull();
+    expect(resultado.reporte?.estado).toBe(
+      EstadoReclamo.EN_REVISION_SUPERVISOR,
+    );
+    expect(solicitud.estado).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+    expect(pago.transferidoAlTrabajador).toBe(false);
+    expect(manager.save).toHaveBeenCalledWith(
+      Reclamo,
+      expect.objectContaining({
+        estado: EstadoReclamo.EN_REVISION_SUPERVISOR,
+        motivo: 'El cliente no pagó el saldo',
+      }),
+    );
+    expect(manager.save).toHaveBeenCalledWith(
+      ClienteConflictivo,
+      expect.objectContaining({ reportesAcumulados: 1 }),
+    );
+  });
+
+  it('CP31: incrementa los reportes acumulados de un cliente ya conflictivo', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({ estadoQr: EstadoQr.PAGADO });
+    const conflictivo = {
+      id: '99999999-9999-4999-8999-999999999999',
+      clienteId: CLIENTE_ID,
+      reportesAcumulados: 2,
+      motivo: 'Reporte previo',
+      registradoPorId: null,
+    } as ClienteConflictivo;
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      if (entidad === ClienteConflictivo) {
+        return Promise.resolve(conflictivo);
+      }
+      return Promise.resolve(null);
+    });
+
+    await service.confirmarPago75(USUARIO_TRABAJADOR, PAGO_ID, {
+      confirmado: false,
+      motivo: 'Nuevo incumplimiento',
+    });
+
+    expect(conflictivo.reportesAcumulados).toBe(3);
+    expect(manager.save).toHaveBeenCalledWith(
+      ClienteConflictivo,
+      conflictivo,
+    );
+  });
+
+  it('exige motivo cuando el trabajador no confirma el pago', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({ estadoQr: EstadoQr.PAGADO });
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      return Promise.resolve(null);
+    });
+
+    await expect(
+      service.confirmarPago75(USUARIO_TRABAJADOR, PAGO_ID, {
+        confirmado: false,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('no permite confirmar el 75% a un trabajador no asignado', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: 'otro-perfil',
+    });
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(crearPago());
+      }
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      return Promise.resolve(null);
+    });
+
+    await expect(
+      service.confirmarPago75(USUARIO_TRABAJADOR, PAGO_ID, {
+        confirmado: true,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('CP11: cierra automáticamente a las 48 horas si una parte confirmó', async () => {
+    const perfil = crearPerfil();
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({
+      estadoQr: EstadoQr.PAGADO,
+      yaPagueCliente: true,
+    });
+    candidatasRepository.find.mockResolvedValue([solicitud]);
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === HistorialEstado) {
+        return Promise.resolve({
+          fechaHora: new Date(Date.now() - 49 * 3_600_000),
+        });
+      }
+      if (entidad === PerfilTrabajador) {
+        return Promise.resolve(perfil);
+      }
+      return Promise.resolve(null);
+    });
+
+    const cerradas = await service.cerrarPendientes48h();
+
+    expect(cerradas).toBe(1);
+    expect(solicitud.estado).toBe(EstadoSolicitud.FINALIZADA);
+    expect(pago.transferidoAlTrabajador).toBe(true);
+  });
+
+  it('el cierre automático no actúa con un reclamo abierto', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({
+      estadoQr: EstadoQr.PAGADO,
+      yaPagueCliente: true,
+    });
+    candidatasRepository.find.mockResolvedValue([solicitud]);
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === Reclamo) {
+        return Promise.resolve({
+          id: 'reclamo-1',
+          estado: EstadoReclamo.EN_REVISION_SUPERVISOR,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const cerradas = await service.cerrarPendientes48h();
+
+    expect(cerradas).toBe(0);
+    expect(solicitud.estado).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+  });
+
+  it('el cierre automático exige que alguna parte haya confirmado', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({ estadoQr: EstadoQr.PAGADO });
+    candidatasRepository.find.mockResolvedValue([solicitud]);
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      return Promise.resolve(null);
+    });
+
+    const cerradas = await service.cerrarPendientes48h();
+
+    expect(cerradas).toBe(0);
+    expect(solicitud.estado).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+  });
+
+  it('el cierre automático no actúa antes de las 48 horas', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    const pago = crearPago({
+      estadoQr: EstadoQr.PAGADO,
+      saldo75ConfirmadoTrabajador: true,
+    });
+    candidatasRepository.find.mockResolvedValue([solicitud]);
+    manager.findOne.mockImplementation((entidad) => {
+      if (entidad === Solicitud) {
+        return Promise.resolve(solicitud);
+      }
+      if (entidad === Pago) {
+        return Promise.resolve(pago);
+      }
+      if (entidad === HistorialEstado) {
+        return Promise.resolve({
+          fechaHora: new Date(Date.now() - 47 * 3_600_000),
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const cerradas = await service.cerrarPendientes48h();
+
+    expect(cerradas).toBe(0);
+    expect(solicitud.estado).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+  });
+
+  it('el cierre automático no toca solicitudes que ya no están terminadas', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.FINALIZADA,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    candidatasRepository.find.mockResolvedValue([solicitud]);
+    manager.findOne.mockResolvedValue(solicitud);
+
+    const cerradas = await service.cerrarPendientes48h();
+
+    expect(cerradas).toBe(0);
   });
 });

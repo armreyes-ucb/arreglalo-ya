@@ -16,6 +16,7 @@ import {
 import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoQr } from '../common/enums/estado-qr.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
+import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { TipoPrecio } from '../common/enums/tipo-precio.enum.js';
 import { toDevolucionPublica } from '../common/mappers/devolucion-publica.mapper.js';
@@ -28,22 +29,27 @@ import {
 } from '../common/mappers/solicitud-detalle.mapper.js';
 import { toSolicitudDisponible } from '../common/mappers/solicitud-disponible.mapper.js';
 import { toSolicitudPublica } from '../common/mappers/solicitud-publica.mapper.js';
+import { toSuspensionPublica } from '../common/mappers/suspension-publica.mapper.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
 import { sumarDias } from '../common/utils/fechas.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { generarEnlaceWhatsApp } from '../common/utils/whatsapp.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
+import { Devolucion } from '../entities/devolucion.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Precio } from '../entities/precio.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
+import { Suspension } from '../entities/suspension.entity.js';
 import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
 import { Zona } from '../entities/zona.entity.js';
 import type { PagoPublico } from '../pagos/interfaces/pago-publico.interface.js';
+import type { TransferenciaSimulada } from '../pagos/interfaces/transferencia-simulada.interface.js';
 import { PagosService } from '../pagos/pagos.service.js';
 import { TrabajadoresService } from '../trabajadores/trabajadores.service.js';
+import type { CancelarSolicitudDto } from './dto/cancelar-solicitud.dto.js';
 import type { CrearIncrementoDto } from './dto/crear-incremento.dto.js';
 import type { CrearOfertaDto } from './dto/crear-oferta.dto.js';
 import type { CrearPrecioFinalDto } from './dto/crear-precio-final.dto.js';
@@ -53,6 +59,7 @@ import type { ListarDisponiblesQueryDto } from './dto/listar-disponibles-query.d
 import type { ResponderPrecioDto } from './dto/responder-precio.dto.js';
 import type { OfertaConSolicitud } from './interfaces/oferta-con-solicitud.interface.js';
 import type { OfertaPublica } from './interfaces/oferta-publica.interface.js';
+import type { ResolucionCancelacion } from './interfaces/resolucion-cancelacion.interface.js';
 import type {
   PrecioPublico,
   ResolucionPrecio,
@@ -223,7 +230,11 @@ export class SolicitudesService {
     ]);
     const zonasPorId = new Map(zonas.map((zona) => [zona.id, zona]));
     const clientesConflictivos = new Set(
-      conflictivos.map((conflictivo) => conflictivo.clienteId),
+      conflictivos
+        .filter(
+          (conflictivo) => conflictivo.reportesAcumulados >= 3,
+        )
+        .map((conflictivo) => conflictivo.clienteId),
     );
 
     return solicitudes.map((solicitud) =>
@@ -909,6 +920,194 @@ export class SolicitudesService {
         pago: toPagoPublico(pago),
         devolucion: toDevolucionPublica(devolucion),
         estado_solicitud: solicitud.estado,
+      };
+    });
+  }
+
+  async terminarTrabajo(
+    usuarioId: string,
+    solicitudId: string,
+  ): Promise<SolicitudPublica> {
+    const perfil = await this.obtenerPerfilTrabajador(usuarioId);
+
+    return this.dataSource.transaction(async (manager) => {
+      const solicitud = await manager.findOne(Solicitud, {
+        where: { id: solicitudId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (
+        !solicitud ||
+        solicitud.trabajadorConfirmadoId !== perfil.id
+      ) {
+        throw new NotFoundException('Solicitud no encontrada');
+      }
+
+      const zona = await manager.findOne(Zona, {
+        where: { id: solicitud.zonaId },
+      });
+
+      if (
+        solicitud.estado === EstadoSolicitud.TERMINADA_TRABAJADOR
+      ) {
+        return toSolicitudPublica(solicitud, zona);
+      }
+      if (solicitud.estado !== EstadoSolicitud.EN_PROGRESO) {
+        throw new BadRequestException(
+          'La solicitud no está en progreso',
+        );
+      }
+
+      solicitud.estado = EstadoSolicitud.TERMINADA_TRABAJADOR;
+      await manager.save(Solicitud, solicitud);
+      await this.registrarHistorial(
+        manager,
+        solicitud.id,
+        EstadoSolicitud.TERMINADA_TRABAJADOR,
+        usuarioId,
+      );
+
+      return toSolicitudPublica(solicitud, zona);
+    });
+  }
+
+  async cancelar(
+    usuarioId: string,
+    rolActivo: Rol,
+    solicitudId: string,
+    dto: CancelarSolicitudDto,
+  ): Promise<ResolucionCancelacion> {
+    return this.dataSource.transaction(async (manager) => {
+      const solicitud = await manager.findOne(Solicitud, {
+        where: { id: solicitudId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!solicitud) {
+        throw new NotFoundException('Solicitud no encontrada');
+      }
+
+      const esCliente = solicitud.clienteId === usuarioId;
+      let perfilTrabajador: PerfilTrabajador | null = null;
+      if (!esCliente) {
+        if (
+          rolActivo !== Rol.TRABAJADOR ||
+          solicitud.trabajadorConfirmadoId === null
+        ) {
+          throw new NotFoundException('Solicitud no encontrada');
+        }
+        perfilTrabajador = await manager.findOne(
+          PerfilTrabajador,
+          { where: { usuarioId } },
+        );
+        if (
+          !perfilTrabajador ||
+          perfilTrabajador.id !==
+            solicitud.trabajadorConfirmadoId
+        ) {
+          throw new NotFoundException('Solicitud no encontrada');
+        }
+      }
+
+      if (
+        solicitud.estado === EstadoSolicitud.FINALIZADA ||
+        solicitud.estado === EstadoSolicitud.CANCELADA ||
+        solicitud.estado === EstadoSolicitud.ANULADA
+      ) {
+        throw new BadRequestException(
+          'La solicitud ya está cerrada',
+        );
+      }
+
+      const ahora = new Date();
+      const actor = esCliente ? 'CLIENTE' : 'TRABAJADOR';
+
+      let numeroFalta: number | undefined;
+      if (actor === 'TRABAJADOR' && perfilTrabajador) {
+        const faltas = await manager.count(Suspension, {
+          where: { trabajadorId: perfilTrabajador.id },
+        });
+        numeroFalta = faltas + 1;
+      }
+
+      const evaluacion = this.reglas.evaluarCancelacion(
+        actor,
+        solicitud.fechaCitaPreferida,
+        ahora,
+        numeroFalta,
+      );
+
+      const pago = await manager.findOne(Pago, {
+        where: { solicitudId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const pagoConfirmado = pago?.estadoQr === EstadoQr.PAGADO;
+
+      let devolucion: Devolucion | null = null;
+      let suspension: Suspension | null = null;
+      let transferencia: TransferenciaSimulada | null = null;
+
+      if (pago && pago.estadoQr === EstadoQr.PENDIENTE) {
+        pago.estadoQr = EstadoQr.VENCIDO;
+        await manager.save(Pago, pago);
+      }
+
+      if (pago && pagoConfirmado) {
+        if (evaluacion.devolverPagoInicial) {
+          devolucion =
+            await this.pagosService.registrarDevolucion(
+              manager,
+              pago,
+              `Cancelación: ${dto.motivo}`,
+            );
+        } else if (actor === 'CLIENTE') {
+          transferencia =
+            await this.pagosService.registrarTransferenciaSimulada(
+              manager,
+              pago,
+            );
+        }
+      }
+
+      if (evaluacion.suspenderTrabajador && perfilTrabajador) {
+        suspension = manager.create(Suspension, {
+          trabajadorId: perfilTrabajador.id,
+          numeroFalta: evaluacion.numeroFalta ?? 1,
+          diasFibonacci: evaluacion.diasSuspension,
+          motivo: `Cancelación con menos de 2 horas: ${dto.motivo}`,
+          aplicadaPorId: usuarioId,
+          inicio: ahora,
+          fin: sumarDias(ahora, evaluacion.diasSuspension),
+        });
+        await manager.save(Suspension, suspension);
+
+        perfilTrabajador.estado = EstadoTrabajador.SUSPENDIDO;
+        await manager.save(PerfilTrabajador, perfilTrabajador);
+      }
+
+      solicitud.estado = EstadoSolicitud.CANCELADA;
+      solicitud.cerradaEn = ahora;
+      await manager.save(Solicitud, solicitud);
+      await this.cerrarOfertas(manager, solicitud.id);
+      await this.registrarHistorial(
+        manager,
+        solicitud.id,
+        EstadoSolicitud.CANCELADA,
+        usuarioId,
+      );
+
+      const zona = await manager.findOne(Zona, {
+        where: { id: solicitud.zonaId },
+      });
+
+      return {
+        solicitud: toSolicitudPublica(solicitud, zona),
+        pago: pago ? toPagoPublico(pago) : null,
+        devolucion: devolucion
+          ? toDevolucionPublica(devolucion)
+          : null,
+        suspension: suspension
+          ? toSuspensionPublica(suspension)
+          : null,
+        transferencia,
       };
     });
   }

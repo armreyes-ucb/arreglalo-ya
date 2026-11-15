@@ -23,13 +23,14 @@ import { BusinessRulesService } from '../common/services/business-rules.service.
 import type { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
-import type { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
+import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Precio } from '../entities/precio.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
 import type { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
-import type { Zona } from '../entities/zona.entity.js';
+import { Zona } from '../entities/zona.entity.js';
 import type { PagosService } from '../pagos/pagos.service.js';
 import type { TrabajadoresService } from '../trabajadores/trabajadores.service.js';
+import type { CancelarSolicitudDto } from './dto/cancelar-solicitud.dto.js';
 import type { CrearOfertaDto } from './dto/crear-oferta.dto.js';
 import type { ElegirOfertaDto } from './dto/elegir-oferta.dto.js';
 import type { ListarDisponiblesQueryDto } from './dto/listar-disponibles-query.dto.js';
@@ -179,6 +180,7 @@ describe('SolicitudesService', () => {
   let pagosService: {
     crearPagoInicial: ReturnType<typeof vi.fn>;
     registrarDevolucion: ReturnType<typeof vi.fn>;
+    registrarTransferenciaSimulada: ReturnType<typeof vi.fn>;
   };
   let reglas: BusinessRulesService;
   let manager: {
@@ -186,6 +188,7 @@ describe('SolicitudesService', () => {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
   };
   let dataSource: { transaction: ReturnType<typeof vi.fn> };
   let service: SolicitudesService;
@@ -211,6 +214,7 @@ describe('SolicitudesService', () => {
     pagosService = {
       crearPagoInicial: vi.fn(),
       registrarDevolucion: vi.fn(),
+      registrarTransferenciaSimulada: vi.fn(),
     };
     reglas = new BusinessRulesService();
     manager = {
@@ -218,6 +222,7 @@ describe('SolicitudesService', () => {
       create: vi.fn((_entidad, datos) => ({ ...datos })),
       save: vi.fn(async (_entidad, datos) => datos),
       update: vi.fn(),
+      count: vi.fn(),
     };
     dataSource = {
       transaction: vi.fn(async (callback) => callback(manager)),
@@ -247,7 +252,10 @@ describe('SolicitudesService', () => {
     solicitudRepository.find.mockResolvedValue([crearSolicitud()]);
     zonaRepository.find.mockResolvedValue([crearZona()]);
     conflictivoRepository.find.mockResolvedValue([
-      { clienteId: CLIENTE_ID } as ClienteConflictivo,
+      {
+        clienteId: CLIENTE_ID,
+        reportesAcumulados: 3,
+      } as ClienteConflictivo,
     ]);
 
     const resultado = await service.listarDisponibles(
@@ -614,5 +622,317 @@ describe('SolicitudesService', () => {
         Rol.TRABAJADOR,
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('el trabajador asignado termina el trabajo y queda TERMINADA_TRABAJADOR', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.EN_PROGRESO,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === Zona
+            ? crearZona()
+            : null,
+      ),
+    );
+
+    const resultado = await service.terminarTrabajo(
+      USUARIO_ID,
+      SOLICITUD_ID,
+    );
+
+    expect(resultado.estado).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+    expect(manager.save).toHaveBeenCalledWith(
+      Solicitud,
+      expect.objectContaining({
+        estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      }),
+    );
+    expect(manager.save).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      }),
+    );
+  });
+
+  it('terminar es idempotente si ya estaba terminada', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.TERMINADA_TRABAJADOR,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === Zona
+            ? crearZona()
+            : null,
+      ),
+    );
+
+    const resultado = await service.terminarTrabajo(
+      USUARIO_ID,
+      SOLICITUD_ID,
+    );
+
+    expect(resultado.estado).toBe(
+      EstadoSolicitud.TERMINADA_TRABAJADOR,
+    );
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+
+  it('no permite terminar una solicitud que no está en progreso', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.CONFIRMADA,
+      trabajadorConfirmadoId: PERFIL_ID,
+    });
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === Zona
+            ? crearZona()
+            : null,
+      ),
+    );
+
+    await expect(
+      service.terminarTrabajo(USUARIO_ID, SOLICITUD_ID),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('no permite terminar una solicitud asignada a otro trabajador', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.EN_PROGRESO,
+      trabajadorConfirmadoId: 'otro-perfil',
+    });
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    manager.findOne.mockResolvedValue(solicitud);
+
+    await expect(
+      service.terminarTrabajo(USUARIO_ID, SOLICITUD_ID),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('CP04: el cliente cancela con 3 horas, hay devolución y no hay suspensión', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.CONFIRMADA,
+      trabajadorConfirmadoId: PERFIL_ID,
+      fechaCitaPreferida: new Date(Date.now() + 3 * 3_600_000),
+    });
+    const pago = crearPago();
+    const devolucion = {
+      id: '99999999-9999-4999-8999-999999999999',
+      pagoId: pago.id,
+      motivo: 'Cancelación: Cambio de planes',
+      monto: 100,
+      fechaLimite: '2026-01-14',
+      estado: 'PENDIENTE',
+    };
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === Pago
+            ? pago
+            : entidad === Zona
+              ? crearZona()
+              : null,
+      ),
+    );
+    pagosService.registrarDevolucion.mockResolvedValue(devolucion);
+
+    const resultado = await service.cancelar(
+      CLIENTE_ID,
+      Rol.CLIENTE,
+      SOLICITUD_ID,
+      { motivo: 'Cambio de planes' } as CancelarSolicitudDto,
+    );
+
+    expect(solicitud.estado).toBe(EstadoSolicitud.CANCELADA);
+    expect(resultado.devolucion?.monto).toBe(100);
+    expect(resultado.suspension).toBeNull();
+    expect(resultado.transferencia).toBeNull();
+    expect(
+      pagosService.registrarDevolucion,
+    ).toHaveBeenCalledWith(
+      manager,
+      pago,
+      'Cancelación: Cambio de planes',
+    );
+  });
+
+  it('CP05: el trabajador cancela con 1 hora, hay devolución y suspensión de 1 día', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.EN_PROGRESO,
+      trabajadorConfirmadoId: PERFIL_ID,
+      fechaCitaPreferida: new Date(Date.now() + 3_600_000),
+    });
+    const perfil = crearPerfil();
+    const pago = crearPago();
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === PerfilTrabajador
+            ? perfil
+            : entidad === Pago
+              ? pago
+              : entidad === Zona
+                ? crearZona()
+                : null,
+      ),
+    );
+    manager.count.mockResolvedValue(0);
+    pagosService.registrarDevolucion.mockResolvedValue({
+      id: '99999999-9999-4999-8999-999999999999',
+      pagoId: pago.id,
+      motivo: 'Cancelación: Enfermedad',
+      monto: 100,
+      fechaLimite: '2026-01-14',
+      estado: 'PENDIENTE',
+    });
+
+    const resultado = await service.cancelar(
+      USUARIO_ID,
+      Rol.TRABAJADOR,
+      SOLICITUD_ID,
+      { motivo: 'Enfermedad' } as CancelarSolicitudDto,
+    );
+
+    expect(solicitud.estado).toBe(EstadoSolicitud.CANCELADA);
+    expect(resultado.devolucion?.monto).toBe(100);
+    expect(resultado.suspension?.numero_falta).toBe(1);
+    expect(resultado.suspension?.dias_fibonacci).toBe(1);
+    expect(perfil.estado).toBe(EstadoTrabajador.SUSPENDIDO);
+  });
+
+  it('el cliente que cancela con menos de 2 horas no recibe devolución y se transfiere el 20%', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.CONFIRMADA,
+      trabajadorConfirmadoId: PERFIL_ID,
+      fechaCitaPreferida: new Date(Date.now() + 3_600_000),
+    });
+    const pago = crearPago();
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === Pago
+            ? pago
+            : entidad === Zona
+              ? crearZona()
+              : null,
+      ),
+    );
+    pagosService.registrarTransferenciaSimulada.mockResolvedValue({
+      monto: 80,
+      comision_plataforma: 20,
+      comprobante: 'SIM-PRUEBA',
+      simulada: true,
+    });
+
+    const resultado = await service.cancelar(
+      CLIENTE_ID,
+      Rol.CLIENTE,
+      SOLICITUD_ID,
+      { motivo: 'Emergencia' } as CancelarSolicitudDto,
+    );
+
+    expect(resultado.devolucion).toBeNull();
+    expect(resultado.transferencia?.monto).toBe(80);
+    expect(
+      pagosService.registrarTransferenciaSimulada,
+    ).toHaveBeenCalledWith(manager, pago);
+    expect(
+      pagosService.registrarDevolucion,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('cancelar una solicitud sin pago no genera devolución', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.PUBLICADA,
+      fechaCitaPreferida: new Date(Date.now() + 5 * 3_600_000),
+    });
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === Zona
+            ? crearZona()
+            : null,
+      ),
+    );
+
+    const resultado = await service.cancelar(
+      CLIENTE_ID,
+      Rol.CLIENTE,
+      SOLICITUD_ID,
+      { motivo: 'Ya no lo necesito' } as CancelarSolicitudDto,
+    );
+
+    expect(solicitud.estado).toBe(EstadoSolicitud.CANCELADA);
+    expect(resultado.pago).toBeNull();
+    expect(resultado.devolucion).toBeNull();
+    expect(resultado.suspension).toBeNull();
+  });
+
+  it('invalida un QR pendiente al cancelar', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.PENDIENTE_PAGO,
+      fechaCitaPreferida: new Date(Date.now() + 5 * 3_600_000),
+    });
+    const pago = crearPago({ estadoQr: EstadoQr.PENDIENTE });
+    manager.findOne.mockImplementation((entidad) =>
+      Promise.resolve(
+        entidad === Solicitud
+          ? solicitud
+          : entidad === Pago
+            ? pago
+            : entidad === Zona
+              ? crearZona()
+              : null,
+      ),
+    );
+
+    await service.cancelar(
+      CLIENTE_ID,
+      Rol.CLIENTE,
+      SOLICITUD_ID,
+      { motivo: 'Cambio de idea' } as CancelarSolicitudDto,
+    );
+
+    expect(pago.estadoQr).toBe(EstadoQr.VENCIDO);
+  });
+
+  it('CP31: no marca como conflictivo a un cliente con menos de 3 reportes', async () => {
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    trabajadorZonaRepository.find.mockResolvedValue([
+      { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+    ]);
+    solicitudRepository.find.mockResolvedValue([crearSolicitud()]);
+    zonaRepository.find.mockResolvedValue([crearZona()]);
+    conflictivoRepository.find.mockResolvedValue([
+      {
+        clienteId: CLIENTE_ID,
+        reportesAcumulados: 2,
+      } as ClienteConflictivo,
+    ]);
+
+    const resultado = await service.listarDisponibles(
+      USUARIO_ID,
+      {} as ListarDisponiblesQueryDto,
+    );
+
+    expect(resultado[0].cliente_en_conflictivos).toBe(false);
   });
 });

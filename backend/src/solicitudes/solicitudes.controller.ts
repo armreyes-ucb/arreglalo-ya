@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -14,6 +15,7 @@ import { Rol } from '../common/enums/rol.enum.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { CancelarSolicitudDto } from './dto/cancelar-solicitud.dto.js';
 import { CrearIncrementoDto } from './dto/crear-incremento.dto.js';
 import { CrearOfertaDto } from './dto/crear-oferta.dto.js';
 import { CrearPrecioFinalDto } from './dto/crear-precio-final.dto.js';
@@ -28,6 +30,7 @@ import type {
   PrecioPublico,
   ResolucionPrecio,
 } from './interfaces/precio-publico.interface.js';
+import type { ResolucionCancelacion } from './interfaces/resolucion-cancelacion.interface.js';
 import type { SolicitudDetalle } from './interfaces/solicitud-detalle.interface.js';
 import type { SolicitudDisponible } from './interfaces/solicitud-disponible.interface.js';
 import type { SolicitudPublica } from './interfaces/solicitud-publica.interface.js';
@@ -87,6 +90,33 @@ export class SolicitudesController {
       usuario.id,
       solicitudId,
       usuario.rolActivo,
+    );
+  }
+
+  @Patch(':id/terminar')
+  @Roles(Rol.TRABAJADOR)
+  terminar(
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) solicitudId: string,
+  ): Promise<SolicitudPublica> {
+    return this.solicitudesService.terminarTrabajo(
+      usuario.id,
+      solicitudId,
+    );
+  }
+
+  @Post(':id/cancelar')
+  @Roles(Rol.CLIENTE, Rol.TRABAJADOR)
+  cancelar(
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) solicitudId: string,
+    @Body() dto: CancelarSolicitudDto,
+  ): Promise<ResolucionCancelacion> {
+    return this.solicitudesService.cancelar(
+      usuario.id,
+      usuario.rolActivo,
+      solicitudId,
+      dto,
     );
   }
 

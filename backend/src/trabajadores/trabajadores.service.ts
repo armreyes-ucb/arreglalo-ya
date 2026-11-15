@@ -1,8 +1,10 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
@@ -20,6 +22,7 @@ import { toTrabajadorPerfilPublico } from '../common/mappers/trabajador-perfil-p
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { Documento } from '../entities/documento.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
+import { Suspension } from '../entities/suspension.entity.js';
 import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
 import { Usuario } from '../entities/usuario.entity.js';
 import { Zona } from '../entities/zona.entity.js';
@@ -35,6 +38,8 @@ const CAMPOS_PRECIO_VALIDOS = new Set<string>(
 
 @Injectable()
 export class TrabajadoresService {
+  private readonly logger = new Logger(TrabajadoresService.name);
+
   constructor(
     @InjectRepository(PerfilTrabajador)
     private readonly perfilRepository: Repository<PerfilTrabajador>,
@@ -44,6 +49,8 @@ export class TrabajadoresService {
     private readonly trabajadorZonaRepository: Repository<TrabajadorZona>,
     @InjectRepository(Documento)
     private readonly documentoRepository: Repository<Documento>,
+    @InjectRepository(Suspension)
+    private readonly suspensionRepository: Repository<Suspension>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -138,6 +145,46 @@ export class TrabajadoresService {
     especialidad?: EspecialidadTipo,
   ): Promise<TrabajadorMatch[]> {
     return this.listarTrabajadores(zonaId, especialidad, true);
+  }
+
+  async reactivarSuspensionesVencidas(): Promise<number> {
+    const suspendidos = await this.perfilRepository.find({
+      where: { estado: EstadoTrabajador.SUSPENDIDO },
+    });
+
+    let reactivados = 0;
+    for (const perfil of suspendidos) {
+      const ultima = await this.suspensionRepository.findOne({
+        where: { trabajadorId: perfil.id },
+        order: { fin: 'DESC' },
+      });
+      if (!ultima || ultima.fin.getTime() > Date.now()) {
+        continue;
+      }
+      perfil.estado = EstadoTrabajador.ACTIVO;
+      await this.perfilRepository.save(perfil);
+      reactivados += 1;
+    }
+
+    return reactivados;
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async reactivarSuspensionesVencidasProgramado(): Promise<void> {
+    try {
+      const reactivados =
+        await this.reactivarSuspensionesVencidas();
+      if (reactivados > 0) {
+        this.logger.log(
+          `Trabajadores reactivados tras suspensión: ${reactivados}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        'No se pudo reactivar las suspensiones vencidas',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   private async buscarPerfilPorUsuario(
