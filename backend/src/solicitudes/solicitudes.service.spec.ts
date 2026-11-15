@@ -269,6 +269,38 @@ describe('SolicitudesService', () => {
     expect(resultado[0].cliente_en_conflictivos).toBe(true);
   });
 
+  it('CP02: lista primero las solicitudes urgentes', async () => {
+    const urgente = crearSolicitud({
+      id: '55555555-5555-4555-8555-555555555555',
+      urgente: true,
+      creadaEn: new Date('2026-11-09T09:00:00.000Z'),
+    });
+    const normal = crearSolicitud({
+      creadaEn: new Date('2026-11-09T11:00:00.000Z'),
+    });
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    trabajadorZonaRepository.find.mockResolvedValue([
+      { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+    ]);
+    solicitudRepository.find.mockResolvedValue([urgente, normal]);
+    zonaRepository.find.mockResolvedValue([crearZona()]);
+    conflictivoRepository.find.mockResolvedValue([]);
+
+    const resultado = await service.listarDisponibles(
+      USUARIO_ID,
+      {} as ListarDisponiblesQueryDto,
+    );
+
+    expect(solicitudRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { urgente: 'DESC', creadaEn: 'DESC' },
+      }),
+    );
+    expect(resultado).toHaveLength(2);
+    expect(resultado[0].urgente).toBe(true);
+    expect(resultado[1].urgente).toBe(false);
+  });
+
   it('CP20: bloquea ofertar en una solicitud propia', async () => {
     perfilRepository.findOne.mockResolvedValue(crearPerfil());
     solicitudRepository.findOne.mockResolvedValue(

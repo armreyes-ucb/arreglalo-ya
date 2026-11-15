@@ -177,6 +177,45 @@ describe('PagosService', () => {
     );
   });
 
+  it('CP36: genera un QR nuevo cuando el anterior ya venció', async () => {
+    const pago = crearPago({
+      qrVenceEn: new Date(Date.now() - 60_000),
+      codigoQrData: 'data:image/png;base64,anterior',
+    });
+    manager.findOne.mockResolvedValue(pago);
+    const antes = Date.now();
+
+    const actualizado = await service.crearPagoInicial(
+      manager,
+      crearSolicitud(),
+      crearOferta(),
+    );
+
+    expect(actualizado.id).toBe(PAGO_ID);
+    expect(actualizado.estadoQr).toBe(EstadoQr.PENDIENTE);
+    expect(actualizado.codigoQrData).toMatch(
+      /^data:image\/png;base64,/,
+    );
+    expect(actualizado.codigoQrData).not.toBe(
+      'data:image/png;base64,anterior',
+    );
+    expect(actualizado.qrVenceEn?.getTime()).toBeGreaterThanOrEqual(
+      antes + 29 * 60_000,
+    );
+  });
+
+  it('CP36: no regenera el QR mientras el vigente no ha vencido', async () => {
+    manager.findOne.mockResolvedValue(crearPago());
+
+    await expect(
+      service.crearPagoInicial(
+        manager,
+        crearSolicitud(),
+        crearOferta(),
+      ),
+    ).rejects.toThrow('El QR vigente todavía no ha vencido');
+  });
+
   it('CP28: confirma el pago, asigna trabajador y cierra las demás ofertas', async () => {
     const pago = crearPago();
     const solicitud = crearSolicitud();
