@@ -173,6 +173,18 @@ import {
                 @if (oferta.mensaje) {
                   <p class="small mt-1">“{{ oferta.mensaje }}”</p>
                 }
+                @if (puedeVerSeguimiento(oferta)) {
+                  <a
+                    [routerLink]="[
+                      '/trabajador/trabajos',
+                      oferta.solicitud_id,
+                      'seguimiento',
+                    ]"
+                    class="btn btn--primario btn--bloque mt-2"
+                  >
+                    Ir al seguimiento
+                  </a>
+                }
               </div>
             }
           </div>
@@ -221,6 +233,22 @@ export class MisOfertas implements OnInit {
       (oferta) => oferta.estado === filtro,
     );
   });
+
+  protected puedeVerSeguimiento(
+    oferta: OfertaConSolicitud,
+  ): boolean {
+    if (oferta.estado !== 'ELEGIDA') {
+      return false;
+    }
+    return [
+      'CONFIRMADA',
+      'EN_PROGRESO',
+      'TERMINADA_TRABAJADOR',
+      'FINALIZADA',
+      'ANULADA',
+      'CANCELADA',
+    ].includes(oferta.solicitud.estado);
+  }
 
   ngOnInit(): void {
     void this.cargar();

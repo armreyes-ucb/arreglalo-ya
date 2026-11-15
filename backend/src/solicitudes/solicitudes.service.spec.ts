@@ -14,6 +14,7 @@ import {
 import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
 import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoQr } from '../common/enums/estado-qr.enum.js';
+import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
@@ -154,6 +155,20 @@ function crearOferta(
   };
 }
 
+function crearPrecio(overrides: Partial<Precio> = {}): Precio {
+  return {
+    id: PRECIO_ID,
+    solicitudId: SOLICITUD_ID,
+    tipo: TipoPrecio.FINAL,
+    monto: 400,
+    motivo: null,
+    fotoEvidenciaUrl: null,
+    aprobadoCliente: null,
+    fecha: new Date('2026-11-09T12:00:00.000Z'),
+    ...overrides,
+  };
+}
+
 describe('SolicitudesService', () => {
   let solicitudRepository: {
     find: ReturnType<typeof vi.fn>;
@@ -167,6 +182,9 @@ describe('SolicitudesService', () => {
     count: ReturnType<typeof vi.fn>;
   };
   let historialRepository: { find: ReturnType<typeof vi.fn> };
+  let pagoRepository: { findOne: ReturnType<typeof vi.fn> };
+  let precioRepository: { find: ReturnType<typeof vi.fn> };
+  let reclamoRepository: { findOne: ReturnType<typeof vi.fn> };
   let conflictivoRepository: { find: ReturnType<typeof vi.fn> };
   let perfilRepository: { findOne: ReturnType<typeof vi.fn> };
   let trabajadorZonaRepository: { find: ReturnType<typeof vi.fn> };
@@ -206,6 +224,9 @@ describe('SolicitudesService', () => {
       count: vi.fn(),
     };
     historialRepository = { find: vi.fn() };
+    pagoRepository = { findOne: vi.fn() };
+    precioRepository = { find: vi.fn() };
+    reclamoRepository = { findOne: vi.fn() };
     conflictivoRepository = { find: vi.fn() };
     perfilRepository = { findOne: vi.fn() };
     trabajadorZonaRepository = { find: vi.fn() };
@@ -232,6 +253,11 @@ describe('SolicitudesService', () => {
       ofertaRepository as unknown as Repository<Oferta>,
       historialRepository as unknown as Repository<
         import('../entities/historial-estado.entity.js').HistorialEstado
+      >,
+      pagoRepository as unknown as Repository<Pago>,
+      precioRepository as unknown as Repository<Precio>,
+      reclamoRepository as unknown as Repository<
+        import('../entities/reclamo.entity.js').Reclamo
       >,
       conflictivoRepository as unknown as Repository<ClienteConflictivo>,
       perfilRepository as unknown as Repository<PerfilTrabajador>,
@@ -966,5 +992,150 @@ describe('SolicitudesService', () => {
     );
 
     expect(resultado[0].cliente_en_conflictivos).toBe(false);
+  });
+
+  it('lista las ofertas con datos públicos del técnico y sin teléfono ni documentos', async () => {
+    const perfil = {
+      ...crearPerfil(),
+      trabajadorZonas: [
+        {
+          trabajadorId: PERFIL_ID,
+          zonaId: 3,
+          zona: crearZona(),
+        },
+      ],
+    };
+    solicitudRepository.findOne.mockResolvedValue(
+      crearSolicitud({ estado: EstadoSolicitud.CON_OFERTAS }),
+    );
+    ofertaRepository.find.mockResolvedValue([
+      Object.assign(crearOferta(), { trabajador: perfil }),
+    ]);
+
+    const resultado = await service.listarOfertasSolicitud(
+      CLIENTE_ID,
+      SOLICITUD_ID,
+    );
+
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].trabajador.nombre_completo).toBe(
+      'Trabajador Prueba',
+    );
+    expect(resultado[0].trabajador.promedio).toBe(4.5);
+    expect(resultado[0].trabajador.zonas[0].nombre).toBe('Centro');
+    expect(JSON.stringify(resultado)).not.toContain('+59170000001');
+    expect(JSON.stringify(resultado)).not.toContain('documentos');
+    expect(JSON.stringify(resultado)).not.toContain(
+      'numeroCuentaCifrado',
+    );
+  });
+
+  it('oculta las ofertas a un cliente que no es dueño de la solicitud', async () => {
+    solicitudRepository.findOne.mockResolvedValue(crearSolicitud());
+
+    await expect(
+      service.listarOfertasSolicitud(USUARIO_ID, SOLICITUD_ID),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(ofertaRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('devuelve el pago y el reclamo abierto al cliente dueño', async () => {
+    solicitudRepository.findOne.mockResolvedValue(
+      crearSolicitud({ estado: EstadoSolicitud.TERMINADA_TRABAJADOR }),
+    );
+    pagoRepository.findOne.mockResolvedValue(crearPago());
+    reclamoRepository.findOne.mockResolvedValue({
+      id: 'reclamo-1',
+      estado: EstadoReclamo.ABIERTO,
+    });
+
+    const resultado = await service.obtenerPagoSolicitud(
+      CLIENTE_ID,
+      SOLICITUD_ID,
+      Rol.CLIENTE,
+    );
+
+    expect(resultado.pago.id).toBe(
+      '77777777-7777-4777-8777-777777777777',
+    );
+    expect(resultado.pago.estado_qr).toBe(EstadoQr.PAGADO);
+    expect(resultado.reporte_abierto).toEqual({
+      id: 'reclamo-1',
+      estado: EstadoReclamo.ABIERTO,
+    });
+  });
+
+  it('permite al trabajador confirmado consultar el pago', async () => {
+    solicitudRepository.findOne.mockResolvedValue(
+      crearSolicitud({
+        estado: EstadoSolicitud.CONFIRMADA,
+        trabajadorConfirmadoId: PERFIL_ID,
+      }),
+    );
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    pagoRepository.findOne.mockResolvedValue(crearPago());
+    reclamoRepository.findOne.mockResolvedValue(null);
+
+    const resultado = await service.obtenerPagoSolicitud(
+      USUARIO_ID,
+      SOLICITUD_ID,
+      Rol.TRABAJADOR,
+    );
+
+    expect(resultado.pago.pago_inicial_25).toBe(100);
+    expect(resultado.reporte_abierto).toBeNull();
+  });
+
+  it('bloquea el pago a un trabajador que no fue confirmado', async () => {
+    solicitudRepository.findOne.mockResolvedValue(
+      crearSolicitud({ estado: EstadoSolicitud.CONFIRMADA }),
+    );
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+
+    await expect(
+      service.obtenerPagoSolicitud(
+        USUARIO_ID,
+        SOLICITUD_ID,
+        Rol.TRABAJADOR,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(pagoRepository.findOne).not.toHaveBeenCalled();
+  });
+
+  it('devuelve los precios de la solicitud ordenados por fecha', async () => {
+    solicitudRepository.findOne.mockResolvedValue(
+      crearSolicitud({ estado: EstadoSolicitud.EN_PROGRESO }),
+    );
+    precioRepository.find.mockResolvedValue([crearPrecio()]);
+
+    const resultado = await service.listarPreciosSolicitud(
+      CLIENTE_ID,
+      SOLICITUD_ID,
+      Rol.CLIENTE,
+    );
+
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].tipo).toBe(TipoPrecio.FINAL);
+    expect(resultado[0].aprobado_cliente).toBeNull();
+    expect(precioRepository.find).toHaveBeenCalledWith({
+      where: { solicitudId: SOLICITUD_ID },
+      order: { fecha: 'ASC' },
+    });
+  });
+
+  it('impide que un técnico ajeno consulte los precios', async () => {
+    solicitudRepository.findOne.mockResolvedValue(
+      crearSolicitud({ estado: EstadoSolicitud.EN_PROGRESO }),
+    );
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+
+    await expect(
+      service.listarPreciosSolicitud(
+        USUARIO_ID,
+        SOLICITUD_ID,
+        Rol.TRABAJADOR,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(precioRepository.find).not.toHaveBeenCalled();
   });
 });

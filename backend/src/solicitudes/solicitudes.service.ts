@@ -12,14 +12,17 @@ import {
   MoreThan,
   Repository,
   type EntityManager,
+  type FindOptionsRelations,
 } from 'typeorm';
 import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoQr } from '../common/enums/estado-qr.enum.js';
+import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { TipoPrecio } from '../common/enums/tipo-precio.enum.js';
 import { toDevolucionPublica } from '../common/mappers/devolucion-publica.mapper.js';
+import { toOfertaConTrabajador } from '../common/mappers/oferta-con-trabajador.mapper.js';
 import { toOfertaPublica } from '../common/mappers/oferta-publica.mapper.js';
 import { toPagoPublico } from '../common/mappers/pago-publico.mapper.js';
 import { toPrecioPublico } from '../common/mappers/precio-publico.mapper.js';
@@ -41,6 +44,7 @@ import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Precio } from '../entities/precio.entity.js';
+import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
 import { Suspension } from '../entities/suspension.entity.js';
 import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
@@ -58,7 +62,9 @@ import type { ElegirOfertaDto } from './dto/elegir-oferta.dto.js';
 import type { ListarDisponiblesQueryDto } from './dto/listar-disponibles-query.dto.js';
 import type { ResponderPrecioDto } from './dto/responder-precio.dto.js';
 import type { OfertaConSolicitud } from './interfaces/oferta-con-solicitud.interface.js';
+import type { OfertaConTrabajador } from './interfaces/oferta-con-trabajador.interface.js';
 import type { OfertaPublica } from './interfaces/oferta-publica.interface.js';
+import type { PagoSolicitudPublico } from './interfaces/pago-solicitud.interface.js';
 import type { ResolucionCancelacion } from './interfaces/resolucion-cancelacion.interface.js';
 import type {
   PrecioPublico,
@@ -81,6 +87,12 @@ const ESTADOS_TRABAJADOR_ASIGNADO = [
   EstadoSolicitud.CANCELADA,
 ];
 
+const ESTADOS_RECLAMO_ABIERTO = [
+  EstadoReclamo.ABIERTO,
+  EstadoReclamo.RESPONDIDO,
+  EstadoReclamo.EN_REVISION_SUPERVISOR,
+];
+
 @Injectable()
 export class SolicitudesService {
   constructor(
@@ -90,6 +102,12 @@ export class SolicitudesService {
     private readonly ofertaRepository: Repository<Oferta>,
     @InjectRepository(HistorialEstado)
     private readonly historialRepository: Repository<HistorialEstado>,
+    @InjectRepository(Pago)
+    private readonly pagoRepository: Repository<Pago>,
+    @InjectRepository(Precio)
+    private readonly precioRepository: Repository<Precio>,
+    @InjectRepository(Reclamo)
+    private readonly reclamoRepository: Repository<Reclamo>,
     @InjectRepository(ClienteConflictivo)
     private readonly conflictivoRepository: Repository<ClienteConflictivo>,
     @InjectRepository(PerfilTrabajador)
@@ -273,37 +291,18 @@ export class SolicitudesService {
     solicitudId: string,
     rolActivo: Rol = Rol.CLIENTE,
   ): Promise<SolicitudDetalle> {
-    const solicitud = await this.solicitudRepository.findOne({
-      where: { id: solicitudId },
-      relations: {
+    const solicitud = await this.cargarSolicitudConAcceso(
+      usuarioId,
+      solicitudId,
+      rolActivo,
+      {
         cliente: true,
         trabajadorConfirmado: {
           usuario: true,
         },
       },
-    });
-    if (!solicitud) {
-      throw new NotFoundException('Solicitud no encontrada');
-    }
-
+    );
     const esCliente = solicitud.clienteId === usuarioId;
-    if (!esCliente) {
-      if (rolActivo !== Rol.TRABAJADOR) {
-        throw new NotFoundException('Solicitud no encontrada');
-      }
-      const perfil = await this.perfilRepository.findOne({
-        where: { usuarioId },
-      });
-      if (
-        !perfil ||
-        solicitud.trabajadorConfirmadoId !== perfil.id ||
-        !ESTADOS_TRABAJADOR_ASIGNADO.includes(solicitud.estado)
-      ) {
-        throw new ForbiddenException(
-          'No tienes acceso a esta solicitud',
-        );
-      }
-    }
 
     const [zona, historial, totalOfertas] = await Promise.all([
       this.zonaRepository.findOne({ where: { id: solicitud.zonaId } }),
@@ -340,6 +339,94 @@ export class SolicitudesService {
         whatsappUrl,
       },
     );
+  }
+
+  async listarOfertasSolicitud(
+    usuarioId: string,
+    solicitudId: string,
+  ): Promise<OfertaConTrabajador[]> {
+    const solicitud = await this.solicitudRepository.findOne({
+      where: { id: solicitudId },
+    });
+    if (!solicitud || solicitud.clienteId !== usuarioId) {
+      throw new NotFoundException('Solicitud no encontrada');
+    }
+
+    const ofertas = await this.ofertaRepository.find({
+      where: { solicitudId },
+      relations: {
+        trabajador: {
+          usuario: true,
+          trabajadorZonas: { zona: true },
+        },
+      },
+      order: { creadaEn: 'ASC' },
+    });
+
+    return ofertas.map((oferta) => {
+      const zonas = (oferta.trabajador?.trabajadorZonas ?? [])
+        .map((trabajadorZona) => trabajadorZona.zona)
+        .filter((zona): zona is Zona => Boolean(zona));
+      return toOfertaConTrabajador(
+        oferta,
+        oferta.trabajador,
+        zonas,
+      );
+    });
+  }
+
+  async obtenerPagoSolicitud(
+    usuarioId: string,
+    solicitudId: string,
+    rolActivo: Rol = Rol.CLIENTE,
+  ): Promise<PagoSolicitudPublico> {
+    await this.cargarSolicitudConAcceso(
+      usuarioId,
+      solicitudId,
+      rolActivo,
+    );
+
+    const pago = await this.pagoRepository.findOne({
+      where: { solicitudId },
+    });
+    if (!pago) {
+      throw new NotFoundException(
+        'La solicitud no tiene un pago registrado',
+      );
+    }
+
+    const reporte = await this.reclamoRepository.findOne({
+      where: {
+        solicitudId,
+        estado: In(ESTADOS_RECLAMO_ABIERTO),
+      },
+      order: { fechaApertura: 'DESC' },
+    });
+
+    return {
+      pago: toPagoPublico(pago),
+      reporte_abierto: reporte
+        ? { id: reporte.id, estado: reporte.estado }
+        : null,
+    };
+  }
+
+  async listarPreciosSolicitud(
+    usuarioId: string,
+    solicitudId: string,
+    rolActivo: Rol = Rol.CLIENTE,
+  ): Promise<PrecioPublico[]> {
+    await this.cargarSolicitudConAcceso(
+      usuarioId,
+      solicitudId,
+      rolActivo,
+    );
+
+    const precios = await this.precioRepository.find({
+      where: { solicitudId },
+      order: { fecha: 'ASC' },
+    });
+    return precios.map(toPrecioPublico);
   }
 
   async listarMisOfertas(
@@ -1110,6 +1197,44 @@ export class SolicitudesService {
         transferencia,
       };
     });
+  }
+
+  private async cargarSolicitudConAcceso(
+    usuarioId: string,
+    solicitudId: string,
+    rolActivo: Rol,
+    relations: FindOptionsRelations<Solicitud> = {},
+  ): Promise<Solicitud> {
+    const solicitud = await this.solicitudRepository.findOne({
+      where: { id: solicitudId },
+      relations,
+    });
+    if (!solicitud) {
+      throw new NotFoundException('Solicitud no encontrada');
+    }
+
+    if (solicitud.clienteId === usuarioId) {
+      return solicitud;
+    }
+
+    if (rolActivo !== Rol.TRABAJADOR) {
+      throw new NotFoundException('Solicitud no encontrada');
+    }
+
+    const perfil = await this.perfilRepository.findOne({
+      where: { usuarioId },
+    });
+    if (
+      !perfil ||
+      solicitud.trabajadorConfirmadoId !== perfil.id ||
+      !ESTADOS_TRABAJADOR_ASIGNADO.includes(solicitud.estado)
+    ) {
+      throw new ForbiddenException(
+        'No tienes acceso a esta solicitud',
+      );
+    }
+
+    return solicitud;
   }
 
   private async obtenerPerfilTrabajador(

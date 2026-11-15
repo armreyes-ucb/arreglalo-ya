@@ -6,6 +6,12 @@ import type {
   NuevaOferta,
   Oferta,
   OfertaConSolicitud,
+  OfertaConTrabajador,
+  Pago,
+  PagoSolicitud,
+  Precio,
+  ResolucionCancelacion,
+  ResolucionPrecio,
   Solicitud,
   SolicitudDetalle,
   SolicitudDisponible,
@@ -20,6 +26,16 @@ export interface CrearSolicitudPayload {
   direccion_oculta: string;
   fecha_cita_preferida: string;
   urgente: boolean;
+}
+
+export interface RegistrarPrecioFinalPayload {
+  monto: number;
+}
+
+export interface RegistrarIncrementoPayload {
+  monto: number;
+  motivo: string;
+  foto_evidencia_url: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -42,6 +58,30 @@ export class SolicitudesService {
     return firstValueFrom(
       this.http.get<SolicitudDetalle>(
         `${API_URL}/solicitudes/${id}`,
+      ),
+    );
+  }
+
+  ofertas(id: string): Promise<OfertaConTrabajador[]> {
+    return firstValueFrom(
+      this.http.get<OfertaConTrabajador[]>(
+        `${API_URL}/solicitudes/${id}/ofertas`,
+      ),
+    );
+  }
+
+  pago(id: string): Promise<PagoSolicitud> {
+    return firstValueFrom(
+      this.http.get<PagoSolicitud>(
+        `${API_URL}/solicitudes/${id}/pago`,
+      ),
+    );
+  }
+
+  precios(id: string): Promise<Precio[]> {
+    return firstValueFrom(
+      this.http.get<Precio[]>(
+        `${API_URL}/solicitudes/${id}/precios`,
       ),
     );
   }
@@ -81,6 +121,88 @@ export class SolicitudesService {
     return firstValueFrom(
       this.http.get<OfertaConSolicitud[]>(
         `${API_URL}/solicitudes/mis-ofertas`,
+      ),
+    );
+  }
+
+  elegirOferta(
+    solicitudId: string,
+    ofertaId: string,
+  ): Promise<Pago> {
+    return firstValueFrom(
+      this.http.post<Pago>(
+        `${API_URL}/solicitudes/${solicitudId}/elegir-oferta`,
+        { oferta_id: ofertaId },
+      ),
+    );
+  }
+
+  registrarPrecioFinal(
+    solicitudId: string,
+    payload: RegistrarPrecioFinalPayload,
+  ): Promise<Precio> {
+    return firstValueFrom(
+      this.http.post<Precio>(
+        `${API_URL}/solicitudes/${solicitudId}/precio-final`,
+        payload,
+      ),
+    );
+  }
+
+  responderPrecioFinal(
+    solicitudId: string,
+    aprobado: boolean,
+  ): Promise<ResolucionPrecio> {
+    return firstValueFrom(
+      this.http.post<ResolucionPrecio>(
+        `${API_URL}/solicitudes/${solicitudId}/precio-final/responder`,
+        { aprobado },
+      ),
+    );
+  }
+
+  registrarIncremento(
+    solicitudId: string,
+    payload: RegistrarIncrementoPayload,
+  ): Promise<Precio> {
+    return firstValueFrom(
+      this.http.post<Precio>(
+        `${API_URL}/solicitudes/${solicitudId}/incremento`,
+        payload,
+      ),
+    );
+  }
+
+  responderIncremento(
+    solicitudId: string,
+    precioId: string,
+    aprobado: boolean,
+  ): Promise<ResolucionPrecio> {
+    return firstValueFrom(
+      this.http.post<ResolucionPrecio>(
+        `${API_URL}/solicitudes/${solicitudId}/incrementos/${precioId}/responder`,
+        { aprobado },
+      ),
+    );
+  }
+
+  terminar(solicitudId: string): Promise<Solicitud> {
+    return firstValueFrom(
+      this.http.patch<Solicitud>(
+        `${API_URL}/solicitudes/${solicitudId}/terminar`,
+        {},
+      ),
+    );
+  }
+
+  cancelar(
+    solicitudId: string,
+    motivo: string,
+  ): Promise<ResolucionCancelacion> {
+    return firstValueFrom(
+      this.http.post<ResolucionCancelacion>(
+        `${API_URL}/solicitudes/${solicitudId}/cancelar`,
+        { motivo },
       ),
     );
   }

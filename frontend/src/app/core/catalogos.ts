@@ -1,12 +1,16 @@
 import type {
   DecisionRevision,
   Especialidad,
+  EstadoDevolucion,
   EstadoOferta,
+  EstadoQr,
+  EstadoReclamo,
   EstadoRevision,
   EstadoSolicitud,
   EstadoTrabajador,
   Rol,
   TipoDocumento,
+  TipoPrecio,
 } from './models';
 
 export interface CatalogoEspecialidad {
@@ -115,6 +119,37 @@ export const ETIQUETAS_DECISION: Record<DecisionRevision, string> = {
   REQUIERE_DATOS: 'Solicitar datos adicionales',
 };
 
+export const ETIQUETAS_ESTADO_QR: Record<EstadoQr, string> = {
+  PENDIENTE: 'Pendiente de pago',
+  PAGADO: 'Pagado',
+  VENCIDO: 'QR vencido',
+  DEVUELTO: 'Devuelto',
+};
+
+export const ETIQUETAS_TIPO_PRECIO: Record<TipoPrecio, string> = {
+  PREVIO: 'Precio previo',
+  FINAL: 'Precio final',
+  INCREMENTO: 'Incremento',
+};
+
+export const ETIQUETAS_ESTADO_RECLAMO: Record<EstadoReclamo, string> = {
+  ABIERTO: 'Reclamo abierto',
+  RESPONDIDO: 'Respondido por el técnico',
+  EN_REVISION_SUPERVISOR: 'En revisión por supervisor',
+  RESUELTO: 'Resuelto',
+  FALTA_TRABAJADOR: 'Falta del trabajador',
+  RECHAZADO: 'Rechazado',
+};
+
+export const ETIQUETAS_ESTADO_DEVOLUCION: Record<
+  EstadoDevolucion,
+  string
+> = {
+  PENDIENTE: 'Pendiente',
+  EN_PROCESO: 'En proceso',
+  COMPLETADA: 'Completada',
+};
+
 export const TIPOS_DOCUMENTO_REQUERIDOS: TipoDocumento[] = [
   'CARNET_ANVERSO',
   'CARNET_REVERSO',
@@ -172,6 +207,45 @@ export function etiquetaEstadoRevision(
 
 export function etiquetaDocumento(tipo: TipoDocumento | string): string {
   return ETIQUETAS_DOCUMENTO[tipo as TipoDocumento] ?? tipo;
+}
+
+export function etiquetaEstadoQr(estado: EstadoQr | string): string {
+  return ETIQUETAS_ESTADO_QR[estado as EstadoQr] ?? estado;
+}
+
+export function etiquetaTipoPrecio(tipo: TipoPrecio | string): string {
+  return ETIQUETAS_TIPO_PRECIO[tipo as TipoPrecio] ?? tipo;
+}
+
+export function etiquetaEstadoReclamo(
+  estado: EstadoReclamo | string,
+): string {
+  return (
+    ETIQUETAS_ESTADO_RECLAMO[estado as EstadoReclamo] ?? estado
+  );
+}
+
+export function etiquetaEstadoDevolucion(
+  estado: EstadoDevolucion | string,
+): string {
+  return (
+    ETIQUETAS_ESTADO_DEVOLUCION[estado as EstadoDevolucion] ??
+    estado
+  );
+}
+
+export function claseTonoPago(estado: EstadoQr | string): string {
+  switch (estado) {
+    case 'PAGADO':
+      return 'insignia--verde';
+    case 'PENDIENTE':
+      return 'insignia--ambar';
+    case 'VENCIDO':
+    case 'DEVUELTO':
+      return 'insignia--rojo';
+    default:
+      return 'insignia--neutro';
+  }
 }
 
 export function claseTonoSolicitud(

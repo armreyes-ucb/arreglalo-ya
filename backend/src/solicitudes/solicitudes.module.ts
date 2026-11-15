@@ -8,6 +8,7 @@ import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Precio } from '../entities/precio.entity.js';
+import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
 import { Suspension } from '../entities/suspension.entity.js';
 import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
@@ -25,6 +26,7 @@ import { SolicitudesService } from './solicitudes.service.js';
       Oferta,
       Pago,
       Precio,
+      Reclamo,
       HistorialEstado,
       ClienteConflictivo,
       PerfilTrabajador,

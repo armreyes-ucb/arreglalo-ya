@@ -34,6 +34,27 @@ export type EstadoTrabajador =
   | 'SUSPENDIDO'
   | 'BAJA';
 
+export type EstadoQr =
+  | 'PENDIENTE'
+  | 'PAGADO'
+  | 'VENCIDO'
+  | 'DEVUELTO';
+
+export type TipoPrecio = 'PREVIO' | 'FINAL' | 'INCREMENTO';
+
+export type EstadoReclamo =
+  | 'ABIERTO'
+  | 'RESPONDIDO'
+  | 'EN_REVISION_SUPERVISOR'
+  | 'RESUELTO'
+  | 'FALTA_TRABAJADOR'
+  | 'RECHAZADO';
+
+export type EstadoDevolucion =
+  | 'PENDIENTE'
+  | 'EN_PROCESO'
+  | 'COMPLETADA';
+
 export type EstadoRevision =
   | 'PENDIENTE'
   | 'APROBADO'
@@ -104,7 +125,10 @@ export interface EventoHistorial {
   usuario_nombre: string | null;
 }
 
-export interface SolicitudDetalle extends Solicitud {
+export interface SolicitudDetalle
+  extends Omit<Solicitud, 'direccion_oculta'> {
+  direccion_oculta: string | null;
+  whatsapp_url: string | null;
   total_ofertas: number;
   historial: EventoHistorial[];
 }
@@ -290,4 +314,106 @@ export interface NuevaOferta {
   costo_transporte: number;
   fecha_propuesta: string;
   mensaje?: string;
+}
+
+export interface TrabajadorResumenOferta {
+  id: string;
+  nombre_completo: string;
+  promedio: number;
+  trabajos_completados: number;
+  nivel_verificacion: number;
+  especialidades: Especialidad[];
+  zonas: Zona[];
+}
+
+export interface OfertaConTrabajador extends Oferta {
+  trabajador: TrabajadorResumenOferta;
+}
+
+export interface Pago {
+  id: string;
+  solicitud_id: string;
+  precio_total_acordado: number;
+  pago_inicial_25: number;
+  parte_trabajador_20: number;
+  comision_5: number;
+  saldo_75: number;
+  codigo_qr_data: string | null;
+  qr_vence_en: string | null;
+  estado_qr: EstadoQr;
+  ya_pague_cliente: boolean;
+  fecha_ya_pague: string | null;
+  saldo_75_confirmado_trabajador: boolean;
+  fecha_confirmacion_trabajador: string | null;
+  transferido_al_trabajador: boolean;
+  comprobante_transferencia: string | null;
+}
+
+export interface ReportePublico {
+  id: string;
+  estado: EstadoReclamo;
+}
+
+export interface PagoSolicitud {
+  pago: Pago;
+  reporte_abierto: ReportePublico | null;
+}
+
+export interface Precio {
+  id: string;
+  solicitud_id: string;
+  tipo: TipoPrecio;
+  monto: number;
+  motivo: string | null;
+  foto_evidencia_url: string | null;
+  aprobado_cliente: boolean | null;
+  fecha: string;
+}
+
+export interface TransferenciaSimulada {
+  monto: number;
+  comision_plataforma: number;
+  comprobante: string;
+  simulada: true;
+}
+
+export interface ResolucionPagoFinal {
+  pago: Pago;
+  estado_solicitud: EstadoSolicitud;
+  transferencia: TransferenciaSimulada | null;
+  reporte: ReportePublico | null;
+}
+
+export interface DevolucionPublica {
+  id: string;
+  pago_id: string;
+  motivo: string;
+  monto: number;
+  fecha_limite: string;
+  estado: EstadoDevolucion;
+}
+
+export interface ResolucionPrecio {
+  precio: Precio;
+  pago: Pago | null;
+  devolucion: DevolucionPublica | null;
+  estado_solicitud: EstadoSolicitud;
+}
+
+export interface SuspensionPublica {
+  id: string;
+  trabajador_id: string;
+  numero_falta: number;
+  dias_fibonacci: number;
+  motivo: string;
+  inicio: string;
+  fin: string;
+}
+
+export interface ResolucionCancelacion {
+  solicitud: Solicitud;
+  pago: Pago | null;
+  devolucion: DevolucionPublica | null;
+  suspension: SuspensionPublica | null;
+  transferencia: TransferenciaSimulada | null;
 }

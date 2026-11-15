@@ -86,6 +86,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'mis-solicitudes/:id/seguimiento',
+        title: 'Seguimiento en vivo | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/seguimiento/seguimiento').then(
+            (m) => m.Seguimiento,
+          ),
+      },
+      {
         path: 'buscar',
         title: 'Buscar técnicos | Arréglalo Ya',
         loadComponent: () =>
@@ -145,6 +153,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/trabajador/mis-ofertas').then(
             (m) => m.MisOfertas,
+          ),
+      },
+      {
+        path: 'trabajos/:id/seguimiento',
+        title: 'Seguimiento en vivo | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/seguimiento/seguimiento').then(
+            (m) => m.Seguimiento,
           ),
       },
     ],

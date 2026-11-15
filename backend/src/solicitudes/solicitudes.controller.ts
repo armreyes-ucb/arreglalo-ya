@@ -25,7 +25,9 @@ import { ListarDisponiblesQueryDto } from './dto/listar-disponibles-query.dto.js
 import { ResponderPrecioDto } from './dto/responder-precio.dto.js';
 import type { PagoPublico } from '../pagos/interfaces/pago-publico.interface.js';
 import type { OfertaConSolicitud } from './interfaces/oferta-con-solicitud.interface.js';
+import type { OfertaConTrabajador } from './interfaces/oferta-con-trabajador.interface.js';
 import type { OfertaPublica } from './interfaces/oferta-publica.interface.js';
+import type { PagoSolicitudPublico } from './interfaces/pago-solicitud.interface.js';
 import type {
   PrecioPublico,
   ResolucionPrecio,
@@ -87,6 +89,44 @@ export class SolicitudesController {
     @Param('id', new ParseUUIDPipe()) solicitudId: string,
   ): Promise<SolicitudDetalle> {
     return this.solicitudesService.obtenerDetalle(
+      usuario.id,
+      solicitudId,
+      usuario.rolActivo,
+    );
+  }
+
+  @Get(':id/ofertas')
+  @Roles(Rol.CLIENTE)
+  listarOfertas(
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) solicitudId: string,
+  ): Promise<OfertaConTrabajador[]> {
+    return this.solicitudesService.listarOfertasSolicitud(
+      usuario.id,
+      solicitudId,
+    );
+  }
+
+  @Get(':id/pago')
+  @Roles(Rol.CLIENTE, Rol.TRABAJADOR)
+  obtenerPago(
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) solicitudId: string,
+  ): Promise<PagoSolicitudPublico> {
+    return this.solicitudesService.obtenerPagoSolicitud(
+      usuario.id,
+      solicitudId,
+      usuario.rolActivo,
+    );
+  }
+
+  @Get(':id/precios')
+  @Roles(Rol.CLIENTE, Rol.TRABAJADOR)
+  listarPrecios(
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) solicitudId: string,
+  ): Promise<PrecioPublico[]> {
+    return this.solicitudesService.listarPreciosSolicitud(
       usuario.id,
       solicitudId,
       usuario.rolActivo,
