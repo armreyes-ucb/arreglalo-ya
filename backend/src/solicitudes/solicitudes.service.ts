@@ -18,7 +18,6 @@ import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoQr } from '../common/enums/estado-qr.enum.js';
 import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
-import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { TipoPrecio } from '../common/enums/tipo-precio.enum.js';
 import { toDevolucionPublica } from '../common/mappers/devolucion-publica.mapper.js';
@@ -34,9 +33,11 @@ import { toSolicitudDisponible } from '../common/mappers/solicitud-disponible.ma
 import { toSolicitudPublica } from '../common/mappers/solicitud-publica.mapper.js';
 import { toSuspensionPublica } from '../common/mappers/suspension-publica.mapper.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import { SancionesService } from '../common/services/sanciones.service.js';
 import { sumarDias } from '../common/utils/fechas.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { generarEnlaceWhatsApp } from '../common/utils/whatsapp.js';
+import { REPORTES_PARA_ADVERTIR } from '../reputacion/reputacion.constants.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
@@ -119,6 +120,7 @@ export class SolicitudesService {
     private readonly trabajadoresService: TrabajadoresService,
     private readonly pagosService: PagosService,
     private readonly reglas: BusinessRulesService,
+    private readonly sanciones: SancionesService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -250,7 +252,8 @@ export class SolicitudesService {
     const clientesConflictivos = new Set(
       conflictivos
         .filter(
-          (conflictivo) => conflictivo.reportesAcumulados >= 3,
+          (conflictivo) =>
+            conflictivo.reportesAcumulados >= REPORTES_PARA_ADVERTIR,
         )
         .map((conflictivo) => conflictivo.clienteId),
     );
@@ -304,15 +307,19 @@ export class SolicitudesService {
     );
     const esCliente = solicitud.clienteId === usuarioId;
 
-    const [zona, historial, totalOfertas] = await Promise.all([
-      this.zonaRepository.findOne({ where: { id: solicitud.zonaId } }),
-      this.historialRepository.find({
-        where: { solicitudId },
-        relations: { usuario: true },
-        order: { fechaHora: 'ASC' },
-      }),
-      this.ofertaRepository.count({ where: { solicitudId } }),
-    ]);
+    const [zona, historial, totalOfertas, conflictivo] =
+      await Promise.all([
+        this.zonaRepository.findOne({ where: { id: solicitud.zonaId } }),
+        this.historialRepository.find({
+          where: { solicitudId },
+          relations: { usuario: true },
+          order: { fechaHora: 'ASC' },
+        }),
+        this.ofertaRepository.count({ where: { solicitudId } }),
+        this.conflictivoRepository.findOne({
+          where: { clienteId: solicitud.clienteId },
+        }),
+      ]);
 
     const puedeVerContacto = ESTADOS_CON_CONTACTO.includes(
       solicitud.estado,
@@ -337,6 +344,9 @@ export class SolicitudesService {
       {
         direccionOculta,
         whatsappUrl,
+        advertirClienteConflictivo:
+          (conflictivo?.reportesAcumulados ?? 0) >=
+          REPORTES_PARA_ADVERTIR,
       },
     );
   }
@@ -461,6 +471,21 @@ export class SolicitudesService {
         ]),
       },
     });
+    const conflictivos = await this.conflictivoRepository.find({
+      where: {
+        clienteId: In([
+          ...new Set(solicitudes.map((solicitud) => solicitud.clienteId)),
+        ]),
+      },
+    });
+    const clientesAdvertidos = new Set(
+      conflictivos
+        .filter(
+          (conflictivo) =>
+            conflictivo.reportesAcumulados >= REPORTES_PARA_ADVERTIR,
+        )
+        .map((conflictivo) => conflictivo.clienteId),
+    );
     const solicitudesPorId = new Map(
       solicitudes.map((solicitud) => [solicitud.id, solicitud]),
     );
@@ -476,6 +501,7 @@ export class SolicitudesService {
           oferta,
           solicitud,
           zonasPorId.get(solicitud.zonaId) ?? null,
+          clientesAdvertidos.has(solicitud.clienteId),
         ),
       ];
     });
@@ -1155,19 +1181,17 @@ export class SolicitudesService {
       }
 
       if (evaluacion.suspenderTrabajador && perfilTrabajador) {
-        suspension = manager.create(Suspension, {
-          trabajadorId: perfilTrabajador.id,
-          numeroFalta: evaluacion.numeroFalta ?? 1,
-          diasFibonacci: evaluacion.diasSuspension,
-          motivo: `Cancelación con menos de 2 horas: ${dto.motivo}`,
-          aplicadaPorId: usuarioId,
-          inicio: ahora,
-          fin: sumarDias(ahora, evaluacion.diasSuspension),
-        });
-        await manager.save(Suspension, suspension);
-
-        perfilTrabajador.estado = EstadoTrabajador.SUSPENDIDO;
-        await manager.save(PerfilTrabajador, perfilTrabajador);
+        suspension = await this.sanciones.aplicarFalta(
+          manager,
+          perfilTrabajador.id,
+          `Cancelación con menos de 2 horas: ${dto.motivo}`,
+          usuarioId,
+          ahora,
+          {
+            perfil: perfilTrabajador,
+            numeroFalta: evaluacion.numeroFalta ?? undefined,
+          },
+        );
       }
 
       solicitud.estado = EstadoSolicitud.CANCELADA;

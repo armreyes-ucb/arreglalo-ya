@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import { SancionesService } from '../common/services/sanciones.service.js';
 import { Calificacion } from '../entities/calificacion.entity.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
@@ -11,10 +12,12 @@ import { Suspension } from '../entities/suspension.entity.js';
 import { Usuario } from '../entities/usuario.entity.js';
 import { CalificacionesController } from './calificaciones.controller.js';
 import { CalificacionesService } from './calificaciones.service.js';
-import { ConflictivosController } from './conflictivos.controller.js';
 import { ConflictivosService } from './conflictivos.service.js';
 import { ReclamosController } from './reclamos.controller.js';
 import { ReclamosService } from './reclamos.service.js';
+import { SolicitudesReputacionController } from './solicitudes-reputacion.controller.js';
+import { SupervisionConflictivosController } from './supervision-conflictivos.controller.js';
+import { SupervisionSuspensionesController } from './supervision-suspensiones.controller.js';
 import { SuspensionesController } from './suspensiones.controller.js';
 import { SuspensionesService } from './suspensiones.service.js';
 
@@ -34,8 +37,10 @@ import { SuspensionesService } from './suspensiones.service.js';
   controllers: [
     CalificacionesController,
     ReclamosController,
+    SolicitudesReputacionController,
     SuspensionesController,
-    ConflictivosController,
+    SupervisionSuspensionesController,
+    SupervisionConflictivosController,
   ],
   providers: [
     CalificacionesService,
@@ -43,6 +48,7 @@ import { SuspensionesService } from './suspensiones.service.js';
     SuspensionesService,
     ConflictivosService,
     BusinessRulesService,
+    SancionesService,
   ],
 })
 export class ReputacionModule {}

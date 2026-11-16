@@ -15,5 +15,7 @@ export type SolicitudDetalle = Omit<
   direccion_oculta: string | null;
   whatsapp_url: string | null;
   total_ofertas: number;
+  /** RF32: booleano, sin exponer datos privados del cliente. */
+  advertir_cliente_conflictivo: boolean;
   historial: EventoHistorial[];
 };

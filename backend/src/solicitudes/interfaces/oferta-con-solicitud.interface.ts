@@ -16,4 +16,6 @@ export interface ResumenSolicitudOferta {
 
 export interface OfertaConSolicitud extends OfertaPublica {
   solicitud: ResumenSolicitudOferta;
+  /** RF32: el cliente acumula reportes suficientes para advertir. */
+  advertir_cliente_conflictivo: boolean;
 }

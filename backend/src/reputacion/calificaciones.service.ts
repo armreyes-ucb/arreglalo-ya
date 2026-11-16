@@ -14,6 +14,7 @@ import { Calificacion } from '../entities/calificacion.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
 import type { CrearCalificacionDto } from './dto/crear-calificacion.dto.js';
+import type { ComentarSolicitudDto } from './dto/comentar-solicitud.dto.js';
 import type { ResponderCalificacionDto } from './dto/responder-calificacion.dto.js';
 import type { CalificacionPublica } from './interfaces/calificacion-publica.interface.js';
 import type {
@@ -42,11 +43,12 @@ export class CalificacionesService {
   async crear(
     usuarioId: string,
     rolActivo: Rol,
+    solicitudId: string,
     dto: CrearCalificacionDto,
   ): Promise<CalificacionPublica> {
     return this.dataSource.transaction(async (manager) => {
       const solicitud = await manager.findOne(Solicitud, {
-        where: { id: dto.solicitud_id },
+        where: { id: solicitudId },
       });
       if (!solicitud) {
         throw new NotFoundException('Solicitud no encontrada');
@@ -87,6 +89,88 @@ export class CalificacionesService {
         comentario: dto.comentario?.trim() || null,
         respuestaTrabajador: null,
         fecha,
+      });
+
+      try {
+        await manager.save(Calificacion, calificacion);
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          throw new BadRequestException(
+            'Ya registraste una calificación de este trabajo hoy',
+          );
+        }
+        throw error;
+      }
+
+      if (esCalificacionATrabajador) {
+        await this.recalcularPromedio(manager, destinatarioId);
+      }
+
+      return toCalificacionPublica(calificacion);
+    });
+  }
+
+  /**
+   * RF29 + CP10: agrega o actualiza el comentario de la calificación del
+   * autor para esa solicitud, sin límite de días desde el cierre. Si aún
+   * no existe calificación, exige las estrellas para crearla.
+   */
+  async comentar(
+    usuarioId: string,
+    rolActivo: Rol,
+    solicitudId: string,
+    dto: ComentarSolicitudDto,
+  ): Promise<CalificacionPublica> {
+    return this.dataSource.transaction(async (manager) => {
+      const solicitud = await manager.findOne(Solicitud, {
+        where: { id: solicitudId },
+      });
+      if (!solicitud) {
+        throw new NotFoundException('Solicitud no encontrada');
+      }
+      if (!ESTADOS_CALIFICABLES.includes(solicitud.estado)) {
+        throw new BadRequestException(
+          'La solicitud todavía no permite comentarios',
+        );
+      }
+
+      const { destinatarioId, esCalificacionATrabajador } =
+        await this.resolverDestinatario(
+          manager,
+          solicitud,
+          usuarioId,
+          rolActivo,
+        );
+
+      const existente = await manager.findOne(Calificacion, {
+        where: { solicitudId: solicitud.id, autorId: usuarioId },
+        order: { fecha: 'DESC' },
+      });
+
+      if (existente) {
+        existente.comentario = dto.comentario.trim();
+        await manager.save(Calificacion, existente);
+        return toCalificacionPublica(existente);
+      }
+
+      if (dto.estrellas === undefined) {
+        throw new BadRequestException(
+          'Primero registra la calificación de este trabajo o envía las estrellas junto con el comentario',
+        );
+      }
+
+      const calificacion = manager.create(Calificacion, {
+        solicitudId: solicitud.id,
+        autorId: usuarioId,
+        destinatarioId,
+        estrellas: dto.estrellas,
+        calidad: dto.calidad ?? null,
+        puntualidad: dto.puntualidad ?? null,
+        trato: dto.trato ?? null,
+        precioJusto: dto.precio_justo ?? null,
+        comentario: dto.comentario.trim(),
+        respuestaTrabajador: null,
+        fecha: hoyISO(),
       });
 
       try {

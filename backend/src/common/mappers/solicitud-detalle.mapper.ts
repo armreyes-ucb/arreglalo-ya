@@ -30,6 +30,7 @@ export function toSolicitudDetalle(
   opciones: {
     direccionOculta?: string | null;
     whatsappUrl?: string | null;
+    advertirClienteConflictivo?: boolean;
   } = {},
 ): SolicitudDetalle {
   const base = toSolicitudPublica(solicitud, zona);
@@ -41,6 +42,8 @@ export function toSolicitudDetalle(
         : opciones.direccionOculta,
     whatsapp_url: opciones.whatsappUrl ?? null,
     total_ofertas: totalOfertas,
+    advertir_cliente_conflictivo:
+      opciones.advertirClienteConflictivo ?? false,
     historial: historial.map(toEventoHistorial),
   };
 }
@@ -49,6 +52,7 @@ export function toOfertaConSolicitud(
   oferta: Oferta,
   solicitud: Solicitud,
   zona: Zona | null,
+  advertirClienteConflictivo = false,
 ): OfertaConSolicitud {
   return {
     ...toOfertaPublica(oferta),
@@ -62,5 +66,6 @@ export function toOfertaConSolicitud(
       urgente: solicitud.urgente,
       fecha_cita_preferida: solicitud.fechaCitaPreferida,
     },
+    advertir_cliente_conflictivo: advertirClienteConflictivo,
   };
 }

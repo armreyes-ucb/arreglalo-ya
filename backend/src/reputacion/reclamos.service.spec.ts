@@ -140,11 +140,14 @@ describe('ReclamosService', () => {
     );
     const servicio = crearServicio(manager, repositorios);
 
-    const resultado = await servicio.crear(CLIENTE_ID, {
-      solicitud_id: SOLICITUD_ID,
-      motivo: 'El trabajo quedó incompleto',
-      evidencia_fotos: ['/uploads/foto.jpg'],
-    });
+    const resultado = await servicio.crear(
+      CLIENTE_ID,
+      SOLICITUD_ID,
+      {
+        motivo: 'El trabajo quedó incompleto',
+        evidencia_fotos: ['/uploads/foto.jpg'],
+      },
+    );
 
     expect(manager.save).toHaveBeenCalledWith(
       Reclamo,
@@ -165,8 +168,7 @@ describe('ReclamosService', () => {
     const servicio = crearServicio(manager, repositorios);
 
     await expect(
-      servicio.crear(CLIENTE_ID, {
-        solicitud_id: SOLICITUD_ID,
+      servicio.crear(CLIENTE_ID, SOLICITUD_ID, {
         motivo: 'Reclamo tardío del trabajo',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
@@ -180,8 +182,7 @@ describe('ReclamosService', () => {
     const servicio = crearServicio(manager, repositorios);
 
     await expect(
-      servicio.crear(CLIENTE_ID, {
-        solicitud_id: SOLICITUD_ID,
+      servicio.crear(CLIENTE_ID, SOLICITUD_ID, {
         motivo: 'El trabajo quedó incompleto',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
@@ -194,8 +195,7 @@ describe('ReclamosService', () => {
     const servicio = crearServicio(manager, repositorios);
 
     await expect(
-      servicio.crear(CLIENTE_ID, {
-        solicitud_id: SOLICITUD_ID,
+      servicio.crear(CLIENTE_ID, SOLICITUD_ID, {
         motivo: 'Otro reclamo del mismo trabajo',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
@@ -206,8 +206,7 @@ describe('ReclamosService', () => {
     const servicio = crearServicio(manager, repositorios);
 
     await expect(
-      servicio.crear('otro-cliente', {
-        solicitud_id: SOLICITUD_ID,
+      servicio.crear('otro-cliente', SOLICITUD_ID, {
         motivo: 'No es mi trabajo',
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
@@ -401,5 +400,42 @@ describe('ReclamosService', () => {
     );
 
     await expect(servicio.mios(CLIENTE_ID)).resolves.toEqual([]);
+  });
+
+  it('RF30: pasa a revisión del supervisor los reclamos sin respuesta en 48 horas', async () => {
+    const update = vi.fn(async () => ({ affected: 2 }));
+    repositorios.set(Reclamo, { update });
+    const servicio = crearServicio(
+      crearManager(() => null).manager,
+      repositorios,
+    );
+
+    const movidos = await servicio.pasarARevisionSupervisor(
+      new Date('2026-05-10T12:00:00.000Z'),
+    );
+
+    expect(movidos).toBe(2);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        estado: EstadoReclamo.ABIERTO,
+      }),
+      { estado: EstadoReclamo.EN_REVISION_SUPERVISOR },
+    );
+  });
+
+  it('RF30: el cron de SLA no rompe si la actualización falla', async () => {
+    repositorios.set(Reclamo, {
+      update: vi.fn(async () => {
+        throw new Error('base caída');
+      }),
+    });
+    const servicio = crearServicio(
+      crearManager(() => null).manager,
+      repositorios,
+    );
+
+    await expect(
+      servicio.procesarSlaProgramado(),
+    ).resolves.toBeUndefined();
   });
 });

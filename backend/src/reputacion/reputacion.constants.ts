@@ -7,6 +7,9 @@ export const DIAS_MAXIMOS_RECLAMO = 7;
 /** RF30: el trabajador responde el reclamo en 48 horas. */
 export const HORAS_RESPUESTA_RECLAMO = 48;
 
+/** RF30: el supervisor debería resolver el reclamo en 72 horas (SLA). */
+export const HORAS_REVISION_SUPERVISOR = 72;
+
 /** RF32: desde 3 reportes el cliente se considera conflictivo. */
 export const REPORTES_PARA_ADVERTIR = 3;
 

@@ -143,12 +143,16 @@ describe('CalificacionesService', () => {
       .spyOn(servicio, 'recalcularPromedio')
       .mockResolvedValue(undefined);
 
-    const resultado = await servicio.crear(CLIENTE_ID, Rol.CLIENTE, {
-      solicitud_id: SOLICITUD_ID,
-      estrellas: 5,
-      calidad: 5,
-      comentario: 'Excelente trabajo',
-    });
+    const resultado = await servicio.crear(
+      CLIENTE_ID,
+      Rol.CLIENTE,
+      SOLICITUD_ID,
+      {
+        estrellas: 5,
+        calidad: 5,
+        comentario: 'Excelente trabajo',
+      },
+    );
 
     expect(manager.save).toHaveBeenCalledWith(
       Calificacion,
@@ -187,7 +191,8 @@ describe('CalificacionesService', () => {
     const resultado = await servicio.crear(
       TRABAJADOR_USUARIO_ID,
       Rol.TRABAJADOR,
-      { solicitud_id: SOLICITUD_ID, estrellas: 4 },
+      SOLICITUD_ID,
+      { estrellas: 4 },
     );
 
     expect(resultado.destinatario_id).toBe(CLIENTE_ID);
@@ -210,9 +215,8 @@ describe('CalificacionesService', () => {
     const servicio = crearServicio(manager);
 
     await expect(
-      servicio.crear(CLIENTE_ID, Rol.CLIENTE, {
-        solicitud_id: SOLICITUD_ID,
-        estrellas: 5,
+      servicio.crear(CLIENTE_ID, Rol.CLIENTE, SOLICITUD_ID, {
+      estrellas: 5,
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(manager.save).not.toHaveBeenCalled();
@@ -228,9 +232,8 @@ describe('CalificacionesService', () => {
     const servicio = crearServicio(manager);
 
     await expect(
-      servicio.crear(CLIENTE_ID, Rol.CLIENTE, {
-        solicitud_id: SOLICITUD_ID,
-        estrellas: 3,
+      servicio.crear(CLIENTE_ID, Rol.CLIENTE, SOLICITUD_ID, {
+      estrellas: 3,
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
@@ -250,9 +253,8 @@ describe('CalificacionesService', () => {
     const servicio = crearServicio(manager);
 
     await expect(
-      servicio.crear('otro-usuario', Rol.CLIENTE, {
-        solicitud_id: SOLICITUD_ID,
-        estrellas: 3,
+      servicio.crear('otro-usuario', Rol.CLIENTE, SOLICITUD_ID, {
+      estrellas: 3,
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
@@ -421,5 +423,105 @@ describe('CalificacionesService', () => {
     await expect(
       servicio.listarPorTrabajador(PERFIL_ID),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('CP10: agrega el comentario sin límite de días sobre la calificación existente', async () => {
+    const existente = {
+      id: 'calificacion-vieja',
+      solicitudId: SOLICITUD_ID,
+      autorId: CLIENTE_ID,
+      destinatarioId: TRABAJADOR_USUARIO_ID,
+      estrellas: 4,
+      calidad: null,
+      puntualidad: null,
+      trato: null,
+      precioJusto: null,
+      comentario: null,
+      respuestaTrabajador: null,
+      fecha: '2026-01-05',
+    } as Calificacion;
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Solicitud) {
+        return crearSolicitud({
+          estado: EstadoSolicitud.FINALIZADA,
+        });
+      }
+      if (entidad === PerfilTrabajador) {
+        return perfil;
+      }
+      if (entidad === Calificacion) {
+        return existente;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+
+    const resultado = await servicio.comentar(
+      CLIENTE_ID,
+      Rol.CLIENTE,
+      SOLICITUD_ID,
+      { comentario: 'Comentario agregado semanas después' },
+    );
+
+    expect(manager.save).toHaveBeenCalledWith(
+      Calificacion,
+      expect.objectContaining({
+        comentario: 'Comentario agregado semanas después',
+      }),
+    );
+    expect(resultado.comentario).toBe(
+      'Comentario agregado semanas después',
+    );
+    expect(resultado.estrellas).toBe(4);
+    expect(manager.create).not.toHaveBeenCalled();
+  });
+
+  it('permite comentar con estrellas si el autor aún no calificó la solicitud', async () => {
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Solicitud) {
+        return solicitud;
+      }
+      if (entidad === PerfilTrabajador) {
+        return perfil;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+    const recalcular = vi
+      .spyOn(servicio, 'recalcularPromedio')
+      .mockResolvedValue(undefined);
+
+    const resultado = await servicio.comentar(
+      CLIENTE_ID,
+      Rol.CLIENTE,
+      SOLICITUD_ID,
+      { comentario: 'Muy buen trabajo', estrellas: 5 },
+    );
+
+    expect(resultado.estrellas).toBe(5);
+    expect(recalcular).toHaveBeenCalledWith(
+      manager,
+      TRABAJADOR_USUARIO_ID,
+    );
+  });
+
+  it('exige estrellas cuando todavía no existe calificación de la solicitud', async () => {
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Solicitud) {
+        return solicitud;
+      }
+      if (entidad === PerfilTrabajador) {
+        return perfil;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+
+    await expect(
+      servicio.comentar(CLIENTE_ID, Rol.CLIENTE, SOLICITUD_ID, {
+        comentario: 'Solo quiero dejar un comentario',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(manager.save).not.toHaveBeenCalled();
   });
 });

@@ -6,7 +6,7 @@ import { toPublicZona } from './zona-publica.mapper.js';
 export function toSolicitudDisponible(
   solicitud: Solicitud,
   zona: Zona | null,
-  clienteEnConflictivos: boolean,
+  advertirClienteConflictivo: boolean,
 ): SolicitudDisponible {
   return {
     id: solicitud.id,
@@ -21,6 +21,6 @@ export function toSolicitudDisponible(
     estado: solicitud.estado,
     creada_en: solicitud.creadaEn,
     vence_en: solicitud.venceEn,
-    cliente_en_conflictivos: clienteEnConflictivos,
+    advertir_cliente_conflictivo: advertirClienteConflictivo,
   };
 }

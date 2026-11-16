@@ -2,7 +2,6 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -10,9 +9,6 @@ import {
 } from 'class-validator';
 
 export class CrearCalificacionDto {
-  @IsUUID()
-  solicitud_id: string;
-
   @IsInt()
   @Min(1)
   @Max(5)

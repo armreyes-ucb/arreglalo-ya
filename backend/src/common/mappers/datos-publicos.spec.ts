@@ -89,7 +89,7 @@ describe('CP14/CP17 - datos públicos y privados', () => {
     );
     expect(resultado).not.toHaveProperty('direccion_oculta');
     expect(JSON.stringify(resultado)).not.toContain(DIRECCION);
-    expect(resultado.cliente_en_conflictivos).toBe(true);
+    expect(resultado.advertir_cliente_conflictivo).toBe(true);
   });
 
   it('CP17: el perfil público de match no expone datos privados', () => {

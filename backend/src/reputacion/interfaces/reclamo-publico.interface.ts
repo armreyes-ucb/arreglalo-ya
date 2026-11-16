@@ -11,4 +11,6 @@ export interface ReclamoPublico {
   fecha_apertura: Date;
   horas_para_responder: number | null;
   fuera_de_plazo: boolean;
+  /** RF30: pasaron más de 72 horas sin resolución del supervisor. */
+  vencido_sla: boolean;
 }

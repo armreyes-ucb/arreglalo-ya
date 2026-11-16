@@ -130,6 +130,7 @@ export interface SolicitudDetalle
   direccion_oculta: string | null;
   whatsapp_url: string | null;
   total_ofertas: number;
+  advertir_cliente_conflictivo: boolean;
   historial: EventoHistorial[];
 }
 
@@ -146,7 +147,7 @@ export interface SolicitudDisponible {
   estado: EstadoSolicitud;
   creada_en: string;
   vence_en: string;
-  cliente_en_conflictivos: boolean;
+  advertir_cliente_conflictivo: boolean;
 }
 
 export interface Oferta {
@@ -174,6 +175,7 @@ export interface ResumenSolicitudOferta {
 
 export interface OfertaConSolicitud extends Oferta {
   solicitud: ResumenSolicitudOferta;
+  advertir_cliente_conflictivo: boolean;
 }
 
 export interface PerfilTrabajadorPropio {

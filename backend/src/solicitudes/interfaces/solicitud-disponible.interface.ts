@@ -15,5 +15,5 @@ export interface SolicitudDisponible {
   estado: EstadoSolicitud;
   creada_en: Date;
   vence_en: Date;
-  cliente_en_conflictivos: boolean;
+  advertir_cliente_conflictivo: boolean;
 }

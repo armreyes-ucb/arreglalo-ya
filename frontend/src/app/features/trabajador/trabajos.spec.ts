@@ -56,7 +56,7 @@ const SOLICITUD: SolicitudDisponible = {
   estado: 'PUBLICADA',
   creada_en: '2026-11-10T10:00:00.000Z',
   vence_en: '2026-12-10T10:00:00.000Z',
-  cliente_en_conflictivos: false,
+  advertir_cliente_conflictivo: false,
 };
 
 describe('TrabajosDisponibles', () => {

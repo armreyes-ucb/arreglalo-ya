@@ -41,6 +41,7 @@ const DETALLE: SolicitudDetalle = {
   entro_al_tope: null,
   cerrada_en: null,
   total_ofertas: 2,
+  advertir_cliente_conflictivo: false,
   historial: [],
 };
 

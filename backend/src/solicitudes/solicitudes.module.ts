@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import { SancionesService } from '../common/services/sanciones.service.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
@@ -38,6 +39,6 @@ import { SolicitudesService } from './solicitudes.service.js';
     TrabajadoresModule,
   ],
   controllers: [SolicitudesController],
-  providers: [SolicitudesService, BusinessRulesService],
+  providers: [SolicitudesService, BusinessRulesService, SancionesService],
 })
 export class SolicitudesModule {}

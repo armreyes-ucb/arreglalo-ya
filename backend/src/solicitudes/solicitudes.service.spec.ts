@@ -21,6 +21,7 @@ import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { TipoPrecio } from '../common/enums/tipo-precio.enum.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import { SancionesService } from '../common/services/sanciones.service.js';
 import type { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
@@ -227,7 +228,7 @@ describe('SolicitudesService', () => {
     pagoRepository = { findOne: vi.fn() };
     precioRepository = { find: vi.fn() };
     reclamoRepository = { findOne: vi.fn() };
-    conflictivoRepository = { find: vi.fn() };
+    conflictivoRepository = { find: vi.fn(), findOne: vi.fn() };
     perfilRepository = { findOne: vi.fn() };
     trabajadorZonaRepository = { find: vi.fn() };
     zonaRepository = { find: vi.fn(), findOne: vi.fn() };
@@ -266,6 +267,7 @@ describe('SolicitudesService', () => {
       trabajadoresService as unknown as TrabajadoresService,
       pagosService as unknown as PagosService,
       reglas,
+      new SancionesService(reglas),
       dataSource as unknown as DataSource,
     );
   });
@@ -292,7 +294,7 @@ describe('SolicitudesService', () => {
     expect(resultado).toHaveLength(1);
     expect(resultado[0]).not.toHaveProperty('direccion_oculta');
     expect(JSON.stringify(resultado)).not.toContain(DIRECCION);
-    expect(resultado[0].cliente_en_conflictivos).toBe(true);
+    expect(resultado[0].advertir_cliente_conflictivo).toBe(true);
   });
 
   it('CP02: lista primero las solicitudes urgentes', async () => {
@@ -387,6 +389,54 @@ describe('SolicitudesService', () => {
     });
   });
 
+  it('RF32/CP27: advierte del cliente conflictivo sin exponer el motivo ni datos privados', async () => {
+    solicitudRepository.findOne.mockResolvedValue(
+      crearSolicitud({
+        trabajadorConfirmadoId: PERFIL_ID,
+        estado: EstadoSolicitud.CONFIRMADA,
+      }),
+    );
+    perfilRepository.findOne.mockResolvedValue(crearPerfil());
+    zonaRepository.findOne.mockResolvedValue(crearZona());
+    historialRepository.find.mockResolvedValue([]);
+    ofertaRepository.count.mockResolvedValue(0);
+    conflictivoRepository.findOne.mockResolvedValue({
+      clienteId: CLIENTE_ID,
+      reportesAcumulados: 3,
+      motivo: 'Incumplió un pago',
+    });
+
+    const resultado = await service.obtenerDetalle(
+      USUARIO_ID,
+      SOLICITUD_ID,
+      Rol.TRABAJADOR,
+    );
+
+    expect(resultado.advertir_cliente_conflictivo).toBe(true);
+    expect(resultado).not.toHaveProperty('motivo');
+    expect(JSON.stringify(resultado)).not.toContain(
+      'Incumplió un pago',
+    );
+  });
+
+  it('RF32: no advierte si el cliente tiene menos de 3 reportes', async () => {
+    solicitudRepository.findOne.mockResolvedValue(crearSolicitud());
+    zonaRepository.findOne.mockResolvedValue(crearZona());
+    historialRepository.find.mockResolvedValue([]);
+    ofertaRepository.count.mockResolvedValue(0);
+    conflictivoRepository.findOne.mockResolvedValue({
+      clienteId: CLIENTE_ID,
+      reportesAcumulados: 2,
+    });
+
+    const resultado = await service.obtenerDetalle(
+      CLIENTE_ID,
+      SOLICITUD_ID,
+    );
+
+    expect(resultado.advertir_cliente_conflictivo).toBe(false);
+  });
+
   it('no expone el detalle de una solicitud ajena', async () => {
     solicitudRepository.findOne.mockResolvedValue(crearSolicitud());
 
@@ -412,12 +462,14 @@ describe('SolicitudesService', () => {
     ]);
     solicitudRepository.find.mockResolvedValue([crearSolicitud()]);
     zonaRepository.find.mockResolvedValue([crearZona()]);
+    conflictivoRepository.find.mockResolvedValue([]);
 
     const resultado = await service.listarMisOfertas(USUARIO_ID);
 
     expect(resultado).toHaveLength(1);
     expect(resultado[0].solicitud.tipo_problema).toBe('Fuga de agua');
     expect(resultado[0].precio_estimado).toBe(120);
+    expect(resultado[0].advertir_cliente_conflictivo).toBe(false);
   });
 
   it('CP01/CP36: elige oferta, genera el 25% y queda PENDIENTE_PAGO', async () => {
@@ -991,7 +1043,7 @@ describe('SolicitudesService', () => {
       {} as ListarDisponiblesQueryDto,
     );
 
-    expect(resultado[0].cliente_en_conflictivos).toBe(false);
+    expect(resultado[0].advertir_cliente_conflictivo).toBe(false);
   });
 
   it('lista las ofertas con datos públicos del técnico y sin teléfono ni documentos', async () => {

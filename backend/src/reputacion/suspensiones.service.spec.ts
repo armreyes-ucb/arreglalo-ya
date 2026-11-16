@@ -6,6 +6,7 @@ import type { DataSource, Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import { SancionesService } from '../common/services/sanciones.service.js';
 import type { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Suspension } from '../entities/suspension.entity.js';
 import type { AplicarSuspensionDto } from './dto/aplicar-suspension.dto.js';
@@ -90,7 +91,7 @@ function crearServicio(
 
   return new SuspensionesService(
     dataSource,
-    new BusinessRulesService(),
+    new SancionesService(new BusinessRulesService()),
     repositorioSuspensiones as Repository<Suspension>,
     repositorioPerfiles as Repository<PerfilTrabajador>,
   );

@@ -17,21 +17,26 @@ import { ConflictivosService } from './conflictivos.service.js';
 import { RegistrarConflictivoDto } from './dto/registrar-conflictivo.dto.js';
 import type { ClienteConflictivoPublico } from './interfaces/cliente-conflictivo-publico.interface.js';
 
-@Controller('clientes-conflictivos')
+/**
+ * RF32 + CP27: solo supervisión ve el listado completo. Los trabajadores
+ * reciben únicamente el booleano `advertir_cliente_conflictivo` en sus
+ * solicitudes, nunca la tabla ni datos privados de otros clientes.
+ */
+@Controller('supervision/clientes-conflictivos')
 @UseGuards(JwtAuthGuard, RolesGuard)
-export class ConflictivosController {
+export class SupervisionConflictivosController {
   constructor(
     private readonly conflictivosService: ConflictivosService,
   ) {}
 
   @Get()
-  @Roles(Rol.TRABAJADOR, Rol.SUPERVISOR)
+  @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
   listar(): Promise<ClienteConflictivoPublico[]> {
     return this.conflictivosService.listar();
   }
 
   @Get(':clienteId')
-  @Roles(Rol.TRABAJADOR, Rol.SUPERVISOR)
+  @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
   obtener(
     @Param('clienteId', new ParseUUIDPipe()) clienteId: string,
   ): Promise<ClienteConflictivoPublico> {
@@ -39,7 +44,7 @@ export class ConflictivosController {
   }
 
   @Post()
-  @Roles(Rol.SUPERVISOR)
+  @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
   registrar(
     @CurrentUser() usuario: AuthenticatedUser,
     @Body() dto: RegistrarConflictivoDto,

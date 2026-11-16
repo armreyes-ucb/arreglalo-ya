@@ -3,15 +3,11 @@ import {
   IsArray,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
 export class CrearReclamoDto {
-  @IsUUID()
-  solicitud_id: string;
-
   @IsString()
   @MinLength(10)
   @MaxLength(1000)

@@ -1,14 +1,8 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, type EntityManager, Repository } from 'typeorm';
-import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { toSuspensionRegistrada } from '../common/mappers/suspension-registrada.mapper.js';
-import { BusinessRulesService } from '../common/services/business-rules.service.js';
-import { sumarDias } from '../common/utils/fechas.js';
+import { SancionesService } from '../common/services/sanciones.service.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Suspension } from '../entities/suspension.entity.js';
 import type { AplicarSuspensionDto } from './dto/aplicar-suspension.dto.js';
@@ -19,7 +13,7 @@ import type { SuspensionRegistrada } from './interfaces/suspension-registrada.in
 export class SuspensionesService {
   constructor(
     private readonly dataSource: DataSource,
-    private readonly reglas: BusinessRulesService,
+    private readonly sanciones: SancionesService,
     @InjectRepository(Suspension)
     private readonly suspensionRepository: Repository<Suspension>,
     @InjectRepository(PerfilTrabajador)
@@ -31,46 +25,20 @@ export class SuspensionesService {
    * serie de Fibonacci y lo deja en estado SUSPENDIDO hasta el vencimiento.
    * Reutilizable dentro de una transacción abierta por otro servicio.
    */
-  async aplicarFalta(
+  aplicarFalta(
     manager: EntityManager,
     trabajadorId: string,
     motivo: string,
     aplicadaPorId: string | null,
     ahora: Date = new Date(),
   ): Promise<Suspension> {
-    const perfil = await manager.findOne(PerfilTrabajador, {
-      where: { id: trabajadorId },
-    });
-    if (!perfil) {
-      throw new NotFoundException('Trabajador no encontrado');
-    }
-    if (perfil.estado === EstadoTrabajador.BAJA) {
-      throw new BadRequestException(
-        'El trabajador está dado de baja y no puede ser suspendido',
-      );
-    }
-
-    const faltas = await manager.count(Suspension, {
-      where: { trabajadorId },
-    });
-    const numeroFalta = faltas + 1;
-    const diasFibonacci = this.reglas.diasSuspension(numeroFalta);
-
-    const suspension = manager.create(Suspension, {
+    return this.sanciones.aplicarFalta(
+      manager,
       trabajadorId,
-      numeroFalta,
-      diasFibonacci,
       motivo,
       aplicadaPorId,
-      inicio: ahora,
-      fin: sumarDias(ahora, diasFibonacci),
-    });
-    await manager.save(Suspension, suspension);
-
-    perfil.estado = EstadoTrabajador.SUSPENDIDO;
-    await manager.save(PerfilTrabajador, perfil);
-
-    return suspension;
+      ahora,
+    );
   }
 
   /** RF31: el supervisor aplica una falta comprobada. */

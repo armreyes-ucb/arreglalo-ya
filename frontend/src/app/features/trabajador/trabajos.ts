@@ -165,7 +165,7 @@ import {
                           >Urgente +10%</span
                         >
                       }
-                      @if (solicitud.cliente_en_conflictivos) {
+                      @if (solicitud.advertir_cliente_conflictivo) {
                         <span class="insignia insignia--ambar"
                           >Cliente con antecedentes</span
                         >

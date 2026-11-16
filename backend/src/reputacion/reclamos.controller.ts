@@ -5,7 +5,6 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  Post,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -14,7 +13,6 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
-import { CrearReclamoDto } from './dto/crear-reclamo.dto.js';
 import { ResolverReclamoDto } from './dto/resolver-reclamo.dto.js';
 import { ResponderReclamoDto } from './dto/responder-reclamo.dto.js';
 import type { ReclamoPublico } from './interfaces/reclamo-publico.interface.js';
@@ -25,15 +23,6 @@ import { ReclamosService } from './reclamos.service.js';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReclamosController {
   constructor(private readonly reclamosService: ReclamosService) {}
-
-  @Post()
-  @Roles(Rol.CLIENTE)
-  crear(
-    @CurrentUser() usuario: AuthenticatedUser,
-    @Body() dto: CrearReclamoDto,
-  ): Promise<ReclamoPublico> {
-    return this.reclamosService.crear(usuario.id, dto);
-  }
 
   @Patch(':id/responder')
   @Roles(Rol.TRABAJADOR)

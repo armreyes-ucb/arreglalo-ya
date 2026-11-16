@@ -2,9 +2,16 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, In, type EntityManager } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import {
+  DataSource,
+  In,
+  LessThanOrEqual,
+  type EntityManager,
+} from 'typeorm';
 import { DecisionReclamo } from '../common/enums/decision-reclamo.enum.js';
 import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
@@ -32,6 +39,8 @@ const MS_POR_DIA = 24 * MS_POR_HORA;
 
 @Injectable()
 export class ReclamosService {
+  private readonly logger = new Logger(ReclamosService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly suspensionesService: SuspensionesService,
@@ -40,11 +49,12 @@ export class ReclamosService {
   /** RF30: el cliente reclama dentro de los 7 días desde el cierre (RN07). */
   async crear(
     usuarioId: string,
+    solicitudId: string,
     dto: CrearReclamoDto,
   ): Promise<ReclamoPublico> {
     return this.dataSource.transaction(async (manager) => {
       const solicitud = await manager.findOne(Solicitud, {
-        where: { id: dto.solicitud_id },
+        where: { id: solicitudId },
       });
       if (!solicitud || solicitud.clienteId !== usuarioId) {
         throw new NotFoundException('Solicitud no encontrada');
@@ -145,6 +155,47 @@ export class ReclamosService {
 
       return toReclamoPublico(reclamo);
     });
+  }
+
+  /**
+   * RF30: SLA operativo. A las 48 horas sin respuesta del trabajador el
+   * reclamo pasa a revisión del supervisor; a las 72 horas sin resolución
+   * queda marcado como vencido (campo derivado `vencido_sla`) pero puede
+   * resolverse igual.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async procesarSlaProgramado(): Promise<void> {
+    try {
+      const movidos = await this.pasarARevisionSupervisor();
+      if (movidos > 0) {
+        this.logger.log(
+          `Reclamos enviados a revisión por SLA: ${movidos}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        'No se pudo procesar el SLA de reclamos',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  async pasarARevisionSupervisor(
+    ahora: Date = new Date(),
+  ): Promise<number> {
+    const limite = new Date(
+      ahora.getTime() - HORAS_RESPUESTA_RECLAMO * MS_POR_HORA,
+    );
+    const resultado = await this.dataSource
+      .getRepository(Reclamo)
+      .update(
+        {
+          estado: EstadoReclamo.ABIERTO,
+          fechaApertura: LessThanOrEqual(limite),
+        },
+        { estado: EstadoReclamo.EN_REVISION_SUPERVISOR },
+      );
+    return resultado.affected ?? 0;
   }
 
   /** RF30: bandeja de reclamos para el supervisor. */

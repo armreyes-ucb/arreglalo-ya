@@ -5,7 +5,6 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  Post,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -15,7 +14,6 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
 import { CalificacionesService } from './calificaciones.service.js';
-import { CrearCalificacionDto } from './dto/crear-calificacion.dto.js';
 import { ResponderCalificacionDto } from './dto/responder-calificacion.dto.js';
 import type { CalificacionPublica } from './interfaces/calificacion-publica.interface.js';
 import type { ResumenReputacion } from './interfaces/resumen-reputacion.interface.js';
@@ -26,19 +24,6 @@ export class CalificacionesController {
   constructor(
     private readonly calificacionesService: CalificacionesService,
   ) {}
-
-  @Post()
-  @Roles(Rol.CLIENTE, Rol.TRABAJADOR)
-  crear(
-    @CurrentUser() usuario: AuthenticatedUser,
-    @Body() dto: CrearCalificacionDto,
-  ): Promise<CalificacionPublica> {
-    return this.calificacionesService.crear(
-      usuario.id,
-      usuario.rolActivo,
-      dto,
-    );
-  }
 
   @Patch(':id/responder')
   @Roles(Rol.TRABAJADOR)

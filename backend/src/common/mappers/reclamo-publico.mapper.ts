@@ -3,6 +3,7 @@ import type { ReclamoPublico } from '../../reputacion/interfaces/reclamo-publico
 import {
   ESTADOS_RECLAMO_ABIERTO,
   HORAS_RESPUESTA_RECLAMO,
+  HORAS_REVISION_SUPERVISOR,
   MS_POR_HORA,
 } from '../../reputacion/reputacion.constants.js';
 
@@ -32,5 +33,7 @@ export function toReclamoPublico(
       : null,
     fuera_de_plazo:
       abierto && horasTranscurridas > HORAS_RESPUESTA_RECLAMO,
+    vencido_sla:
+      abierto && horasTranscurridas > HORAS_REVISION_SUPERVISOR,
   };
 }
