@@ -109,6 +109,9 @@ describe('TrabajadoresService - CP26 match', () => {
       >,
       suspensionRepository as unknown as Repository<Suspension>,
       {} as DataSource,
+      { find: vi.fn(async () => []) } as never,
+      { find: vi.fn(async () => []) } as never,
+      { findOne: vi.fn(), update: vi.fn() } as never,
     );
   });
 

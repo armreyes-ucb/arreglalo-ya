@@ -2,6 +2,7 @@ import type { PerfilTrabajador } from '../../entities/perfil-trabajador.entity.j
 import type { Zona } from '../../entities/zona.entity.js';
 import type { PerfilTrabajadorPropio } from '../../trabajadores/interfaces/perfil-trabajador-propio.interface.js';
 import { calcularEstadoAntecedentes } from '../utils/fechas.js';
+import { calcularPausa } from '../utils/pausa.js';
 import { motivoBloqueoOferta } from '../utils/rn10.js';
 import { toPublicZona } from './zona-publica.mapper.js';
 
@@ -37,5 +38,6 @@ export function toPerfilTrabajadorPropio(
     antecedentes_vencidos: antecedentes.vencido,
     puede_ofertar: motivoBloqueo === null,
     motivo_bloqueo: motivoBloqueo,
+    pausa: calcularPausa(perfil),
   };
 }

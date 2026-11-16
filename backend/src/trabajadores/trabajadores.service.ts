@@ -12,22 +12,32 @@ import {
   Repository,
   type EntityManager,
 } from 'typeorm';
+import { ESTADOS_SOLICITUD_EN_CURSO } from '../common/constants/estados.js';
+import { AccionPausa } from '../common/enums/accion-pausa.enum.js';
 import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
+import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoRevision } from '../common/enums/estado-revision.enum.js';
+import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
+import { Rol } from '../common/enums/rol.enum.js';
 import { TipoDocumento } from '../common/enums/tipo-documento.enum.js';
 import { toPerfilTrabajadorPropio } from '../common/mappers/perfil-trabajador-propio.mapper.js';
 import { toTrabajadorMatch } from '../common/mappers/trabajador-match.mapper.js';
 import { toTrabajadorPerfilPublico } from '../common/mappers/trabajador-perfil-publico.mapper.js';
+import { sumarDias } from '../common/utils/fechas.js';
+import { DIAS_PARA_BAJA_AUTOMATICA } from '../common/utils/pausa.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { Documento } from '../entities/documento.entity.js';
+import { Oferta } from '../entities/oferta.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
+import { Solicitud } from '../entities/solicitud.entity.js';
 import { Suspension } from '../entities/suspension.entity.js';
 import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
 import { Usuario } from '../entities/usuario.entity.js';
 import { Zona } from '../entities/zona.entity.js';
 import type { ActualizarPerfilTrabajadorDto } from './dto/actualizar-perfil-trabajador.dto.js';
 import type { BuscarTrabajadoresQueryDto } from './dto/buscar-trabajadores-query.dto.js';
+import type { CambiarPausaDto } from './dto/cambiar-pausa.dto.js';
 import type { PerfilTrabajadorPropio } from './interfaces/perfil-trabajador-propio.interface.js';
 import type { TrabajadorMatch } from './interfaces/trabajador-match.interface.js';
 import type { TrabajadorPerfilPublico } from './interfaces/trabajador-perfil-publico.interface.js';
@@ -52,6 +62,12 @@ export class TrabajadoresService {
     @InjectRepository(Suspension)
     private readonly suspensionRepository: Repository<Suspension>,
     private readonly dataSource: DataSource,
+    @InjectRepository(Solicitud)
+    private readonly solicitudRepository: Repository<Solicitud>,
+    @InjectRepository(Oferta)
+    private readonly ofertaRepository: Repository<Oferta>,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
   async obtenerPerfilPropio(
@@ -145,6 +161,165 @@ export class TrabajadoresService {
     especialidad?: EspecialidadTipo,
   ): Promise<TrabajadorMatch[]> {
     return this.listarTrabajadores(zonaId, especialidad, true);
+  }
+
+  /** RF05: pausa voluntaria (máximo 30 días) o reactivación. */
+  async cambiarPausa(
+    usuarioId: string,
+    dto: CambiarPausaDto,
+  ): Promise<PerfilTrabajadorPropio> {
+    return dto.accion === AccionPausa.REACTIVAR
+      ? this.reactivarPausa(usuarioId)
+      : this.pausar(usuarioId);
+  }
+
+  /** RF05: solo puede pausar un trabajador activo y sin trabajos en curso. */
+  async pausar(usuarioId: string): Promise<PerfilTrabajadorPropio> {
+    const perfil = await this.buscarPerfilPorUsuario(usuarioId);
+
+    if (perfil.estado === EstadoTrabajador.PAUSADO) {
+      throw new BadRequestException('La cuenta ya está en pausa');
+    }
+    if (perfil.estado === EstadoTrabajador.SUSPENDIDO) {
+      throw new BadRequestException(
+        'No puedes pausar una cuenta suspendida',
+      );
+    }
+    if (perfil.estado === EstadoTrabajador.BAJA) {
+      throw new BadRequestException(
+        'El rol de trabajador fue dado de baja',
+      );
+    }
+    if (perfil.estado !== EstadoTrabajador.ACTIVO) {
+      throw new BadRequestException(
+        'Debes completar la verificación antes de pausar tu cuenta',
+      );
+    }
+
+    const trabajos = await this.solicitudRepository.find({
+      where: {
+        trabajadorConfirmadoId: perfil.id,
+        estado: In(ESTADOS_SOLICITUD_EN_CURSO),
+      },
+      select: { id: true },
+    });
+    if (trabajos.length > 0) {
+      throw new BadRequestException(
+        `Tienes ${trabajos.length} trabajo(s) en curso; termínalos antes de pausar tu cuenta`,
+      );
+    }
+
+    const ofertasElegidas = await this.ofertaRepository.find({
+      where: {
+        trabajadorId: perfil.id,
+        estado: EstadoOferta.ELEGIDA,
+      },
+      select: { solicitudId: true },
+    });
+    if (ofertasElegidas.length > 0) {
+      const pendientesDePago = await this.solicitudRepository.find({
+        where: {
+          id: In(
+            ofertasElegidas.map((oferta) => oferta.solicitudId),
+          ),
+          estado: EstadoSolicitud.PENDIENTE_PAGO,
+        },
+        select: { id: true },
+      });
+      if (pendientesDePago.length > 0) {
+        throw new BadRequestException(
+          'Tienes una oferta elegida pendiente de pago; espera la confirmación del cliente',
+        );
+      }
+    }
+
+    perfil.estado = EstadoTrabajador.PAUSADO;
+    perfil.fechaPausa = new Date();
+    await this.perfilRepository.save(perfil);
+
+    return this.obtenerPerfilPropio(usuarioId);
+  }
+
+  /** RF05: reactivación voluntaria antes de la baja automática (RN09). */
+  async reactivarPausa(
+    usuarioId: string,
+  ): Promise<PerfilTrabajadorPropio> {
+    const perfil = await this.buscarPerfilPorUsuario(usuarioId);
+
+    if (perfil.estado === EstadoTrabajador.BAJA) {
+      throw new BadRequestException(
+        'El rol de trabajador fue dado de baja; vuelve a activarlo',
+      );
+    }
+    if (perfil.estado !== EstadoTrabajador.PAUSADO) {
+      throw new BadRequestException('La cuenta no está en pausa');
+    }
+
+    perfil.estado = EstadoTrabajador.ACTIVO;
+    perfil.fechaPausa = null;
+    await this.perfilRepository.save(perfil);
+
+    return this.obtenerPerfilPropio(usuarioId);
+  }
+
+  /**
+   * RN09 / CP12: a los 60 días de pausa (30 + otros 30 sin reactivar) se
+   * da de baja el rol de trabajador, conservando el rol de cliente.
+   */
+  async procesarPausasVencidas(
+    ahora: Date = new Date(),
+  ): Promise<number> {
+    const pausados = await this.perfilRepository.find({
+      where: { estado: EstadoTrabajador.PAUSADO },
+    });
+
+    let dadosDeBaja = 0;
+    for (const perfil of pausados) {
+      if (!perfil.fechaPausa) {
+        continue;
+      }
+      const limite = sumarDias(
+        perfil.fechaPausa,
+        DIAS_PARA_BAJA_AUTOMATICA,
+      );
+      if (limite.getTime() > ahora.getTime()) {
+        continue;
+      }
+
+      perfil.estado = EstadoTrabajador.BAJA;
+      await this.perfilRepository.save(perfil);
+
+      const usuario = await this.usuarioRepository.findOne({
+        where: { id: perfil.usuarioId },
+      });
+      if (usuario?.roles.includes(Rol.TRABAJADOR)) {
+        await this.usuarioRepository.update(usuario.id, {
+          roles: usuario.roles.filter(
+            (rol) => rol !== Rol.TRABAJADOR,
+          ),
+        });
+      }
+      dadosDeBaja += 1;
+    }
+
+    return dadosDeBaja;
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async procesarPausasVencidasProgramado(): Promise<void> {
+    try {
+      const dadosDeBaja = await this.procesarPausasVencidas();
+      if (dadosDeBaja > 0) {
+        this.logger.log(
+          `Roles de trabajador dados de baja por inactividad: ${dadosDeBaja}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        'No se pudo procesar las pausas vencidas',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   async reactivarSuspensionesVencidas(): Promise<number> {

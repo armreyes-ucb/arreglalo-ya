@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   mkdir,
   readFile,
+  unlink,
   writeFile,
 } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
@@ -57,6 +58,27 @@ export class DocumentStorageService {
       };
     } catch {
       throw new BadRequestException('No se pudo leer el documento');
+    }
+  }
+
+  /**
+   * Elimina un archivo privado. Devuelve `false` si la referencia no es
+   * válida o si el archivo ya no existe, sin lanzar excepciones.
+   */
+  async eliminar(url: string): Promise<boolean> {
+    if (!url.startsWith(PREFIJO_PRIVADO)) {
+      return false;
+    }
+    const referencia = url.slice(PREFIJO_PRIVADO.length);
+    const nombre = basename(referencia);
+    if (!nombre || nombre !== referencia) {
+      return false;
+    }
+    try {
+      await unlink(join(this.directorio, nombre));
+      return true;
+    } catch {
+      return false;
     }
   }
 }

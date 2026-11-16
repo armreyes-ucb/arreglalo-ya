@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Patch,
   Post,
   UseGuards,
@@ -11,7 +12,9 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
 import { ActivarTrabajadorDto } from './dto/activar-trabajador.dto.js';
 import { CambiarRolDto } from './dto/cambiar-rol.dto.js';
+import { EliminarCuentaDto } from './dto/eliminar-cuenta.dto.js';
 import type { ActivacionTrabajadorResponse } from './interfaces/activacion-trabajador-response.interface.js';
+import type { EliminacionCuentaResponse } from './interfaces/eliminacion-cuenta.interface.js';
 import { UsuariosService } from './usuarios.service.js';
 
 @Controller('usuarios')
@@ -33,5 +36,13 @@ export class UsuariosController {
     @Body() dto: ActivarTrabajadorDto,
   ): Promise<ActivacionTrabajadorResponse> {
     return this.usuariosService.activarTrabajador(usuario.id, dto);
+  }
+
+  @Delete('mi-cuenta')
+  eliminarCuenta(
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Body() dto: EliminarCuentaDto,
+  ): Promise<EliminacionCuentaResponse> {
+    return this.usuariosService.eliminarCuenta(usuario.id, dto);
   }
 }

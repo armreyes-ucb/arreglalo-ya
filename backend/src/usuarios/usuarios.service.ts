@@ -1,29 +1,50 @@
+import bcrypt from 'bcrypt';
 import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { AuthService } from '../auth/auth.service.js';
 import type { AuthTokenResponse } from '../auth/interfaces/auth-token-response.interface.js';
+import {
+  ESTADOS_DEVOLUCION_ACTIVA,
+  ESTADOS_RECLAMO_ABIERTO,
+  ESTADOS_SOLICITUD_ACTIVA_CLIENTE,
+  ESTADOS_SOLICITUD_EN_CURSO,
+} from '../common/constants/estados.js';
+import { EstadoQr } from '../common/enums/estado-qr.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
+import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { toPublicPerfil } from '../common/mappers/perfil-trabajador-publico.mapper.js';
 import { toPublicZona } from '../common/mappers/zona-publica.mapper.js';
 import { isUniqueViolation } from '../common/utils/postgres-error.js';
+import { CuentaBancaria } from '../entities/cuenta-bancaria.entity.js';
+import { Devolucion } from '../entities/devolucion.entity.js';
+import { Documento } from '../entities/documento.entity.js';
+import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
+import { Reclamo } from '../entities/reclamo.entity.js';
+import { Solicitud } from '../entities/solicitud.entity.js';
 import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
 import { Usuario } from '../entities/usuario.entity.js';
 import { Zona } from '../entities/zona.entity.js';
+import { DocumentStorageService } from '../verificacion/document-storage.service.js';
 import { ActivarTrabajadorDto } from './dto/activar-trabajador.dto.js';
 import { CambiarRolDto } from './dto/cambiar-rol.dto.js';
+import type { EliminarCuentaDto } from './dto/eliminar-cuenta.dto.js';
 import type { ActivacionTrabajadorResponse } from './interfaces/activacion-trabajador-response.interface.js';
+import type { EliminacionCuentaResponse } from './interfaces/eliminacion-cuenta.interface.js';
 
 @Injectable()
 export class UsuariosService {
+  private readonly logger = new Logger(UsuariosService.name);
+
   constructor(
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
@@ -34,6 +55,7 @@ export class UsuariosService {
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly authService: AuthService,
+    private readonly documentStorage: DocumentStorageService,
   ) {}
 
   async cambiarRol(
@@ -160,6 +182,191 @@ export class UsuariosService {
         );
       }
       throw error;
+    }
+  }
+
+  /**
+   * RF06 / CP22: anonimiza la cuenta si no hay solicitudes, pagos,
+   * devoluciones ni reclamos activos. Los registros contables se conservan.
+   */
+  async eliminarCuenta(
+    usuarioId: string,
+    dto: EliminarCuentaDto,
+  ): Promise<EliminacionCuentaResponse> {
+    const usuario = await this.usuarioRepo.findOne({
+      where: { id: usuarioId },
+    });
+    if (!usuario) {
+      throw new UnauthorizedException('Sesión inválida');
+    }
+    if (usuario.estado === EstadoUsuario.ANONIMIZADO) {
+      return { anonimizado: true, ya_anonimizado: true };
+    }
+
+    const passwordCorrecta = await bcrypt.compare(
+      dto.password,
+      usuario.passwordHash,
+    );
+    if (!passwordCorrecta) {
+      throw new UnauthorizedException('Contraseña incorrecta');
+    }
+
+    const documentos = await this.dataSource.transaction(
+      async (manager) => {
+        const perfil = await manager.findOne(PerfilTrabajador, {
+          where: { usuarioId },
+        });
+
+        const solicitudesCliente = await manager.find(Solicitud, {
+          where: {
+            clienteId: usuarioId,
+            estado: In(ESTADOS_SOLICITUD_ACTIVA_CLIENTE),
+          },
+          select: { id: true },
+        });
+        const solicitudesTrabajador = perfil
+          ? await manager.find(Solicitud, {
+              where: {
+                trabajadorConfirmadoId: perfil.id,
+                estado: In(ESTADOS_SOLICITUD_EN_CURSO),
+              },
+              select: { id: true },
+            })
+          : [];
+
+        if (
+          solicitudesCliente.length > 0 ||
+          solicitudesTrabajador.length > 0
+        ) {
+          throw new ConflictException(
+            'No puedes eliminar tu cuenta con solicitudes activas',
+          );
+        }
+
+        const solicitudes = await manager.find(Solicitud, {
+          where: [
+            { clienteId: usuarioId },
+            ...(perfil
+              ? [{ trabajadorConfirmadoId: perfil.id }]
+              : []),
+          ],
+          select: { id: true },
+        });
+        const solicitudIds = solicitudes.map(
+          (solicitud) => solicitud.id,
+        );
+
+        if (solicitudIds.length > 0) {
+          const pagos = await manager.find(Pago, {
+            where: { solicitudId: In(solicitudIds) },
+          });
+          const pagosActivos = pagos.filter(
+            (pago) =>
+              pago.estadoQr === EstadoQr.PENDIENTE ||
+              (pago.estadoQr === EstadoQr.PAGADO &&
+                !pago.transferidoAlTrabajador),
+          );
+          if (pagosActivos.length > 0) {
+            throw new ConflictException(
+              'No puedes eliminar tu cuenta con pagos pendientes',
+            );
+          }
+
+          const pagoIds = pagos.map((pago) => pago.id);
+          const devoluciones =
+            pagoIds.length > 0
+              ? await manager.find(Devolucion, {
+                  where: {
+                    pagoId: In(pagoIds),
+                    estado: In(ESTADOS_DEVOLUCION_ACTIVA),
+                  },
+                })
+              : [];
+          if (devoluciones.length > 0) {
+            throw new ConflictException(
+              'No puedes eliminar tu cuenta con devoluciones en curso',
+            );
+          }
+
+          const reclamos = await manager.find(Reclamo, {
+            where: {
+              solicitudId: In(solicitudIds),
+              estado: In(ESTADOS_RECLAMO_ABIERTO),
+            },
+          });
+          if (reclamos.length > 0) {
+            throw new ConflictException(
+              'No puedes eliminar tu cuenta con reclamos abiertos',
+            );
+          }
+        }
+
+        const documentosDelPerfil = perfil
+          ? await manager.find(Documento, {
+              where: { trabajadorId: perfil.id },
+            })
+          : [];
+
+        if (perfil) {
+          perfil.estado = EstadoTrabajador.BAJA;
+          perfil.fechaPausa = null;
+          perfil.horarios = null;
+          perfil.preciosEstimados = {};
+          await manager.save(PerfilTrabajador, perfil);
+          await manager.delete(TrabajadorZona, {
+            trabajadorId: perfil.id,
+          });
+          await manager.delete(Documento, {
+            trabajadorId: perfil.id,
+          });
+        }
+
+        await manager.delete(CuentaBancaria, { usuarioId });
+
+        await manager.update(Usuario, usuarioId, {
+          nombreCompleto: 'Usuario anónimo',
+          telefono: this.telefonoAnonimo(usuarioId),
+          passwordHash: 'ANONIMIZADO',
+          estado: EstadoUsuario.ANONIMIZADO,
+          intentosFallidos: 0,
+          bloqueadoHasta: null,
+        });
+
+        return documentosDelPerfil.map(
+          (documento) => documento.archivoPrivadoUrl,
+        );
+      },
+    );
+
+    await this.eliminarArchivos(documentos);
+
+    return { anonimizado: true, ya_anonimizado: false };
+  }
+
+  private telefonoAnonimo(usuarioId: string): string {
+    return `ANON-${usuarioId
+      .replace(/-/g, '')
+      .slice(0, 12)
+      .toUpperCase()}`;
+  }
+
+  /** D9: el borrado físico es best-effort y nunca revierte la anonimización. */
+  private async eliminarArchivos(urls: string[]): Promise<void> {
+    for (const url of urls) {
+      try {
+        const eliminado = await this.documentStorage.eliminar(url);
+        if (!eliminado) {
+          this.logger.warn(
+            `No se encontró el archivo privado ${url} al anonimizar la cuenta`,
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `No se pudo eliminar el archivo privado ${url}: ${
+            error instanceof Error ? error.message : 'error desconocido'
+          }`,
+        );
+      }
     }
   }
 }

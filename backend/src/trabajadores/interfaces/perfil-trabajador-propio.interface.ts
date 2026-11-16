@@ -1,5 +1,6 @@
 import type { EspecialidadTipo } from '../../common/enums/especialidad-tipo.enum.js';
 import type { EstadoTrabajador } from '../../common/enums/estado-trabajador.enum.js';
+import type { PausaTrabajador } from '../../common/interfaces/pausa-trabajador.interface.js';
 import type { ZonaPublica } from '../../common/interfaces/zona-publica.interface.js';
 
 export interface PerfilTrabajadorPropio {
@@ -22,4 +23,5 @@ export interface PerfilTrabajadorPropio {
   antecedentes_vencidos: boolean;
   puede_ofertar: boolean;
   motivo_bloqueo: string | null;
+  pausa: PausaTrabajador;
 }

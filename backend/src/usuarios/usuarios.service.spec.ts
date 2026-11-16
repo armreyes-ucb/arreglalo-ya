@@ -111,6 +111,9 @@ describe('UsuariosService', () => {
       zonaRepo as unknown as Repository<Zona>,
       dataSource as unknown as DataSource,
       authService as unknown as AuthService,
+      {
+        eliminar: vi.fn(async () => true),
+      } as never,
     );
   });
 

@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { ActualizarPerfilTrabajadorDto } from './dto/actualizar-perfil-trabajador.dto.js';
 import { BuscarTrabajadoresQueryDto } from './dto/buscar-trabajadores-query.dto.js';
+import { CambiarPausaDto } from './dto/cambiar-pausa.dto.js';
 import type { PerfilTrabajadorPropio } from './interfaces/perfil-trabajador-propio.interface.js';
 import type { TrabajadorMatch } from './interfaces/trabajador-match.interface.js';
 import type { TrabajadorPerfilPublico } from './interfaces/trabajador-perfil-publico.interface.js';
@@ -48,10 +49,18 @@ export class TrabajadoresController {
     );
   }
 
+  @Patch('pausa')
+  @Roles(Rol.TRABAJADOR)
+  cambiarPausa(
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Body() dto: CambiarPausaDto,
+  ): Promise<PerfilTrabajadorPropio> {
+    return this.trabajadoresService.cambiarPausa(usuario.id, dto);
+  }
+
   @Get('buscar')
   @Roles(Rol.CLIENTE)
-  buscar(
-    @Query() query: BuscarTrabajadoresQueryDto,
+  buscar(    @Query() query: BuscarTrabajadoresQueryDto,
   ): Promise<TrabajadorMatch[]> {
     return this.trabajadoresService.buscarTrabajadores(query);
   }
