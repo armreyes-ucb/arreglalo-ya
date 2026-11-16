@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
+import { Calificacion } from './calificacion.entity.js';
 import { CuentaBancaria } from './cuenta-bancaria.entity.js';
 import { Documento } from './documento.entity.js';
 import { PerfilTrabajador } from './perfil-trabajador.entity.js';
@@ -53,4 +54,16 @@ export class Usuario {
 
   @OneToMany(() => Documento, (documento) => documento.revisadoPor)
   documentosRevisados?: Relation<Documento[]>;
+
+  @OneToMany(
+    () => Calificacion,
+    (calificacion) => calificacion.autor,
+  )
+  calificacionesEscritas?: Relation<Calificacion[]>;
+
+  @OneToMany(
+    () => Calificacion,
+    (calificacion) => calificacion.destinatario,
+  )
+  calificacionesRecibidas?: Relation<Calificacion[]>;
 }

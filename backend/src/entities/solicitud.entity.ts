@@ -4,11 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   type Relation,
 } from 'typeorm';
 import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
+import { Calificacion } from './calificacion.entity.js';
 import { PerfilTrabajador } from './perfil-trabajador.entity.js';
 import { Usuario } from './usuario.entity.js';
 import { Zona } from './zona.entity.js';
@@ -101,4 +103,10 @@ export class Solicitud {
   @ManyToOne(() => Zona)
   @JoinColumn({ name: 'zona_id' })
   zona?: Relation<Zona>;
+
+  @OneToMany(
+    () => Calificacion,
+    (calificacion) => calificacion.solicitud,
+  )
+  calificaciones?: Relation<Calificacion[]>;
 }
