@@ -24,9 +24,7 @@ export function formatearBs(valor: number | null | undefined): string {
   return `Bs ${FORMATO_MONEDA.format(valor)}`;
 }
 
-export function formatearFecha(
-  valor: string | Date | null | undefined,
-): string {
+export function formatearFecha(valor: string | Date | null | undefined): string {
   if (!valor) {
     return 'Sin fecha';
   }
@@ -37,9 +35,7 @@ export function formatearFecha(
   return FORMATO_FECHA.format(fecha);
 }
 
-export function formatearFechaHora(
-  valor: string | Date | null | undefined,
-): string {
+export function formatearFechaHora(valor: string | Date | null | undefined): string {
   if (!valor) {
     return 'Sin fecha';
   }
@@ -50,9 +46,7 @@ export function formatearFechaHora(
   return FORMATO_FECHA_HORA.format(fecha);
 }
 
-export function valorDatetimeLocal(
-  valor: string | Date | null | undefined,
-): string {
+export function valorDatetimeLocal(valor: string | Date | null | undefined): string {
   if (!valor) {
     return '';
   }
@@ -61,17 +55,13 @@ export function valorDatetimeLocal(
     return '';
   }
   const desfase = fecha.getTimezoneOffset() * 60000;
-  return new Date(fecha.getTime() - desfase)
-    .toISOString()
-    .slice(0, 16);
+  return new Date(fecha.getTime() - desfase).toISOString().slice(0, 16);
 }
 
 export function fechaMinimaLocal(): string {
   const ahora = new Date(Date.now() + 60 * 60 * 1000);
   const desfase = ahora.getTimezoneOffset() * 60000;
-  return new Date(ahora.getTime() - desfase)
-    .toISOString()
-    .slice(0, 16);
+  return new Date(ahora.getTime() - desfase).toISOString().slice(0, 16);
 }
 
 export function formatearDistancia(distancia: number): string {
@@ -84,10 +74,7 @@ export function formatearDistancia(distancia: number): string {
   return 'Zona vecina';
 }
 
-export function formatearNivel(
-  nivel: number,
-  antecedentesVencidos = false,
-): string {
+export function formatearNivel(nivel: number, antecedentesVencidos = false): string {
   if (antecedentesVencidos) {
     return 'Antecedentes vencidos';
   }

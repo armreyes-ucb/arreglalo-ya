@@ -1,21 +1,9 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  claseTonoSolicitud,
-  etiquetaEstadoSolicitud,
-} from '../../core/catalogos';
+import { claseTonoSolicitud, etiquetaEstadoSolicitud } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
-import type {
-  CalificacionPublica,
-  ResumenReputacion,
-} from '../../core/models';
+import type { CalificacionPublica, ResumenReputacion } from '../../core/models';
 import { ReputacionService } from '../../core/reputacion.service';
 import { ToastService } from '../../core/toast.service';
 
@@ -29,13 +17,9 @@ import { ToastService } from '../../core/toast.service';
           <div>
             <span class="migaja">Trabajador</span>
             <h1>Mis calificaciones</h1>
-            <p>
-              Revisa las valoraciones que has recibido y califica a tus clientes.
-            </p>
+            <p>Revisa las valoraciones que has recibido y califica a tus clientes.</p>
           </div>
-          <a routerLink="/trabajador" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/trabajador" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -53,37 +37,29 @@ import { ToastService } from '../../core/toast.service';
             <div class="rejilla rejilla--4 mt-2">
               <div class="estadistica">
                 <span class="estadistica__texto">Promedio general</span>
-                <span class="estadistica__valor">{{
-                  resumen()?.promedio.toFixed(1) ?? '—'
-                }}</span>
+                <span class="estadistica__valor">{{ resumen()?.promedio.toFixed(1) ?? '—' }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Trabajos calificados</span>
-                <span class="estadistica__valor">{{
-                  resumen()?.total_trabajos ?? 0
-                }}</span>
+                <span class="estadistica__valor">{{ resumen()?.total_trabajos ?? 0 }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Total calificaciones</span>
-                <span class="estadistica__valor">{{
-                  resumen()?.total_calificaciones ?? 0
-                }}</span>
+                <span class="estadistica__valor">{{ resumen()?.total_calificaciones ?? 0 }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Calidad · Puntualidad</span>
-                <span class="estadistica__valor small">{{
-                  resumen()?.por_habilidad.calidad?.toFixed(1) ?? '—'
-                }} · {{
-                  resumen()?.por_habilidad.puntualidad?.toFixed(1) ?? '—'
-                }}</span>
+                <span class="estadistica__valor small"
+                  >{{ resumen()?.por_habilidad.calidad?.toFixed(1) ?? '—' }} ·
+                  {{ resumen()?.por_habilidad.puntualidad?.toFixed(1) ?? '—' }}</span
+                >
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Trato · Precio justo</span>
-                <span class="estadistica__valor small">{{
-                  resumen()?.por_habilidad.trato?.toFixed(1) ?? '—'
-                }} · {{
-                  resumen()?.por_habilidad.precio_justo?.toFixed(1) ?? '—'
-                }}</span>
+                <span class="estadistica__valor small"
+                  >{{ resumen()?.por_habilidad.trato?.toFixed(1) ?? '—' }} ·
+                  {{ resumen()?.por_habilidad.precio_justo?.toFixed(1) ?? '—' }}</span
+                >
               </div>
             </div>
           </div>
@@ -102,44 +78,28 @@ import { ToastService } from '../../core/toast.service';
                     <div class="fila fila--separada">
                       <div>
                         <strong>Solicitud {{ cal.solicitud_id.slice(0, 8) }}…</strong>
-                        <div class="small muted">
-                          {{ cal.fecha }} · {{ cal.estrellas }}/5
-                        </div>
+                        <div class="small muted">{{ cal.fecha }} · {{ cal.estrellas }}/5</div>
                         @if (cal.comentario) {
                           <p class="mt-1 small">{{ cal.comentario }}</p>
                         }
                         <div class="fila mt-1" style="gap: 1rem">
-                          <span
-                            class="chip"
-                            [class.chip--activo]="cal.calidad !== null"
-                          >
+                          <span class="chip" [class.chip--activo]="cal.calidad !== null">
                             Calidad: {{ cal.calidad ?? '—' }}
                           </span>
-                          <span
-                            class="chip"
-                            [class.chip--activo]="cal.puntualidad !== null"
-                          >
+                          <span class="chip" [class.chip--activo]="cal.puntualidad !== null">
                             Puntualidad: {{ cal.puntualidad ?? '—' }}
                           </span>
-                          <span
-                            class="chip"
-                            [class.chip--activo]="cal.trato !== null"
-                          >
+                          <span class="chip" [class.chip--activo]="cal.trato !== null">
                             Trato: {{ cal.trato ?? '—' }}
                           </span>
-                          <span
-                            class="chip"
-                            [class.chip--activo]="cal.precio_justo !== null"
-                          >
+                          <span class="chip" [class.chip--activo]="cal.precio_justo !== null">
                             Precio: {{ cal.precio_justo ?? '—' }}
                           </span>
                         </div>
                       </div>
                       @if (cal.respuesta_trabajador) {
                         <div class="alerta alerta--info mt-2" style="margin:0">
-                          <span
-                            >Tu respuesta: {{ cal.respuesta_trabajador }}</span
-                          >
+                          <span>Tu respuesta: {{ cal.respuesta_trabajador }}</span>
                         </div>
                       } @else if (cal.comentario) {
                         <button
@@ -171,9 +131,7 @@ import { ToastService } from '../../core/toast.service';
                     <div class="fila fila--separada">
                       <div>
                         <strong>Cliente {{ cal.destinatario_id.slice(0, 8) }}…</strong>
-                        <div class="small muted">
-                          {{ cal.fecha }} · {{ cal.estrellas }}/5
-                        </div>
+                        <div class="small muted">{{ cal.fecha }} · {{ cal.estrellas }}/5</div>
                         @if (cal.comentario) {
                           <p class="mt-1 small">{{ cal.comentario }}</p>
                         }
@@ -196,34 +154,22 @@ import { ToastService } from '../../core/toast.service';
 
         @if (mostrarRespuesta(); as cal) {
           <div class="modal-fondo" (click)="cerrarRespuesta()">
-            <div
-              class="modal"
-              role="dialog"
-              aria-modal="true"
-              (click)="$event.stopPropagation()"
-            >
+            <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
               <div class="fila fila--separada">
                 <h2 style="margin:0">Responder calificación</h2>
-                <button
-                  type="button"
-                  class="enlace-boton"
-                  (click)="cerrarRespuesta()"
-                >
+                <button type="button" class="enlace-boton" (click)="cerrarRespuesta()">
                   Cerrar
                 </button>
               </div>
               <p class="small muted">
-                Solicitud {{ cal.solicitud_id.slice(0, 8) }}… · {{
-                  cal.estrellas }}
+                Solicitud {{ cal.solicitud_id.slice(0, 8) }}… · {{ cal.estrellas }}
                 /5
               </p>
               @if (cal.comentario) {
                 <p class="mt-2 small">“{{ cal.comentario }}”</p>
               }
               <div class="campo mt-2">
-                <label class="etiqueta" for="respuesta"
-                  >Tu respuesta pública</label
-                >
+                <label class="etiqueta" for="respuesta">Tu respuesta pública</label>
                 <textarea
                   id="respuesta"
                   class="input"
@@ -233,11 +179,7 @@ import { ToastService } from '../../core/toast.service';
                 ></textarea>
               </div>
               <div class="fila mt-2" style="justify-content: flex-end">
-                <button
-                  type="button"
-                  class="btn btn--contorno"
-                  (click)="cerrarRespuesta()"
-                >
+                <button type="button" class="btn btn--contorno" (click)="cerrarRespuesta()">
                   Cancelar
                 </button>
                 <button

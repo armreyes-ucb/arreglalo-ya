@@ -1,10 +1,6 @@
 import { Pipe, type PipeTransform } from '@angular/core';
 import { resolverImagen } from '../core/api';
-import {
-  formatearBs,
-  formatearFecha,
-  formatearFechaHora,
-} from '../core/formato';
+import { formatearBs, formatearFecha, formatearFechaHora } from '../core/formato';
 
 @Pipe({ name: 'imagenUrl' })
 export class ImagenUrlPipe implements PipeTransform {

@@ -1,53 +1,40 @@
 import type { Routes } from '@angular/router';
-import {
-  authGuard,
-  publicOnlyGuard,
-  roleGuard,
-} from './core/guards';
+import { authGuard, publicOnlyGuard, roleGuard } from './core/guards';
 
 export const routes: Routes = [
   {
     path: '',
     title: 'Arréglalo Ya | Técnicos verificados en tu zona',
-    loadComponent: () =>
-      import('./features/public/home').then((m) => m.Home),
+    loadComponent: () => import('./features/public/home').then((m) => m.Home),
   },
   {
     path: 'login',
     title: 'Ingresar | Arréglalo Ya',
     canActivate: [publicOnlyGuard],
-    loadComponent: () =>
-      import('./features/auth/login').then((m) => m.Login),
+    loadComponent: () => import('./features/auth/login').then((m) => m.Login),
   },
   {
     path: 'registro',
     title: 'Crear cuenta | Arréglalo Ya',
     canActivate: [publicOnlyGuard],
-    loadComponent: () =>
-      import('./features/auth/registro').then((m) => m.Registro),
+    loadComponent: () => import('./features/auth/registro').then((m) => m.Registro),
   },
   {
     path: 'terminos',
     title: 'Términos y condiciones | Arréglalo Ya',
-    loadComponent: () =>
-      import('./features/legal/terminos').then((m) => m.Terminos),
+    loadComponent: () => import('./features/legal/terminos').then((m) => m.Terminos),
   },
   {
     path: 'activar-trabajador',
     title: 'Activar cuenta de trabajador | Arréglalo Ya',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/trabajador/activacion').then(
-        (m) => m.ActivacionTrabajador,
-      ),
+      import('./features/trabajador/activacion').then((m) => m.ActivacionTrabajador),
   },
   {
     path: 'sin-acceso',
     title: 'Sin acceso | Arréglalo Ya',
-    loadComponent: () =>
-      import('./features/public/sin-acceso').then(
-        (m) => m.SinAcceso,
-      ),
+    loadComponent: () => import('./features/public/sin-acceso').then((m) => m.SinAcceso),
   },
   {
     path: 'cliente',
@@ -56,58 +43,41 @@ export const routes: Routes = [
       {
         path: '',
         title: 'Panel del cliente | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/cliente/panel').then(
-            (m) => m.PanelCliente,
-          ),
+        loadComponent: () => import('./features/cliente/panel').then((m) => m.PanelCliente),
       },
       {
         path: 'publicar',
         title: 'Publicar solicitud | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/cliente/publicar').then(
-            (m) => m.PublicarSolicitud,
-          ),
+        loadComponent: () => import('./features/cliente/publicar').then((m) => m.PublicarSolicitud),
       },
       {
         path: 'mis-solicitudes',
         title: 'Mis solicitudes | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/cliente/mis-solicitudes').then(
-            (m) => m.MisSolicitudes,
-          ),
+          import('./features/cliente/mis-solicitudes').then((m) => m.MisSolicitudes),
       },
       {
         path: 'mis-solicitudes/:id',
         title: 'Detalle de solicitud | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/cliente/detalle-solicitud').then(
-            (m) => m.DetalleSolicitud,
-          ),
+          import('./features/cliente/detalle-solicitud').then((m) => m.DetalleSolicitud),
       },
       {
         path: 'mis-solicitudes/:id/seguimiento',
         title: 'Seguimiento en vivo | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/seguimiento/seguimiento').then(
-            (m) => m.Seguimiento,
-          ),
+          import('./features/seguimiento/seguimiento').then((m) => m.Seguimiento),
       },
       {
         path: 'buscar',
         title: 'Buscar técnicos | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/cliente/buscar').then(
-            (m) => m.BuscarTrabajadores,
-          ),
+        loadComponent: () => import('./features/cliente/buscar').then((m) => m.BuscarTrabajadores),
       },
       {
         path: 'trabajadores/:id',
         title: 'Perfil del técnico | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/cliente/perfil-publico').then(
-            (m) => m.PerfilPublico,
-          ),
+          import('./features/cliente/perfil-publico').then((m) => m.PerfilPublico),
       },
     ],
   },
@@ -118,74 +88,52 @@ export const routes: Routes = [
       {
         path: '',
         title: 'Panel del trabajador | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/trabajador/panel').then(
-            (m) => m.PanelTrabajador,
-          ),
+        loadComponent: () => import('./features/trabajador/panel').then((m) => m.PanelTrabajador),
       },
       {
         path: 'verificacion',
         title: 'Verificación de identidad | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/trabajador/verificacion').then(
-            (m) => m.VerificacionTrabajador,
-          ),
+          import('./features/trabajador/verificacion').then((m) => m.VerificacionTrabajador),
       },
       {
         path: 'perfil',
         title: 'Mi perfil de trabajador | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/trabajador/perfil').then(
-            (m) => m.PerfilTrabajador,
-          ),
+        loadComponent: () => import('./features/trabajador/perfil').then((m) => m.PerfilTrabajador),
       },
       {
         path: 'trabajos',
         title: 'Trabajos disponibles | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/trabajador/trabajos').then(
-            (m) => m.TrabajosDisponibles,
-          ),
+          import('./features/trabajador/trabajos').then((m) => m.TrabajosDisponibles),
       },
       {
         path: 'mis-ofertas',
         title: 'Mis ofertas | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/trabajador/mis-ofertas').then(
-            (m) => m.MisOfertas,
-          ),
+        loadComponent: () => import('./features/trabajador/mis-ofertas').then((m) => m.MisOfertas),
       },
       {
         path: 'trabajos/:id/seguimiento',
         title: 'Seguimiento en vivo | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/seguimiento/seguimiento').then(
-            (m) => m.Seguimiento,
-          ),
+          import('./features/seguimiento/seguimiento').then((m) => m.Seguimiento),
       },
       {
         path: 'calificaciones',
         title: 'Mis calificaciones | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/trabajador/calificaciones').then(
-            (m) => m.CalificacionesTrabajador,
-          ),
+          import('./features/trabajador/calificaciones').then((m) => m.CalificacionesTrabajador),
       },
       {
         path: 'reclamos',
         title: 'Mis reclamos | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/trabajador/reclamos').then(
-            (m) => m.ReclamosTrabajador,
-          ),
+          import('./features/trabajador/reclamos').then((m) => m.ReclamosTrabajador),
       },
       {
         path: 'pausa',
         title: 'Pausar mi cuenta | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/trabajador/pausa').then(
-            (m) => m.PausaTrabajador,
-          ),
+        loadComponent: () => import('./features/trabajador/pausa').then((m) => m.PausaTrabajador),
       },
     ],
   },
@@ -196,58 +144,43 @@ export const routes: Routes = [
       {
         path: '',
         title: 'Panel del supervisor | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/supervisor/panel').then(
-            (m) => m.PanelSupervisor,
-          ),
+        loadComponent: () => import('./features/supervisor/panel').then((m) => m.PanelSupervisor),
       },
       {
         path: 'verificaciones',
         title: 'Bandeja de verificaciones | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/supervisor/verificaciones').then(
-            (m) => m.BandejaVerificaciones,
-          ),
+          import('./features/supervisor/verificaciones').then((m) => m.BandejaVerificaciones),
       },
       {
         path: 'verificaciones/:id',
         title: 'Revisar verificación | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/supervisor/revision').then(
-            (m) => m.RevisionVerificacion,
-          ),
+          import('./features/supervisor/revision').then((m) => m.RevisionVerificacion),
       },
       {
         path: 'reclamos',
         title: 'Bandeja de reclamos | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/supervisor/reclamos').then(
-            (m) => m.ReclamosSupervisor,
-          ),
+          import('./features/supervisor/reclamos').then((m) => m.ReclamosSupervisor),
       },
       {
         path: 'sanciones',
         title: 'Sanciones Fibonacci | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/supervisor/sanciones').then(
-            (m) => m.SancionesSupervisor,
-          ),
+          import('./features/supervisor/sanciones').then((m) => m.SancionesSupervisor),
       },
       {
         path: 'conflictivos',
         title: 'Clientes conflictivos | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/supervisor/conflictivos').then(
-            (m) => m.ConflictivosSupervisor,
-          ),
+          import('./features/supervisor/conflictivos').then((m) => m.ConflictivosSupervisor),
       },
       {
         path: 'devoluciones',
         title: 'Devoluciones a supervisar | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/supervisor/devoluciones').then(
-            (m) => m.DevolucionesSupervisor,
-          ),
+          import('./features/supervisor/devoluciones').then((m) => m.DevolucionesSupervisor),
       },
     ],
   },
@@ -258,42 +191,29 @@ export const routes: Routes = [
       {
         path: '',
         title: 'Panel de administración | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/admin/panel').then(
-            (m) => m.PanelAdmin,
-          ),
+        loadComponent: () => import('./features/admin/panel').then((m) => m.PanelAdmin),
       },
       {
         path: 'supervisores',
         title: 'Gestión de supervisores | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/admin/supervisores').then(
-            (m) => m.SupervisoresAdmin,
-          ),
+          import('./features/admin/supervisores').then((m) => m.SupervisoresAdmin),
       },
       {
         path: 'zonas',
         title: 'Zonas y especialidades | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/admin/zonas').then(
-            (m) => m.ZonasAdmin,
-          ),
+        loadComponent: () => import('./features/admin/zonas').then((m) => m.ZonasAdmin),
       },
       {
         path: 'configuracion',
         title: 'Parámetros de la plataforma | Arréglalo Ya',
         loadComponent: () =>
-          import('./features/admin/configuracion').then(
-            (m) => m.ConfiguracionAdmin,
-          ),
+          import('./features/admin/configuracion').then((m) => m.ConfiguracionAdmin),
       },
       {
         path: 'reportes',
         title: 'Reportes y métricas | Arréglalo Ya',
-        loadComponent: () =>
-          import('./features/admin/reportes').then(
-            (m) => m.ReportesAdmin,
-          ),
+        loadComponent: () => import('./features/admin/reportes').then((m) => m.ReportesAdmin),
       },
     ],
   },
@@ -301,10 +221,7 @@ export const routes: Routes = [
     path: 'mi-cuenta',
     title: 'Mi cuenta | Arréglalo Ya',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/cuenta/mi-cuenta').then(
-        (m) => m.MiCuenta,
-      ),
+    loadComponent: () => import('./features/cuenta/mi-cuenta').then((m) => m.MiCuenta),
   },
   { path: '**', redirectTo: '' },
 ];

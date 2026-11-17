@@ -1,9 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { mensajeDeError } from '../../core/errores';
@@ -23,13 +18,11 @@ import { FechaPipe } from '../../shared/pipes';
             <span class="migaja">Administración</span>
             <h1>Configuración de la plataforma</h1>
             <p>
-              Porcentajes, plazos y reglas de negocio. Los cambios afectan solo a
-              solicitudes nuevas (CP35).
+              Porcentajes, plazos y reglas de negocio. Los cambios afectan solo a solicitudes nuevas
+              (CP35).
             </p>
           </div>
-          <a routerLink="/admin" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/admin" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -46,9 +39,7 @@ import { FechaPipe } from '../../shared/pipes';
             <h2>Parámetros actuales</h2>
             <div class="formulario--rejilla mt-2">
               <div class="campo">
-                <label class="etiqueta" for="comision_pct"
-                  >Comisión plataforma (%) *</label
-                >
+                <label class="etiqueta" for="comision_pct">Comisión plataforma (%) *</label>
                 <input
                   id="comision_pct"
                   type="number"
@@ -60,9 +51,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="pago_inicial_pct"
-                  >Pago inicial por QR (%) *</label
-                >
+                <label class="etiqueta" for="pago_inicial_pct">Pago inicial por QR (%) *</label>
                 <input
                   id="pago_inicial_pct"
                   type="number"
@@ -74,9 +63,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="factor_urgente"
-                  >Factor urgente *</label
-                >
+                <label class="etiqueta" for="factor_urgente">Factor urgente *</label>
                 <input
                   id="factor_urgente"
                   type="number"
@@ -88,9 +75,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="minutos_vigencia_qr"
-                  >Vigencia QR (minutos) *</label
-                >
+                <label class="etiqueta" for="minutos_vigencia_qr">Vigencia QR (minutos) *</label>
                 <input
                   id="minutos_vigencia_qr"
                   type="number"
@@ -153,9 +138,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="dias_tope_urgente"
-                  >Días tope urgente *</label
-                >
+                <label class="etiqueta" for="dias_tope_urgente">Días tope urgente *</label>
                 <input
                   id="dias_tope_urgente"
                   type="number"
@@ -166,9 +149,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="dias_pausa_maxima"
-                  >Días pausa máxima *</label
-                >
+                <label class="etiqueta" for="dias_pausa_maxima">Días pausa máxima *</label>
                 <input
                   id="dias_pausa_maxima"
                   type="number"
@@ -179,9 +160,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="dias_pausa_baja"
-                  >Días pausa → baja *</label
-                >
+                <label class="etiqueta" for="dias_pausa_baja">Días pausa → baja *</label>
                 <input
                   id="dias_pausa_baja"
                   type="number"
@@ -205,9 +184,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="dias_reclamo"
-                  >Días para reclamar *</label
-                >
+                <label class="etiqueta" for="dias_reclamo">Días para reclamar *</label>
                 <input
                   id="dias_reclamo"
                   type="number"
@@ -231,9 +208,7 @@ import { FechaPipe } from '../../shared/pipes';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="horas_sla_supervisor"
-                  >Horas SLA supervisor *</label
-                >
+                <label class="etiqueta" for="horas_sla_supervisor">Horas SLA supervisor *</label>
                 <input
                   id="horas_sla_supervisor"
                   type="number"

@@ -1,9 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { mensajeDeError } from '../../core/errores';
@@ -21,14 +16,9 @@ import { ToastService } from '../../core/toast.service';
           <div>
             <span class="migaja">Administración</span>
             <h1>Zonas y especialidades</h1>
-            <p>
-              Administra el catálogo geográfico y de oficios. Solo
-              SUPERADMIN.
-            </p>
+            <p>Administra el catálogo geográfico y de oficios. Solo SUPERADMIN.</p>
           </div>
-          <a routerLink="/admin" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/admin" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -43,9 +33,7 @@ import { ToastService } from '../../core/toast.service';
         } @else {
           <div class="tarjeta mb-2">
             <h2>Crear zona</h2>
-            <p class="small muted mt-1">
-              Define el nombre, OTB, municipio y zonas vecinas.
-            </p>
+            <p class="small muted mt-1">Define el nombre, OTB, municipio y zonas vecinas.</p>
             <div class="formulario--rejilla mt-2">
               <div class="campo">
                 <label class="etiqueta" for="nombre">Nombre *</label>
@@ -128,9 +116,9 @@ import { ToastService } from '../../core/toast.service';
                         <td>{{ z.nombre }}</td>
                         <td>{{ z.otb }}</td>
                         <td>{{ z.municipio }}</td>
-                        <td class="small">{{
-                          z.zonas_vecinas.length ? z.zonas_vecinas.join(', ') : '—'
-                        }}</td>
+                        <td class="small">
+                          {{ z.zonas_vecinas.length ? z.zonas_vecinas.join(', ') : '—' }}
+                        </td>
                         <td>
                           <div class="fila" style="gap: 0.5rem">
                             <button
@@ -162,40 +150,19 @@ import { ToastService } from '../../core/toast.service';
 
         @if (mostrarEditar(); as z) {
           <div class="modal-fondo" (click)="cerrarEditar()">
-            <div
-              class="modal"
-              role="dialog"
-              aria-modal="true"
-              (click)="$event.stopPropagation()"
-            >
+            <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
               <div class="fila fila--separada">
                 <h2 style="margin:0">Editar zona</h2>
-                <button
-                  type="button"
-                  class="enlace-boton"
-                  (click)="cerrarEditar()"
-                >
-                  Cerrar
-                </button>
+                <button type="button" class="enlace-boton" (click)="cerrarEditar()">Cerrar</button>
               </div>
               <div class="formulario--rejilla mt-2">
                 <div class="campo">
                   <label class="etiqueta" for="edit-nombre">Nombre</label>
-                  <input
-                    id="edit-nombre"
-                    type="text"
-                    class="input"
-                    [(ngModel)]="editNombre"
-                  />
+                  <input id="edit-nombre" type="text" class="input" [(ngModel)]="editNombre" />
                 </div>
                 <div class="campo">
                   <label class="etiqueta" for="edit-otb">OTB</label>
-                  <input
-                    id="edit-otb"
-                    type="text"
-                    class="input"
-                    [(ngModel)]="editOtb"
-                  />
+                  <input id="edit-otb" type="text" class="input" [(ngModel)]="editOtb" />
                 </div>
                 <div class="campo">
                   <label class="etiqueta" for="edit-municipio">Municipio</label>
@@ -207,23 +174,12 @@ import { ToastService } from '../../core/toast.service';
                   />
                 </div>
                 <div class="campo">
-                  <label class="etiqueta" for="edit-vecinas"
-                    >Zonas vecinas (coma)</label
-                  >
-                  <input
-                    id="edit-vecinas"
-                    type="text"
-                    class="input"
-                    [(ngModel)]="editVecinas"
-                  />
+                  <label class="etiqueta" for="edit-vecinas">Zonas vecinas (coma)</label>
+                  <input id="edit-vecinas" type="text" class="input" [(ngModel)]="editVecinas" />
                 </div>
               </div>
               <div class="fila mt-2" style="justify-content: flex-end">
-                <button
-                  type="button"
-                  class="btn btn--contorno"
-                  (click)="cerrarEditar()"
-                >
+                <button type="button" class="btn btn--contorno" (click)="cerrarEditar()">
                   Cancelar
                 </button>
                 <button

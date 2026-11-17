@@ -11,10 +11,7 @@ export class UploadsService {
     const datos = new FormData();
     datos.append('archivo', archivo);
     const respuesta = await firstValueFrom(
-      this.http.post<{ url: string }>(
-        `${API_URL}/uploads/imagen`,
-        datos,
-      ),
+      this.http.post<{ url: string }>(`${API_URL}/uploads/imagen`, datos),
     );
     return respuesta.url;
   }

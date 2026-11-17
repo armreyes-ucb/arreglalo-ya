@@ -1,15 +1,5 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   ESPECIALIDADES,
@@ -17,32 +7,17 @@ import {
   etiquetaEspecialidad,
 } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
-import {
-  fechaMinimaLocal,
-  formatearFechaHora,
-} from '../../core/formato';
-import type {
-  PerfilTrabajadorPropio,
-  SolicitudDisponible,
-  Zona,
-} from '../../core/models';
+import { fechaMinimaLocal, formatearFechaHora } from '../../core/formato';
+import type { PerfilTrabajadorPropio, SolicitudDisponible, Zona } from '../../core/models';
 import { SolicitudesService } from '../../core/solicitudes.service';
 import { ToastService } from '../../core/toast.service';
 import { TrabajadoresService } from '../../core/trabajadores.service';
 import { ZonasService } from '../../core/zonas.service';
-import {
-  FechaHoraPipe,
-  ImagenUrlPipe,
-} from '../../shared/pipes';
+import { FechaHoraPipe, ImagenUrlPipe } from '../../shared/pipes';
 
 @Component({
   selector: 'app-trabajos-disponibles',
-  imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    FechaHoraPipe,
-    ImagenUrlPipe,
-  ],
+  imports: [ReactiveFormsModule, RouterLink, FechaHoraPipe, ImagenUrlPipe],
   template: `
     <section class="pagina">
       <div class="contenedor">
@@ -51,15 +26,10 @@ import {
             <span class="migaja">Trabajador</span>
             <h1>Trabajos disponibles</h1>
             <p>
-              Solicitudes de clientes en tus zonas. Envía una
-              oferta con tu precio y disponibilidad.
+              Solicitudes de clientes en tus zonas. Envía una oferta con tu precio y disponibilidad.
             </p>
           </div>
-          <a
-            routerLink="/trabajador/mis-ofertas"
-            class="btn btn--contorno"
-            >Mis ofertas</a
-          >
+          <a routerLink="/trabajador/mis-ofertas" class="btn btn--contorno">Mis ofertas</a>
         </div>
 
         @if (perfil() && !perfil()?.puede_ofertar) {
@@ -67,48 +37,27 @@ import {
             <span>
               <strong>No puedes ofertar todavía.</strong>
               {{ perfil()?.motivo_bloqueo }}
-              <a routerLink="/trabajador/verificacion"
-                >Completar verificación</a
-              >
+              <a routerLink="/trabajador/verificacion">Completar verificación</a>
             </span>
           </div>
         }
 
-        <form
-          class="tarjeta mb-2"
-          [formGroup]="filtros"
-          (ngSubmit)="buscar()"
-        >
+        <form class="tarjeta mb-2" [formGroup]="filtros" (ngSubmit)="buscar()">
           <div class="formulario--rejilla">
             <div class="campo">
               <label class="etiqueta" for="zona">Zona</label>
-              <select
-                id="zona"
-                class="select"
-                formControlName="zona_id"
-              >
+              <select id="zona" class="select" formControlName="zona_id">
                 <option [value]="0">Todas mis zonas</option>
                 @for (zona of zonas(); track zona.id) {
-                  <option [value]="zona.id">
-                    {{ zona.nombre }} · {{ zona.municipio }}
-                  </option>
+                  <option [value]="zona.id">{{ zona.nombre }} · {{ zona.municipio }}</option>
                 }
               </select>
             </div>
             <div class="campo">
-              <label class="etiqueta" for="especialidad"
-                >Especialidad</label
-              >
-              <select
-                id="especialidad"
-                class="select"
-                formControlName="especialidad"
-              >
+              <label class="etiqueta" for="especialidad">Especialidad</label>
+              <select id="especialidad" class="select" formControlName="especialidad">
                 <option value="">Todas</option>
-                @for (
-                  especialidad of especialidades;
-                  track especialidad.valor
-                ) {
+                @for (especialidad of especialidades; track especialidad.valor) {
                   <option [value]="especialidad.valor">
                     {{ especialidad.etiqueta }}
                   </option>
@@ -116,11 +65,7 @@ import {
               </select>
             </div>
           </div>
-          <button
-            type="submit"
-            class="btn btn--primario mt-2"
-            [disabled]="cargando()"
-          >
+          <button type="submit" class="btn btn--primario mt-2" [disabled]="cargando()">
             {{ cargando() ? 'Buscando…' : 'Actualizar lista' }}
           </button>
         </form>
@@ -141,18 +86,12 @@ import {
             <div class="vacio">
               <div class="vacio__icono">0</div>
               <h3>No hay trabajos disponibles con esos filtros</h3>
-              <p>
-                Prueba con otra zona o especialidad, o vuelve más
-                tarde.
-              </p>
+              <p>Prueba con otra zona o especialidad, o vuelve más tarde.</p>
             </div>
           </div>
         } @else {
           <div class="pila">
-            @for (
-              solicitud of solicitudes();
-              track solicitud.id
-            ) {
+            @for (solicitud of solicitudes(); track solicitud.id) {
               <div class="tarjeta">
                 <div class="fila fila--arriba fila--separada">
                   <div>
@@ -161,26 +100,16 @@ import {
                         {{ solicitud.tipo_problema }}
                       </h2>
                       @if (solicitud.urgente) {
-                        <span class="insignia insignia--rojo"
-                          >Urgente +10%</span
-                        >
+                        <span class="insignia insignia--rojo">Urgente +10%</span>
                       }
                       @if (solicitud.advertir_cliente_conflictivo) {
-                        <span class="insignia insignia--ambar"
-                          >Cliente con antecedentes</span
-                        >
+                        <span class="insignia insignia--ambar">Cliente con antecedentes</span>
                       }
                     </div>
                     <p class="small muted" style="margin: 0.25rem 0 0">
-                      {{
-                        etiquetaEspecialidad(
-                          solicitud.especialidad
-                        )
-                      }}
+                      {{ etiquetaEspecialidad(solicitud.especialidad) }}
                       · {{ solicitud.zona?.nombre }} ·
-                      {{
-                        etiquetaEstado(solicitud.estado)
-                      }}
+                      {{ etiquetaEstado(solicitud.estado) }}
                     </p>
                   </div>
                   <span class="small muted">
@@ -193,14 +122,8 @@ import {
 
                 @if (solicitud.fotos_urls.length) {
                   <div class="galeria mb-2">
-                    @for (
-                      foto of solicitud.fotos_urls;
-                      track foto
-                    ) {
-                      <img
-                        [src]="foto | imagenUrl"
-                        alt="Foto del problema"
-                      />
+                    @for (foto of solicitud.fotos_urls; track foto) {
+                      <img [src]="foto | imagenUrl" alt="Foto del problema" />
                     }
                   </div>
                 }
@@ -208,14 +131,10 @@ import {
                 <div class="fila fila--separada">
                   <span class="small muted">
                     Cita preferida:
-                    {{
-                      solicitud.fecha_cita_preferida | fechaHora
-                    }}
+                    {{ solicitud.fecha_cita_preferida | fechaHora }}
                   </span>
                   @if (ofertadas().includes(solicitud.id)) {
-                    <span class="insignia insignia--verde"
-                      >Oferta enviada</span
-                    >
+                    <span class="insignia insignia--verde">Oferta enviada</span>
                   } @else {
                     <button
                       type="button"
@@ -236,21 +155,10 @@ import {
 
     @if (seleccionada(); as solicitud) {
       <div class="modal-fondo" (click)="cerrarOferta()">
-        <div
-          class="modal"
-          role="dialog"
-          aria-modal="true"
-          (click)="$event.stopPropagation()"
-        >
+        <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
           <div class="fila fila--separada">
             <h2 style="margin:0">Enviar oferta</h2>
-            <button
-              type="button"
-              class="enlace-boton"
-              (click)="cerrarOferta()"
-            >
-              Cerrar
-            </button>
+            <button type="button" class="enlace-boton" (click)="cerrarOferta()">Cerrar</button>
           </div>
           <p class="small muted">{{ solicitud.tipo_problema }}</p>
 
@@ -263,23 +171,16 @@ import {
           @if (solicitud.urgente) {
             <div class="alerta alerta--aviso">
               <span>
-                Solicitud urgente: tendrá prioridad y el recargo
-                del 10% se aplicará al precio acordado. Tu oferta
-                se mantiene tal como la escribas.
+                Solicitud urgente: tendrá prioridad y el recargo del 10% se aplicará al precio
+                acordado. Tu oferta se mantiene tal como la escribas.
               </span>
             </div>
           }
 
-          <form
-            class="formulario"
-            [formGroup]="oferta"
-            (ngSubmit)="enviarOferta()"
-          >
+          <form class="formulario" [formGroup]="oferta" (ngSubmit)="enviarOferta()">
             <div class="formulario--rejilla">
               <div class="campo">
-                <label class="etiqueta" for="precio"
-                  >Precio estimado (Bs)</label
-                >
+                <label class="etiqueta" for="precio">Precio estimado (Bs)</label>
                 <input
                   id="precio"
                   type="number"
@@ -290,9 +191,7 @@ import {
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="transporte"
-                  >Costo de transporte (Bs)</label
-                >
+                <label class="etiqueta" for="transporte">Costo de transporte (Bs)</label>
                 <input
                   id="transporte"
                   type="number"
@@ -305,9 +204,7 @@ import {
             </div>
 
             <div class="campo">
-              <label class="etiqueta" for="fecha"
-                >Fecha y hora propuesta</label
-              >
+              <label class="etiqueta" for="fecha">Fecha y hora propuesta</label>
               <input
                 id="fecha"
                 type="datetime-local"
@@ -318,9 +215,7 @@ import {
             </div>
 
             <div class="campo">
-              <label class="etiqueta" for="mensaje"
-                >Mensaje <small>(opcional)</small></label
-              >
+              <label class="etiqueta" for="mensaje">Mensaje <small>(opcional)</small></label>
               <textarea
                 id="mensaje"
                 class="textarea"
@@ -335,8 +230,7 @@ import {
                 <span>
                   Total estimado:
                   <strong>Bs {{ total().toFixed(2) }}</strong>
-                  (precio + transporte). El pago inicial del 25% se
-                  calcula al confirmar.
+                  (precio + transporte). El pago inicial del 25% se calcula al confirmar.
                 </span>
               </div>
             }
@@ -346,11 +240,7 @@ import {
               class="btn btn--primario btn--bloque"
               [disabled]="enviandoOferta()"
             >
-              {{
-                enviandoOferta()
-                  ? 'Enviando…'
-                  : 'Enviar mi oferta'
-              }}
+              {{ enviandoOferta() ? 'Enviando…' : 'Enviar mi oferta' }}
             </button>
           </form>
         </div>
@@ -360,29 +250,21 @@ import {
 })
 export class TrabajosDisponibles implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
-  private readonly solicitudesService = inject(
-    SolicitudesService,
-  );
-  private readonly trabajadoresService = inject(
-    TrabajadoresService,
-  );
+  private readonly solicitudesService = inject(SolicitudesService);
+  private readonly trabajadoresService = inject(TrabajadoresService);
   private readonly zonasService = inject(ZonasService);
   private readonly toast = inject(ToastService);
 
   protected readonly especialidades = ESPECIALIDADES;
-  protected readonly etiquetaEspecialidad =
-    etiquetaEspecialidad;
+  protected readonly etiquetaEspecialidad = etiquetaEspecialidad;
   protected readonly etiquetaEstado = etiquetaEstadoSolicitud;
   protected readonly fechaMinima = fechaMinimaLocal();
 
   protected readonly zonas = signal<Zona[]>([]);
-  protected readonly solicitudes =
-    signal<SolicitudDisponible[]>([]);
-  protected readonly perfil =
-    signal<PerfilTrabajadorPropio | null>(null);
+  protected readonly solicitudes = signal<SolicitudDisponible[]>([]);
+  protected readonly perfil = signal<PerfilTrabajadorPropio | null>(null);
   protected readonly ofertadas = signal<string[]>([]);
-  protected readonly seleccionada =
-    signal<SolicitudDisponible | null>(null);
+  protected readonly seleccionada = signal<SolicitudDisponible | null>(null);
   protected readonly cargando = signal(true);
   protected readonly enviandoOferta = signal(false);
   protected readonly error = signal('');
@@ -394,10 +276,7 @@ export class TrabajosDisponibles implements OnInit {
   });
 
   protected readonly oferta = this.fb.group({
-    precio_estimado: [
-      0,
-      [Validators.required, Validators.min(0.5)],
-    ],
+    precio_estimado: [0, [Validators.required, Validators.min(0.5)]],
     costo_transporte: [0, [Validators.required, Validators.min(0)]],
     fecha_propuesta: ['', [Validators.required]],
     mensaje: [''],
@@ -405,10 +284,7 @@ export class TrabajosDisponibles implements OnInit {
 
   protected readonly total = computed(() => {
     const valores = this.oferta.getRawValue();
-    return (
-      Number(valores.precio_estimado || 0) +
-      Number(valores.costo_transporte || 0)
-    );
+    return Number(valores.precio_estimado || 0) + Number(valores.costo_transporte || 0);
   });
 
   ngOnInit(): void {
@@ -442,9 +318,7 @@ export class TrabajosDisponibles implements OnInit {
     }
     if (this.oferta.invalid) {
       this.oferta.markAllAsTouched();
-      this.errorOferta.set(
-        'Completa el precio y la fecha propuesta.',
-      );
+      this.errorOferta.set('Completa el precio y la fecha propuesta.');
       return;
     }
     const valores = this.oferta.getRawValue();
@@ -453,9 +327,7 @@ export class TrabajosDisponibles implements OnInit {
       await this.solicitudesService.ofertar(solicitud.id, {
         precio_estimado: Number(valores.precio_estimado),
         costo_transporte: Number(valores.costo_transporte),
-        fecha_propuesta: new Date(
-          valores.fecha_propuesta,
-        ).toISOString(),
+        fecha_propuesta: new Date(valores.fecha_propuesta).toISOString(),
         mensaje: valores.mensaje.trim() || undefined,
       });
       this.ofertadas.update((ids) => [...ids, solicitud.id]);
@@ -473,11 +345,7 @@ export class TrabajosDisponibles implements OnInit {
     this.error.set('');
     try {
       this.zonas.set(await this.zonasService.listar());
-      this.perfil.set(
-        await this.trabajadoresService
-          .perfilPropio()
-          .catch(() => null),
-      );
+      this.perfil.set(await this.trabajadoresService.perfilPropio().catch(() => null));
       await this.cargarSolicitudes();
     } catch (error) {
       this.error.set(mensajeDeError(error));
@@ -487,8 +355,7 @@ export class TrabajosDisponibles implements OnInit {
   }
 
   private async cargarSolicitudes(): Promise<void> {
-    const { zona_id, especialidad } =
-      this.filtros.getRawValue();
+    const { zona_id, especialidad } = this.filtros.getRawValue();
     try {
       this.cargando.set(true);
       this.solicitudes.set(

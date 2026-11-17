@@ -2,11 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import type {
-  PerfilTrabajadorPropio,
-  SolicitudDisponible,
-  Zona,
-} from '../../core/models';
+import type { PerfilTrabajadorPropio, SolicitudDisponible, Zona } from '../../core/models';
 import { SolicitudesService } from '../../core/solicitudes.service';
 import { ToastService } from '../../core/toast.service';
 import { TrabajadoresService } from '../../core/trabajadores.service';
@@ -41,6 +37,15 @@ const PERFIL: PerfilTrabajadorPropio = {
   antecedentes_vencidos: false,
   puede_ofertar: true,
   motivo_bloqueo: null,
+  pausa: {
+    pausado: false,
+    estado: null,
+    inicio: null,
+    vence_en: null,
+    dias_restantes: null,
+    aviso: false,
+    baja_en: null,
+  },
 };
 
 const SOLICITUD: SolicitudDisponible = {
@@ -124,17 +129,12 @@ describe('TrabajosDisponibles', () => {
 
     await componente.enviarOferta();
 
-    expect(solicitudes.ofertar).toHaveBeenCalledWith(
-      'solicitud-1',
-      {
-        precio_estimado: 100,
-        costo_transporte: 10,
-        fecha_propuesta: new Date(
-          '2030-01-01T10:00',
-        ).toISOString(),
-        mensaje: 'Puedo ir mañana',
-      },
-    );
+    expect(solicitudes.ofertar).toHaveBeenCalledWith('solicitud-1', {
+      precio_estimado: 100,
+      costo_transporte: 10,
+      fecha_propuesta: new Date('2030-01-01T10:00').toISOString(),
+      mensaje: 'Puedo ir mañana',
+    });
     expect(componente.ofertadas()).toContain('solicitud-1');
     expect(toast.exito).toHaveBeenCalled();
   });

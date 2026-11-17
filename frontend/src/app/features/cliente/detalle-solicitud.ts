@@ -1,11 +1,4 @@
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
@@ -29,31 +22,15 @@ import { PagosService } from '../../core/pagos.service';
 import { ReputacionService } from '../../core/reputacion.service';
 import { SolicitudesService } from '../../core/solicitudes.service';
 import { ToastService } from '../../core/toast.service';
-import {
-  FechaHoraPipe,
-  FechaPipe,
-  ImagenUrlPipe,
-  MonedaPipe,
-} from '../../shared/pipes';
+import { FechaHoraPipe, FechaPipe, ImagenUrlPipe, MonedaPipe } from '../../shared/pipes';
 
 @Component({
   selector: 'app-detalle-solicitud',
-  imports: [
-    RouterLink,
-    FormsModule,
-    FechaPipe,
-    FechaHoraPipe,
-    ImagenUrlPipe,
-    MonedaPipe,
-  ],
+  imports: [RouterLink, FormsModule, FechaPipe, FechaHoraPipe, ImagenUrlPipe, MonedaPipe],
   template: `
     <section class="pagina">
       <div class="contenedor">
-        <a
-          routerLink="/cliente/mis-solicitudes"
-          class="migaja"
-          >← Volver a mis solicitudes</a
-        >
+        <a routerLink="/cliente/mis-solicitudes" class="migaja">← Volver a mis solicitudes</a>
 
         @if (cargando()) {
           <div class="cargando">
@@ -69,34 +46,21 @@ import {
             <div>
               <div class="fila">
                 <h1>{{ detalle.tipo_problema }}</h1>
-                <span
-                  class="insignia"
-                  [class]="
-                    'insignia ' + claseTono(detalle.estado)
-                  "
-                >
+                <span class="insignia" [class]="'insignia ' + claseTono(detalle.estado)">
                   {{ etiquetaEstado(detalle.estado) }}
                 </span>
                 @if (detalle.urgente) {
-                  <span class="insignia insignia--rojo"
-                    >Urgente</span
-                  >
+                  <span class="insignia insignia--rojo">Urgente</span>
                 }
               </div>
               <p>
-                {{
-                  etiquetaEspecialidad(detalle.especialidad)
-                }}
+                {{ etiquetaEspecialidad(detalle.especialidad) }}
                 · {{ detalle.zona?.nombre }}
               </p>
             </div>
             @if (verSeguimiento()) {
               <a
-                [routerLink]="[
-                  '/cliente/mis-solicitudes',
-                  detalle.id,
-                  'seguimiento',
-                ]"
+                [routerLink]="['/cliente/mis-solicitudes', detalle.id, 'seguimiento']"
                 class="btn btn--primario"
                 >Ver seguimiento</a
               >
@@ -109,70 +73,43 @@ import {
                 <div>
                   <h2 style="margin:0">Pago inicial del 25%</h2>
                   <p class="small muted" style="margin:0.2rem 0 0">
-                    El técnico recibe el 20% y la plataforma
-                    retiene el 5%.
+                    El técnico recibe el 20% y la plataforma retiene el 5%.
                   </p>
                 </div>
-                <span
-                  class="insignia"
-                  [class]="
-                    'insignia ' +
-                    claseTonoPago(pagoActual.estado_qr)
-                  "
-                >
+                <span class="insignia" [class]="'insignia ' + claseTonoPago(pagoActual.estado_qr)">
                   {{ etiquetaEstadoQr(pagoActual.estado_qr) }}
                 </span>
               </div>
 
               <div class="rejilla rejilla--4 mt-2">
                 <div class="estadistica">
-                  <span class="estadistica__texto"
-                    >Precio acordado</span
-                  >
-                  <strong>{{
-                    pagoActual.precio_total_acordado | moneda
-                  }}</strong>
+                  <span class="estadistica__texto">Precio acordado</span>
+                  <strong>{{ pagoActual.precio_total_acordado | moneda }}</strong>
                 </div>
                 <div class="estadistica">
-                  <span class="estadistica__texto"
-                    >Pago por QR (25%)</span
-                  >
-                  <strong>{{
-                    pagoActual.pago_inicial_25 | moneda
-                  }}</strong>
+                  <span class="estadistica__texto">Pago por QR (25%)</span>
+                  <strong>{{ pagoActual.pago_inicial_25 | moneda }}</strong>
                 </div>
                 <div class="estadistica">
-                  <span class="estadistica__texto"
-                    >Parte del técnico (20%)</span
-                  >
-                  <strong>{{
-                    pagoActual.parte_trabajador_20 | moneda
-                  }}</strong>
+                  <span class="estadistica__texto">Parte del técnico (20%)</span>
+                  <strong>{{ pagoActual.parte_trabajador_20 | moneda }}</strong>
                 </div>
                 <div class="estadistica">
-                  <span class="estadistica__texto"
-                    >Saldo en persona (75%)</span
-                  >
-                  <strong>{{
-                    pagoActual.saldo_75 | moneda
-                  }}</strong>
+                  <span class="estadistica__texto">Saldo en persona (75%)</span>
+                  <strong>{{ pagoActual.saldo_75 | moneda }}</strong>
                 </div>
               </div>
 
               @if (pagoActual.estado_qr === 'PAGADO') {
                 <div class="alerta alerta--exito mt-2">
                   <span>
-                    Pago confirmado. La dirección exacta y el
-                    contacto por WhatsApp ya están habilitados en
-                    el seguimiento.
+                    Pago confirmado. La dirección exacta y el contacto por WhatsApp ya están
+                    habilitados en el seguimiento.
                   </span>
                 </div>
               } @else if (pagoActual.estado_qr === 'VENCIDO') {
                 <div class="alerta alerta--aviso mt-2">
-                  <span>
-                    El QR venció. Genera uno nuevo para continuar
-                    con el pago.
-                  </span>
+                  <span> El QR venció. Genera uno nuevo para continuar con el pago. </span>
                 </div>
                 <button
                   type="button"
@@ -201,8 +138,8 @@ import {
                 <div>
                   <h2 style="margin:0">Comparador de ofertas</h2>
                   <p class="small muted" style="margin:0.2rem 0 0">
-                    {{ ofertas().length }} oferta(s) recibida(s).
-                    Compara precio, reputación y fecha propuesta.
+                    {{ ofertas().length }} oferta(s) recibida(s). Compara precio, reputación y fecha
+                    propuesta.
                   </p>
                 </div>
                 <div class="fila">
@@ -211,9 +148,7 @@ import {
                     <button
                       type="button"
                       class="chip"
-                      [class.chip--activo]="
-                        orden() === opcion.valor
-                      "
+                      [class.chip--activo]="orden() === opcion.valor"
                       (click)="orden.set(opcion.valor)"
                     >
                       {{ opcion.etiqueta }}
@@ -232,59 +167,34 @@ import {
                   <div class="vacio__icono">+</div>
                   <h3>Todavía no hay ofertas</h3>
                   <p>
-                    Los técnicos de tu zona están revisando la
-                    solicitud. Te avisaremos cuando llegue la
-                    primera propuesta.
+                    Los técnicos de tu zona están revisando la solicitud. Te avisaremos cuando
+                    llegue la primera propuesta.
                   </p>
                 </div>
               } @else {
                 <div class="rejilla rejilla--2 mt-2">
-                  @for (
-                    oferta of ofertasOrdenadas();
-                    track oferta.id
-                  ) {
+                  @for (oferta of ofertasOrdenadas(); track oferta.id) {
                     <div class="tarjeta tarjeta--plana">
-                      <div
-                        class="fila fila--separada fila--arriba"
-                      >
+                      <div class="fila fila--separada fila--arriba">
                         <div>
-                          <strong>{{
-                            oferta.trabajador.nombre_completo
-                          }}</strong>
-                          <p
-                            class="small muted"
-                            style="margin: 0.2rem 0 0"
-                          >
+                          <strong>{{ oferta.trabajador.nombre_completo }}</strong>
+                          <p class="small muted" style="margin: 0.2rem 0 0">
                             ★
-                            {{
-                              oferta.trabajador.promedio.toFixed(
-                                1
-                              )
-                            }}
-                            · {{
-                              oferta.trabajador
-                                .trabajos_completados
-                            }}
+                            {{ oferta.trabajador.promedio.toFixed(1) }}
+                            · {{ oferta.trabajador.trabajos_completados }}
                             trabajo(s) completado(s)
                           </p>
                         </div>
-                        @if (
-                          oferta.trabajador.nivel_verificacion >= 2
-                        ) {
-                          <span class="insignia insignia--verde"
-                            >Verificado</span
-                          >
+                        @if (oferta.trabajador.nivel_verificacion >= 2) {
+                          <span class="insignia insignia--verde">Verificado</span>
                         } @else {
-                          <span class="insignia insignia--neutro"
-                            >En verificación</span
-                          >
+                          <span class="insignia insignia--neutro">En verificación</span>
                         }
                       </div>
 
                       <div class="fila mt-2">
                         @for (
-                          especialidad of oferta.trabajador
-                            .especialidades;
+                          especialidad of oferta.trabajador.especialidades;
                           track especialidad
                         ) {
                           <span class="chip chip--activo">{{
@@ -295,35 +205,21 @@ import {
 
                       <p class="small muted mt-1">
                         Zonas:
-                        {{
-                          nombresZonas(oferta.trabajador.zonas)
-                        }}
+                        {{ nombresZonas(oferta.trabajador.zonas) }}
                       </p>
 
                       <div class="rejilla rejilla--3 mt-2">
                         <div class="estadistica">
-                          <span class="estadistica__texto"
-                            >Precio</span
-                          >
-                          <strong>{{
-                            oferta.precio_estimado | moneda
-                          }}</strong>
+                          <span class="estadistica__texto">Precio</span>
+                          <strong>{{ oferta.precio_estimado | moneda }}</strong>
                         </div>
                         <div class="estadistica">
-                          <span class="estadistica__texto"
-                            >Transporte</span
-                          >
-                          <strong>{{
-                            oferta.costo_transporte | moneda
-                          }}</strong>
+                          <span class="estadistica__texto">Transporte</span>
+                          <strong>{{ oferta.costo_transporte | moneda }}</strong>
                         </div>
                         <div class="estadistica">
-                          <span class="estadistica__texto"
-                            >Total estimado</span
-                          >
-                          <strong>{{
-                            totalOferta(oferta) | moneda
-                          }}</strong>
+                          <span class="estadistica__texto">Total estimado</span>
+                          <strong>{{ totalOferta(oferta) | moneda }}</strong>
                         </div>
                       </div>
 
@@ -332,9 +228,7 @@ import {
                         {{ oferta.fecha_propuesta | fechaHora }}
                       </p>
                       @if (oferta.mensaje) {
-                        <p class="small mt-1">
-                          “{{ oferta.mensaje }}”
-                        </p>
+                        <p class="small mt-1">“{{ oferta.mensaje }}”</p>
                       }
 
                       @if (puedeElegir()) {
@@ -345,13 +239,8 @@ import {
                         >
                           Elegir esta oferta
                         </button>
-                      } @else if (
-                        oferta.estado === 'ELEGIDA'
-                      ) {
-                        <span
-                          class="insignia insignia--verde mt-2"
-                          >Oferta elegida</span
-                        >
+                      } @else if (oferta.estado === 'ELEGIDA') {
+                        <span class="insignia insignia--verde mt-2">Oferta elegida</span>
                       }
                     </div>
                   }
@@ -361,8 +250,7 @@ import {
               @if (solicitud()?.estado === 'CON_OFERTAS') {
                 <div class="alerta alerta--info mt-2">
                   <span>
-                    Al elegir una oferta se genera el QR del 25%.
-                    Las demás ofertas se cerrarán
+                    Al elegir una oferta se genera el QR del 25%. Las demás ofertas se cerrarán
                     automáticamente.
                   </span>
                 </div>
@@ -377,14 +265,8 @@ import {
                 <p class="mt-1">{{ detalle.descripcion }}</p>
                 @if (detalle.fotos_urls.length) {
                   <div class="galeria mt-2">
-                    @for (
-                      foto of detalle.fotos_urls;
-                      track foto
-                    ) {
-                      <img
-                        [src]="foto | imagenUrl"
-                        alt="Foto de la solicitud"
-                      />
+                    @for (foto of detalle.fotos_urls; track foto) {
+                      <img [src]="foto | imagenUrl" alt="Foto de la solicitud" />
                     }
                   </div>
                 }
@@ -395,21 +277,15 @@ import {
                 <div class="pila mt-2">
                   <div class="fila fila--separada">
                     <span class="muted">Fecha preferida</span>
-                    <strong>{{
-                      detalle.fecha_cita_preferida | fechaHora
-                    }}</strong>
+                    <strong>{{ detalle.fecha_cita_preferida | fechaHora }}</strong>
                   </div>
                   <div class="fila fila--separada">
                     <span class="muted">Publicada</span>
-                    <strong>{{
-                      detalle.creada_en | fechaHora
-                    }}</strong>
+                    <strong>{{ detalle.creada_en | fechaHora }}</strong>
                   </div>
                   <div class="fila fila--separada">
                     <span class="muted">Vence</span>
-                    <strong>{{
-                      detalle.vence_en | fechaHora
-                    }}</strong>
+                    <strong>{{ detalle.vence_en | fechaHora }}</strong>
                   </div>
                   <div class="fila fila--separada">
                     <span class="muted">Ofertas recibidas</span>
@@ -426,9 +302,8 @@ import {
                   </p>
                   <div class="alerta alerta--exito">
                     <span>
-                      La solicitud está confirmada: el técnico ya
-                      puede ver tu dirección y coordinar por
-                      WhatsApp.
+                      La solicitud está confirmada: el técnico ya puede ver tu dirección y coordinar
+                      por WhatsApp.
                     </span>
                   </div>
                   @if (detalle.whatsapp_url) {
@@ -444,9 +319,8 @@ import {
                   <div class="alerta alerta--aviso">
                     <span>
                       La dirección
-                      <strong>permanece oculta</strong> hasta que
-                      la solicitud esté confirmada con el pago del
-                      25% por QR (RN11).
+                      <strong>permanece oculta</strong> hasta que la solicitud esté confirmada con
+                      el pago del 25% por QR (RN11).
                     </span>
                   </div>
                 }
@@ -457,26 +331,16 @@ import {
               <div class="tarjeta">
                 <h2>Historial de estados</h2>
                 @if (detalle.historial.length === 0) {
-                  <p class="small muted">
-                    Todavía no hay eventos registrados.
-                  </p>
+                  <p class="small muted">Todavía no hay eventos registrados.</p>
                 } @else {
                   <ul class="linea-tiempo mt-2">
-                    @for (
-                      evento of detalle.historial;
-                      track evento.fecha_hora + evento.estado
-                    ) {
+                    @for (evento of detalle.historial; track evento.fecha_hora + evento.estado) {
                       <li>
-                        <strong>{{
-                          etiquetaEstado(evento.estado)
-                        }}</strong>
+                        <strong>{{ etiquetaEstado(evento.estado) }}</strong>
                         <span>
                           {{ evento.fecha_hora | fecha }}
                           ·
-                          {{
-                            evento.usuario_nombre ??
-                              'Sistema'
-                          }}
+                          {{ evento.usuario_nombre ?? 'Sistema' }}
                         </span>
                       </li>
                     }
@@ -496,7 +360,7 @@ import {
                       <div class="campo">
                         <label class="etiqueta">Estrellas</label>
                         <div class="fila" style="gap: 0.5rem">
-                          @for (n of [1,2,3,4,5]; track n) {
+                          @for (n of [1, 2, 3, 4, 5]; track n) {
                             <button
                               type="button"
                               class="btn btn--contorno btn--sm"
@@ -566,7 +430,11 @@ import {
                         <div class="galeria mt-1">
                           @for (foto of reclamoEvidencia(); track foto) {
                             <div>
-                              <img [src]="foto" alt="Evidencia" style="width: 80px; height: 80px; object-fit: cover" />
+                              <img
+                                [src]="foto"
+                                alt="Evidencia"
+                                style="width: 80px; height: 80px; object-fit: cover"
+                              />
                               <button
                                 type="button"
                                 class="enlace-boton small"
@@ -582,7 +450,7 @@ import {
                     <button
                       type="button"
                       class="btn btn--peligro btn--bloque mt-2"
-                      [disabled]="reclamando() || (reclamoMotivo().trim().length < 10)"
+                      [disabled]="reclamando() || reclamoMotivo().trim().length < 10"
                       (click)="reclamar(reclamoMotivo(), reclamoEvidencia())"
                     >
                       {{ reclamando() ? 'Enviando…' : 'Enviar reclamo' }}
@@ -600,31 +468,22 @@ import {
                 <h3>¿Qué sigue?</h3>
                 <p class="small muted">
                   @if (verSeguimiento()) {
-                    Revisa el seguimiento para coordinar el
-                    trabajo, registrar el precio final y cerrar el
-                    cobro.
+                    Revisa el seguimiento para coordinar el trabajo, registrar el precio final y
+                    cerrar el cobro.
                   } @else {
-                    Cuando elijas una oferta podrás pagar el 25%
-                    por QR. El seguimiento se habilita al
-                    confirmar el pago.
+                    Cuando elijas una oferta podrás pagar el 25% por QR. El seguimiento se habilita
+                    al confirmar el pago.
                   }
                 </p>
                 @if (verSeguimiento()) {
                   <a
-                    [routerLink]="[
-                      '/cliente/mis-solicitudes',
-                      detalle.id,
-                      'seguimiento',
-                    ]"
+                    [routerLink]="['/cliente/mis-solicitudes', detalle.id, 'seguimiento']"
                     class="btn btn--primario btn--bloque"
                   >
                     Ir al seguimiento
                   </a>
                 } @else {
-                  <a
-                    routerLink="/cliente/publicar"
-                    class="btn btn--contorno btn--bloque"
-                  >
+                  <a routerLink="/cliente/publicar" class="btn btn--contorno btn--bloque">
                     Publicar otra solicitud
                   </a>
                 }
@@ -637,19 +496,10 @@ import {
 
     @if (ofertaElegida(); as oferta) {
       <div class="modal-fondo" (click)="cerrarConfirmacion()">
-        <div
-          class="modal"
-          role="dialog"
-          aria-modal="true"
-          (click)="$event.stopPropagation()"
-        >
+        <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
           <div class="fila fila--separada">
             <h2 style="margin:0">Confirmar oferta</h2>
-            <button
-              type="button"
-              class="enlace-boton"
-              (click)="cerrarConfirmacion()"
-            >
+            <button type="button" class="enlace-boton" (click)="cerrarConfirmacion()">
               Cerrar
             </button>
           </div>
@@ -661,28 +511,22 @@ import {
           <div class="rejilla rejilla--2 mt-2">
             <div class="estadistica">
               <span class="estadistica__texto">Precio</span>
-              <strong>{{
-                oferta.precio_estimado | moneda
-              }}</strong>
+              <strong>{{ oferta.precio_estimado | moneda }}</strong>
             </div>
             <div class="estadistica">
-              <span class="estadistica__texto"
-                >Pago inicial (25%)</span
-              >
+              <span class="estadistica__texto">Pago inicial (25%)</span>
               <strong>{{ pagoInicialEstimado(oferta) | moneda }}</strong>
             </div>
           </div>
           <p class="small muted" style="margin-top: 0.4rem">
-            El 25% se calcula sobre el precio ofertado (con
-            recargo urgente si aplica) y no incluye el
-            transporte.
+            El 25% se calcula sobre el precio ofertado (con recargo urgente si aplica) y no incluye
+            el transporte.
           </p>
 
           <div class="alerta alerta--info mt-2">
             <span>
-              Al confirmar se generará el QR del 25%. Las demás
-              ofertas se cerrarán y el técnico verá tu dirección
-              exacta cuando el pago se acredite.
+              Al confirmar se generará el QR del 25%. Las demás ofertas se cerrarán y el técnico
+              verá tu dirección exacta cuando el pago se acredite.
             </span>
           </div>
 
@@ -706,21 +550,10 @@ import {
 
     @if (mostrarQr() && pago(); as pagoActual) {
       <div class="modal-fondo" (click)="cerrarQr()">
-        <div
-          class="modal"
-          role="dialog"
-          aria-modal="true"
-          (click)="$event.stopPropagation()"
-        >
+        <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
           <div class="fila fila--separada">
             <h2 style="margin:0">Pagar el 25% por QR</h2>
-            <button
-              type="button"
-              class="enlace-boton"
-              (click)="cerrarQr()"
-            >
-              Cerrar
-            </button>
+            <button type="button" class="enlace-boton" (click)="cerrarQr()">Cerrar</button>
           </div>
 
           <div class="pila" style="align-items: center">
@@ -732,38 +565,21 @@ import {
               />
             }
             <div class="estadistica" style="text-align: center">
-              <span class="estadistica__texto"
-                >Monto a pagar</span
-              >
-              <strong class="estadistica__valor">{{
-                pagoActual.pago_inicial_25 | moneda
-              }}</strong>
+              <span class="estadistica__texto">Monto a pagar</span>
+              <strong class="estadistica__valor">{{ pagoActual.pago_inicial_25 | moneda }}</strong>
             </div>
-            <span
-              class="insignia"
-              [class]="
-                'insignia ' +
-                claseTonoPago(pagoActual.estado_qr)
-              "
-            >
+            <span class="insignia" [class]="'insignia ' + claseTonoPago(pagoActual.estado_qr)">
               {{ etiquetaEstadoQr(pagoActual.estado_qr) }}
             </span>
-            @if (
-              pagoActual.estado_qr === 'PENDIENTE' &&
-              segundosQr() > 0
-            ) {
-              <p class="small muted">
-                El QR vence en {{ tiempoQr() }}
-              </p>
+            @if (pagoActual.estado_qr === 'PENDIENTE' && segundosQr() > 0) {
+              <p class="small muted">El QR vence en {{ tiempoQr() }}</p>
             }
           </div>
 
           @if (pagoActual.estado_qr === 'PENDIENTE') {
             @if (segundosQr() <= 0) {
               <div class="alerta alerta--aviso mt-2">
-                <span>
-                  El QR venció. Genera uno nuevo para continuar.
-                </span>
+                <span> El QR venció. Genera uno nuevo para continuar. </span>
               </div>
               <button
                 type="button"
@@ -780,33 +596,20 @@ import {
                 [disabled]="procesando()"
                 (click)="simularPago()"
               >
-                {{
-                  procesando()
-                    ? 'Confirmando pago…'
-                    : 'Simular pago del banco'
-                }}
+                {{ procesando() ? 'Confirmando pago…' : 'Simular pago del banco' }}
               </button>
-              <p
-                class="small muted"
-                style="text-align: center; margin-top: 0.5rem"
-              >
-                Botón de simulación: representa la confirmación
-                del banco.
+              <p class="small muted" style="text-align: center; margin-top: 0.5rem">
+                Botón de simulación: representa la confirmación del banco.
               </p>
             }
           } @else if (pagoActual.estado_qr === 'PAGADO') {
             <div class="alerta alerta--exito mt-2">
               <span>
-                Pago confirmado. Ya puedes coordinar con el
-                técnico desde el seguimiento.
+                Pago confirmado. Ya puedes coordinar con el técnico desde el seguimiento.
               </span>
             </div>
             <a
-              [routerLink]="[
-                '/cliente/mis-solicitudes',
-                pagoActual.solicitud_id,
-                'seguimiento',
-              ]"
+              [routerLink]="['/cliente/mis-solicitudes', pagoActual.solicitud_id, 'seguimiento']"
               class="btn btn--primario btn--bloque mt-2"
             >
               Ir al seguimiento
@@ -819,32 +622,24 @@ import {
 })
 export class DetalleSolicitud implements OnInit {
   private readonly ruta = inject(ActivatedRoute);
-  private readonly solicitudesService = inject(
-    SolicitudesService,
-  );
+  private readonly solicitudesService = inject(SolicitudesService);
   private readonly pagosService = inject(PagosService);
   private readonly reputacionService = inject(ReputacionService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly solicitud =
-    signal<SolicitudDetalle | null>(null);
-  protected readonly ofertas = signal<OfertaConTrabajador[]>(
-    [],
-  );
+  protected readonly solicitud = signal<SolicitudDetalle | null>(null);
+  protected readonly ofertas = signal<OfertaConTrabajador[]>([]);
   protected readonly pago = signal<Pago | null>(null);
   protected readonly cargando = signal(true);
   protected readonly cargandoOfertas = signal(false);
   protected readonly procesando = signal(false);
   protected readonly error = signal('');
   protected readonly errorPago = signal('');
-  protected readonly ofertaElegida =
-    signal<OfertaConTrabajador | null>(null);
+  protected readonly ofertaElegida = signal<OfertaConTrabajador | null>(null);
   protected readonly mostrarQr = signal(false);
   protected readonly segundosQr = signal(0);
-  protected readonly orden = signal<'precio' | 'reputacion'>(
-    'precio',
-  );
+  protected readonly orden = signal<'precio' | 'reputacion'>('precio');
 
   protected readonly calificando = signal(false);
   protected readonly reclamando = signal(false);
@@ -858,8 +653,7 @@ export class DetalleSolicitud implements OnInit {
   protected readonly etiquetaEstado = etiquetaEstadoSolicitud;
   protected readonly etiquetaEstadoQr = etiquetaEstadoQr;
   protected readonly etiquetaEstadoReclamo = etiquetaEstadoReclamo;
-  protected readonly etiquetaEspecialidad =
-    etiquetaEspecialidad;
+  protected readonly etiquetaEspecialidad = etiquetaEspecialidad;
   protected readonly claseTono = claseTonoSolicitud;
   protected readonly claseTonoPago = claseTonoPago;
   protected readonly claseTonoReclamo = claseTonoReclamo;
@@ -872,16 +666,12 @@ export class DetalleSolicitud implements OnInit {
     { valor: 'reputacion', etiqueta: 'Reputación' },
   ];
 
-  private intervaloCodigo: ReturnType<typeof setInterval> | null =
-    null;
+  private intervaloCodigo: ReturnType<typeof setInterval> | null = null;
 
   protected readonly direccionVisible = computed(() =>
-    [
-      'CONFIRMADA',
-      'EN_PROGRESO',
-      'TERMINADA_TRABAJADOR',
-      'FINALIZADA',
-    ].includes(this.solicitud()?.estado ?? ''),
+    ['CONFIRMADA', 'EN_PROGRESO', 'TERMINADA_TRABAJADOR', 'FINALIZADA'].includes(
+      this.solicitud()?.estado ?? '',
+    ),
   );
 
   protected readonly verSeguimiento = computed(() =>
@@ -896,25 +686,18 @@ export class DetalleSolicitud implements OnInit {
   );
 
   protected readonly mostrarComparador = computed(() =>
-    ['PUBLICADA', 'CON_OFERTAS', 'PENDIENTE_PAGO'].includes(
-      this.solicitud()?.estado ?? '',
-    ),
+    ['PUBLICADA', 'CON_OFERTAS', 'PENDIENTE_PAGO'].includes(this.solicitud()?.estado ?? ''),
   );
 
   protected readonly puedeElegir = computed(() =>
-    ['PUBLICADA', 'CON_OFERTAS'].includes(
-      this.solicitud()?.estado ?? '',
-    ),
+    ['PUBLICADA', 'CON_OFERTAS'].includes(this.solicitud()?.estado ?? ''),
   );
 
   protected readonly puedeCalificar = computed(() => {
     const estado = this.solicitud()?.estado;
-    return [
-      'CONFIRMADA',
-      'EN_PROGRESO',
-      'TERMINADA_TRABAJADOR',
-      'FINALIZADA',
-    ].includes(estado ?? '');
+    return ['CONFIRMADA', 'EN_PROGRESO', 'TERMINADA_TRABAJADOR', 'FINALIZADA'].includes(
+      estado ?? '',
+    );
   });
 
   protected readonly puedeReclamar = computed(() => {
@@ -923,9 +706,7 @@ export class DetalleSolicitud implements OnInit {
     if (estado !== 'FINALIZADA' || !cerradaEn) {
       return false;
     }
-    const dias = Math.floor(
-      (Date.now() - new Date(cerradaEn).getTime()) / (1000 * 60 * 60 * 24),
-    );
+    const dias = Math.floor((Date.now() - new Date(cerradaEn).getTime()) / (1000 * 60 * 60 * 24));
     return dias <= 7;
   });
 
@@ -935,22 +716,17 @@ export class DetalleSolicitud implements OnInit {
       return lista.sort(
         (a, b) =>
           b.trabajador.promedio - a.trabajador.promedio ||
-          b.trabajador.trabajos_completados -
-            a.trabajador.trabajos_completados,
+          b.trabajador.trabajos_completados - a.trabajador.trabajos_completados,
       );
     }
-    return lista.sort(
-      (a, b) => this.totalOferta(a) - this.totalOferta(b),
-    );
+    return lista.sort((a, b) => this.totalOferta(a) - this.totalOferta(b));
   });
 
   protected readonly yaCalificoHoy = computed(() => {
     const detalle = this.solicitud();
     if (!detalle) return false;
     return this.misCalificaciones().some(
-      (c) =>
-        c.solicitud_id === detalle.id &&
-        c.fecha === new Date().toISOString().split('T')[0],
+      (c) => c.solicitud_id === detalle.id && c.fecha === new Date().toISOString().split('T')[0],
     );
   });
 
@@ -975,9 +751,7 @@ export class DetalleSolicitud implements OnInit {
     return oferta.precio_estimado + oferta.costo_transporte;
   }
 
-  protected pagoInicialEstimado(
-    oferta: OfertaConTrabajador,
-  ): number {
+  protected pagoInicialEstimado(oferta: OfertaConTrabajador): number {
     const precio = this.solicitud()?.urgente
       ? oferta.precio_estimado * 1.1
       : oferta.precio_estimado;
@@ -985,9 +759,7 @@ export class DetalleSolicitud implements OnInit {
     return Math.round(total * 0.25 * 2) / 2;
   }
 
-  protected nombresZonas(
-    zonas: Array<{ nombre: string }>,
-  ): string {
+  protected nombresZonas(zonas: Array<{ nombre: string }>): string {
     if (zonas.length === 0) {
       return 'sin zonas registradas';
     }
@@ -1015,17 +787,12 @@ export class DetalleSolicitud implements OnInit {
     this.procesando.set(true);
     this.errorPago.set('');
     try {
-      const pago = await this.solicitudesService.elegirOferta(
-        detalle.id,
-        oferta.id,
-      );
+      const pago = await this.solicitudesService.elegirOferta(detalle.id, oferta.id);
       this.pago.set(pago);
       this.ofertaElegida.set(null);
       this.mostrarQr.set(true);
       this.iniciarContador();
-      this.toast.exito(
-        'Oferta elegida. Escanea o simula el pago del QR.',
-      );
+      this.toast.exito('Oferta elegida. Escanea o simula el pago del QR.');
       await this.cargar();
     } catch (error) {
       this.errorPago.set(mensajeDeError(error));
@@ -1054,13 +821,10 @@ export class DetalleSolicitud implements OnInit {
     this.procesando.set(true);
     this.errorPago.set('');
     try {
-      const actualizado =
-        await this.pagosService.confirmarPago(pago.id);
+      const actualizado = await this.pagosService.confirmarPago(pago.id);
       this.pago.set(actualizado);
       this.detenerContador();
-      this.toast.exito(
-        'Pago del 25% confirmado. El técnico ya puede ver tu dirección.',
-      );
+      this.toast.exito('Pago del 25% confirmado. El técnico ya puede ver tu dirección.');
       await this.cargar();
       this.mostrarQr.set(false);
     } catch (error) {
@@ -1079,21 +843,13 @@ export class DetalleSolicitud implements OnInit {
     this.procesando.set(true);
     this.errorPago.set('');
     try {
-      const ofertas =
-        await this.solicitudesService.ofertas(detalle.id);
+      const ofertas = await this.solicitudesService.ofertas(detalle.id);
       this.ofertas.set(ofertas);
-      const elegida = ofertas.find(
-        (oferta) => oferta.estado === 'ELEGIDA',
-      );
+      const elegida = ofertas.find((oferta) => oferta.estado === 'ELEGIDA');
       if (!elegida) {
-        throw new Error(
-          'No se encontró la oferta elegida para regenerar el QR.',
-        );
+        throw new Error('No se encontró la oferta elegida para regenerar el QR.');
       }
-      const pago = await this.solicitudesService.elegirOferta(
-        detalle.id,
-        elegida.id,
-      );
+      const pago = await this.solicitudesService.elegirOferta(detalle.id, elegida.id);
       this.pago.set(pago);
       this.mostrarQr.set(true);
       this.iniciarContador();
@@ -1131,23 +887,15 @@ export class DetalleSolicitud implements OnInit {
     }
   }
 
-  private async cargarOfertas(
-    detalle: SolicitudDetalle,
-  ): Promise<void> {
-    if (
-      !['PUBLICADA', 'CON_OFERTAS', 'PENDIENTE_PAGO'].includes(
-        detalle.estado,
-      )
-    ) {
+  private async cargarOfertas(detalle: SolicitudDetalle): Promise<void> {
+    if (!['PUBLICADA', 'CON_OFERTAS', 'PENDIENTE_PAGO'].includes(detalle.estado)) {
       this.ofertas.set([]);
       return;
     }
 
     this.cargandoOfertas.set(true);
     try {
-      this.ofertas.set(
-        await this.solicitudesService.ofertas(detalle.id),
-      );
+      this.ofertas.set(await this.solicitudesService.ofertas(detalle.id));
     } catch {
       this.ofertas.set([]);
     } finally {
@@ -1155,9 +903,7 @@ export class DetalleSolicitud implements OnInit {
     }
   }
 
-  private async cargarPago(
-    detalle: SolicitudDetalle,
-  ): Promise<void> {
+  private async cargarPago(detalle: SolicitudDetalle): Promise<void> {
     if (
       ![
         'PENDIENTE_PAGO',
@@ -1173,9 +919,7 @@ export class DetalleSolicitud implements OnInit {
     }
 
     try {
-      const resultado = await this.solicitudesService.pago(
-        detalle.id,
-      );
+      const resultado = await this.solicitudesService.pago(detalle.id);
       this.pago.set(resultado.pago);
       if (resultado.pago.estado_qr === 'PENDIENTE') {
         this.iniciarContador();
@@ -1292,12 +1036,7 @@ export class DetalleSolicitud implements OnInit {
       this.segundosQr.set(0);
       return;
     }
-    const restante = Math.max(
-      0,
-      Math.floor(
-        (new Date(vence).getTime() - Date.now()) / 1000,
-      ),
-    );
+    const restante = Math.max(0, Math.floor((new Date(vence).getTime() - Date.now()) / 1000));
     this.segundosQr.set(restante);
   }
 

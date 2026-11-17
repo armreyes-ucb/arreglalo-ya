@@ -1,8 +1,5 @@
 import { inject } from '@angular/core';
-import {
-  type CanActivateFn,
-  Router,
-} from '@angular/router';
+import { type CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { panelDeRol } from './catalogos';
 import type { Rol } from './models';
@@ -41,9 +38,7 @@ export function roleGuard(...roles: Rol[]): CanActivateFn {
     if (activo && roles.includes(activo)) {
       return true;
     }
-    const asignado = roles.find((rol) =>
-      auth.roles().includes(rol),
-    );
+    const asignado = roles.find((rol) => auth.roles().includes(rol));
     if (asignado) {
       return router.createUrlTree([panelDeRol(asignado)], {
         queryParams: { aviso: 'rol' },

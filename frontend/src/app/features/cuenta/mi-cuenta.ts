@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -25,14 +19,12 @@ import { ToastService } from '../../core/toast.service';
             <span class="migaja">Cuenta</span>
             <h1>Borrar mi cuenta</h1>
             <p>
-              Esta acción es irreversible. Se anonimizarán tus datos personales
-              y se cerrará tu sesión. Tu historial de solicitudes, pagos y
-              calificaciones se conservará de forma anónima.
+              Esta acción es irreversible. Se anonimizarán tus datos personales y se cerrará tu
+              sesión. Tu historial de solicitudes, pagos y calificaciones se conservará de forma
+              anónima.
             </p>
           </div>
-          <a [routerLink]="panel()" class="btn btn--contorno"
-            >Volver a mi panel</a
-          >
+          <a [routerLink]="panel()" class="btn btn--contorno">Volver a mi panel</a>
         </div>
 
         @if (cargando()) {
@@ -63,8 +55,8 @@ import { ToastService } from '../../core/toast.service';
           <div class="tarjeta">
             <h2>Confirmar eliminación</h2>
             <p class="small muted mt-1">
-              Escribe tu contraseña actual para confirmar que deseas borrar tu
-              cuenta permanentemente.
+              Escribe tu contraseña actual para confirmar que deseas borrar tu cuenta
+              permanentemente.
             </p>
             <div class="campo mt-2">
               <label class="etiqueta" for="password">Contraseña</label>
@@ -78,13 +70,7 @@ import { ToastService } from '../../core/toast.service';
               />
             </div>
             <div class="fila mt-2" style="justify-content: flex-end">
-              <button
-                type="button"
-                class="btn btn--contorno"
-                (click)="cancelar()"
-              >
-                Cancelar
-              </button>
+              <button type="button" class="btn btn--contorno" (click)="cancelar()">Cancelar</button>
               <button
                 type="button"
                 class="btn btn--peligro"

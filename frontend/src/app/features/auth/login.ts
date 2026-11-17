@@ -1,19 +1,6 @@
-import {
-  Component,
-  inject,
-  OnInit,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import {
-  ActivatedRoute,
-  Router,
-  RouterLink,
-} from '@angular/router';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { panelDeRol } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
@@ -29,9 +16,7 @@ import { ToastService } from '../../core/toast.service';
           <div class="centrado mb-2">
             <span class="monograma">AY</span>
             <h1 class="mt-2">Bienvenido de nuevo</h1>
-            <p class="muted">
-              Ingresa con tu teléfono y contraseña para continuar.
-            </p>
+            <p class="muted">Ingresa con tu teléfono y contraseña para continuar.</p>
           </div>
 
           @if (aviso()) {
@@ -46,15 +31,9 @@ import { ToastService } from '../../core/toast.service';
             </div>
           }
 
-          <form
-            class="formulario"
-            [formGroup]="formulario"
-            (ngSubmit)="ingresar()"
-          >
+          <form class="formulario" [formGroup]="formulario" (ngSubmit)="ingresar()">
             <div class="campo">
-              <label class="etiqueta" for="telefono"
-                >Teléfono</label
-              >
+              <label class="etiqueta" for="telefono">Teléfono</label>
               <input
                 id="telefono"
                 type="tel"
@@ -63,20 +42,13 @@ import { ToastService } from '../../core/toast.service';
                 placeholder="+591 700 00000"
                 autocomplete="tel"
               />
-              @if (
-                formulario.controls.telefono.touched &&
-                formulario.controls.telefono.invalid
-              ) {
-                <span class="error-campo">
-                  Ingresa un teléfono válido (7 a 15 dígitos).
-                </span>
+              @if (formulario.controls.telefono.touched && formulario.controls.telefono.invalid) {
+                <span class="error-campo"> Ingresa un teléfono válido (7 a 15 dígitos). </span>
               }
             </div>
 
             <div class="campo">
-              <label class="etiqueta" for="password"
-                >Contraseña</label
-              >
+              <label class="etiqueta" for="password">Contraseña</label>
               <input
                 id="password"
                 type="password"
@@ -85,13 +57,8 @@ import { ToastService } from '../../core/toast.service';
                 placeholder="Tu contraseña"
                 autocomplete="current-password"
               />
-              @if (
-                formulario.controls.password.touched &&
-                formulario.controls.password.invalid
-              ) {
-                <span class="error-campo">
-                  Escribe tu contraseña.
-                </span>
+              @if (formulario.controls.password.touched && formulario.controls.password.invalid) {
+                <span class="error-campo"> Escribe tu contraseña. </span>
               }
             </div>
 
@@ -106,11 +73,7 @@ import { ToastService } from '../../core/toast.service';
 
           <p class="centrado small muted mt-3">
             ¿Aún no tienes cuenta?
-            <a
-              [routerLink]="['/registro']"
-              [queryParams]="
-                volver() ? { volver: volver() } : {}
-              "
+            <a [routerLink]="['/registro']" [queryParams]="volver() ? { volver: volver() } : {}"
               >Crear una cuenta gratis</a
             >
           </p>
@@ -140,27 +103,19 @@ export class Login implements OnInit {
   });
 
   ngOnInit(): void {
-    const motivo =
-      this.ruta.snapshot.queryParamMap.get('motivo');
+    const motivo = this.ruta.snapshot.queryParamMap.get('motivo');
     if (motivo === 'sesion-expirada') {
-      this.aviso.set(
-        'Tu sesión expiró. Vuelve a ingresar para continuar.',
-      );
+      this.aviso.set('Tu sesión expiró. Vuelve a ingresar para continuar.');
     }
-    const registro =
-      this.ruta.snapshot.queryParamMap.get('registro');
+    const registro = this.ruta.snapshot.queryParamMap.get('registro');
     if (registro === 'exitoso') {
-      this.aviso.set(
-        'Tu cuenta fue creada. Ingresa con tu teléfono y contraseña.',
-      );
+      this.aviso.set('Tu cuenta fue creada. Ingresa con tu teléfono y contraseña.');
     }
     const volver = this.ruta.snapshot.queryParamMap.get('volver');
     if (volver && this.esRutaInterna(volver)) {
       this.volver.set(volver);
       if (!this.aviso() && volver === '/activar-trabajador') {
-        this.aviso.set(
-          'Ingresa o crea una cuenta para activarte como trabajador.',
-        );
+        this.aviso.set('Ingresa o crea una cuenta para activarte como trabajador.');
       }
     }
   }
@@ -171,18 +126,11 @@ export class Login implements OnInit {
       this.formulario.markAllAsTouched();
       return;
     }
-    const { telefono, password } =
-      this.formulario.getRawValue();
+    const { telefono, password } = this.formulario.getRawValue();
     try {
-      const respuesta = await this.auth.login(
-        telefono,
-        password,
-      );
-      this.toast.exito(
-        `Hola, ${respuesta.usuario.nombre_completo.split(' ')[0]}`,
-      );
-      const destino =
-        this.volver() || panelDeRol(respuesta.rol_activo);
+      const respuesta = await this.auth.login(telefono, password);
+      this.toast.exito(`Hola, ${respuesta.usuario.nombre_completo.split(' ')[0]}`);
+      const destino = this.volver() || panelDeRol(respuesta.rol_activo);
       await this.router.navigateByUrl(destino);
     } catch (error) {
       this.error.set(mensajeDeError(error));

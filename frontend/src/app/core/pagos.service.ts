@@ -9,20 +9,12 @@ export class PagosService {
   private readonly http = inject(HttpClient);
 
   confirmarPago(pagoId: string): Promise<Pago> {
-    return firstValueFrom(
-      this.http.post<Pago>(
-        `${API_URL}/pagos/${pagoId}/webhook-confirmar`,
-        {},
-      ),
-    );
+    return firstValueFrom(this.http.post<Pago>(`${API_URL}/pagos/${pagoId}/webhook-confirmar`, {}));
   }
 
   marcarYaPague(pagoId: string): Promise<ResolucionPagoFinal> {
     return firstValueFrom(
-      this.http.patch<ResolucionPagoFinal>(
-        `${API_URL}/pagos/${pagoId}/ya-pague`,
-        {},
-      ),
+      this.http.patch<ResolucionPagoFinal>(`${API_URL}/pagos/${pagoId}/ya-pague`, {}),
     );
   }
 
@@ -32,10 +24,10 @@ export class PagosService {
     motivo?: string,
   ): Promise<ResolucionPagoFinal> {
     return firstValueFrom(
-      this.http.patch<ResolucionPagoFinal>(
-        `${API_URL}/pagos/${pagoId}/confirmar-75`,
-        { confirmado, motivo },
-      ),
+      this.http.patch<ResolucionPagoFinal>(`${API_URL}/pagos/${pagoId}/confirmar-75`, {
+        confirmado,
+        motivo,
+      }),
     );
   }
 }

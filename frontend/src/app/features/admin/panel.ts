@@ -14,14 +14,11 @@ import { AuthService } from '../../core/auth.service';
             <h1>Panel de administración</h1>
             <p>
               Hola,
-              {{ auth.usuario()?.nombre_completo }}. Este panel
-              concentrará la configuración y los reportes de la
-              plataforma.
+              {{ auth.usuario()?.nombre_completo }}. Este panel concentrará la configuración y los
+              reportes de la plataforma.
             </p>
           </div>
-          <a
-            routerLink="/supervisor/verificaciones"
-            class="btn btn--contorno"
+          <a routerLink="/supervisor/verificaciones" class="btn btn--contorno"
             >Ir a verificaciones</a
           >
         </div>
@@ -30,7 +27,9 @@ import { AuthService } from '../../core/auth.service';
           <div class="tarjeta">
             <h3>Supervisores</h3>
             <p class="small muted">CRUD y contraseñas temporales</p>
-            <a routerLink="/admin/supervisores" class="btn btn--contorno btn--sm mt-1">Gestionar supervisores</a>
+            <a routerLink="/admin/supervisores" class="btn btn--contorno btn--sm mt-1"
+              >Gestionar supervisores</a
+            >
           </div>
           <div class="tarjeta">
             <h3>Zonas y especialidades</h3>
@@ -40,7 +39,9 @@ import { AuthService } from '../../core/auth.service';
           <div class="tarjeta">
             <h3>Parámetros de la plataforma</h3>
             <p class="small muted">Comisión, redondeo, plazos</p>
-            <a routerLink="/admin/configuracion" class="btn btn--contorno btn--sm mt-1">Configurar</a>
+            <a routerLink="/admin/configuracion" class="btn btn--contorno btn--sm mt-1"
+              >Configurar</a
+            >
           </div>
           <div class="tarjeta">
             <h3>Reportes</h3>
@@ -51,13 +52,8 @@ import { AuthService } from '../../core/auth.service';
 
         <div class="tarjeta">
           <h3>Verificaciones</h3>
-          <p class="small muted">
-            Acceso directo a la bandeja de expedientes de
-            trabajadores.
-          </p>
-          <a
-            routerLink="/supervisor/verificaciones"
-            class="btn btn--primario btn--sm"
+          <p class="small muted">Acceso directo a la bandeja de expedientes de trabajadores.</p>
+          <a routerLink="/supervisor/verificaciones" class="btn btn--primario btn--sm"
             >Abrir bandeja</a
           >
         </div>

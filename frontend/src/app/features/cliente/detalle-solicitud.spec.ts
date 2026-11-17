@@ -2,12 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import type {
-  OfertaConTrabajador,
-  Pago,
-  SolicitudDetalle,
-  Zona,
-} from '../../core/models';
+import type { OfertaConTrabajador, Pago, SolicitudDetalle, Zona } from '../../core/models';
 import { PagosService } from '../../core/pagos.service';
 import { SolicitudesService } from '../../core/solicitudes.service';
 import { ToastService } from '../../core/toast.service';
@@ -99,23 +94,15 @@ describe('DetalleSolicitud', () => {
   async function crearComponente(estado = 'CON_OFERTAS') {
     const pagoActual = { ...PAGO };
     const solicitudes = {
-      detalle: vi
-        .fn()
-        .mockResolvedValue({ ...DETALLE, estado }),
-      ofertas: vi
-        .fn()
-        .mockResolvedValue([OFERTA_CARA, OFERTA_BARATA]),
-      pago: vi
-        .fn()
-        .mockImplementation(() =>
-          Promise.resolve({
-            pago: { ...pagoActual },
-            reporte_abierto: null,
-          }),
-        ),
-      elegirOferta: vi
-        .fn()
-        .mockResolvedValue({ ...pagoActual }),
+      detalle: vi.fn().mockResolvedValue({ ...DETALLE, estado }),
+      ofertas: vi.fn().mockResolvedValue([OFERTA_CARA, OFERTA_BARATA]),
+      pago: vi.fn().mockImplementation(() =>
+        Promise.resolve({
+          pago: { ...pagoActual },
+          reporte_abierto: null,
+        }),
+      ),
+      elegirOferta: vi.fn().mockResolvedValue({ ...pagoActual }),
     };
     const pagos = {
       confirmarPago: vi.fn().mockImplementation(() => {
@@ -166,49 +153,36 @@ describe('DetalleSolicitud', () => {
     const { componente, fixture } = await crearComponente();
 
     expect(componente.ofertas()).toHaveLength(2);
-    expect(componente.ofertasOrdenadas()[0].id).toBe(
-      OFERTA_BARATA.id,
-    );
+    expect(componente.ofertasOrdenadas()[0].id).toBe(OFERTA_BARATA.id);
 
     componente.orden.set('reputacion');
 
-    expect(componente.ofertasOrdenadas()[0].id).toBe(
-      OFERTA_CARA.id,
-    );
+    expect(componente.ofertasOrdenadas()[0].id).toBe(OFERTA_CARA.id);
     fixture.destroy();
   });
 
   it('elige la oferta y abre el QR del 25%', async () => {
-    const { componente, solicitudes, toast, fixture } =
-      await crearComponente();
+    const { componente, solicitudes, toast, fixture } = await crearComponente();
 
     componente.elegir(OFERTA_BARATA);
-    expect(componente.ofertaElegida().id).toBe(
-      OFERTA_BARATA.id,
-    );
+    expect(componente.ofertaElegida().id).toBe(OFERTA_BARATA.id);
 
     await componente.confirmarEleccion();
 
-    expect(solicitudes.elegirOferta).toHaveBeenCalledWith(
-      'solicitud-1',
-      OFERTA_BARATA.id,
-    );
+    expect(solicitudes.elegirOferta).toHaveBeenCalledWith('solicitud-1', OFERTA_BARATA.id);
     expect(componente.mostrarQr()).toBe(true);
     expect(toast.exito).toHaveBeenCalled();
     fixture.destroy();
   });
 
   it('simula la confirmación bancaria del pago', async () => {
-    const { componente, pagos, toast, fixture } =
-      await crearComponente('PENDIENTE_PAGO');
+    const { componente, pagos, toast, fixture } = await crearComponente('PENDIENTE_PAGO');
 
     await componente.simularPago();
 
     expect(pagos.confirmarPago).toHaveBeenCalledWith('pago-1');
     expect(componente.pago().estado_qr).toBe('PAGADO');
-    expect(toast.exito).toHaveBeenCalledWith(
-      expect.stringContaining('Pago del 25% confirmado'),
-    );
+    expect(toast.exito).toHaveBeenCalledWith(expect.stringContaining('Pago del 25% confirmado'));
     fixture.destroy();
   });
 });

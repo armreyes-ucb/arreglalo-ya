@@ -1,9 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { mensajeDeError } from '../../core/errores';
 import type { DevolucionPublica } from '../../core/models';
@@ -23,13 +18,11 @@ import { MonedaPipe } from '../../shared/pipes';
             <span class="migaja">Supervisor</span>
             <h1>Devoluciones</h1>
             <p>
-              Lista de devoluciones del pago inicial (25%) procesadas o
-              pendientes. RN04: máximo 3 días hábiles.
+              Lista de devoluciones del pago inicial (25%) procesadas o pendientes. RN04: máximo 3
+              días hábiles.
             </p>
           </div>
-          <a routerLink="/supervisor" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/supervisor" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -78,8 +71,8 @@ import { MonedaPipe } from '../../shared/pipes';
                               (d.estado === 'COMPLETADA'
                                 ? 'insignia--verde'
                                 : d.estado === 'EN_PROCESO'
-                                ? 'insignia--ambar'
-                                : 'insignia--neutro')
+                                  ? 'insignia--ambar'
+                                  : 'insignia--neutro')
                             "
                           >
                             {{ d.estado }}

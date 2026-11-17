@@ -1,9 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import {
-  Router,
-  RouterLink,
-  RouterLinkActive,
-} from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { ETIQUETAS_ROL, panelDeRol } from '../core/catalogos';
 import { mensajeDeError } from '../core/errores';
@@ -22,11 +18,7 @@ interface EnlaceNav {
   template: `
     <header class="nav">
       <div class="contenedor nav__inner">
-        <a
-          routerLink="/"
-          class="nav__marca"
-          (click)="cerrarMenu()"
-        >
+        <a routerLink="/" class="nav__marca" (click)="cerrarMenu()">
           <span class="nav__logo" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="22" height="22">
               <path
@@ -35,15 +27,10 @@ interface EnlaceNav {
               />
             </svg>
           </span>
-          <span class="nav__nombre">
-            Arréglalo <strong>Ya</strong>
-          </span>
+          <span class="nav__nombre"> Arréglalo <strong>Ya</strong> </span>
         </a>
 
-        <nav
-          class="nav__enlaces"
-          [class.nav__enlaces--abiertos]="menuAbierto()"
-        >
+        <nav class="nav__enlaces" [class.nav__enlaces--abiertos]="menuAbierto()">
           @for (enlace of enlaces(); track enlace.ruta) {
             <a
               [routerLink]="enlace.ruta"
@@ -74,50 +61,22 @@ interface EnlaceNav {
                 </select>
               </label>
             }
-            <a
-              [routerLink]="panel()"
-              class="nav__usuario"
-              title="Ir a mi panel"
-            >
+            <a [routerLink]="panel()" class="nav__usuario" title="Ir a mi panel">
               <span class="avatar avatar--sm">
                 {{ iniciales(auth.usuario()?.nombre_completo ?? '') }}
               </span>
               <span class="nav__usuario-texto">
-                <strong>{{
-                  nombreCorto(auth.usuario()?.nombre_completo ?? '')
-                }}</strong>
-                <small>{{
-                  etiquetasRol[auth.rolActivo() ?? 'CLIENTE']
-                }}</small>
+                <strong>{{ nombreCorto(auth.usuario()?.nombre_completo ?? '') }}</strong>
+                <small>{{ etiquetasRol[auth.rolActivo() ?? 'CLIENTE'] }}</small>
               </span>
             </a>
-            <a
-              routerLink="/mi-cuenta"
-              class="btn btn--fantasma btn--sm"
-              title="Mi cuenta"
-            >
+            <a routerLink="/mi-cuenta" class="btn btn--fantasma btn--sm" title="Mi cuenta">
               Cuenta
             </a>
-            <button
-              type="button"
-              class="btn btn--fantasma btn--sm"
-              (click)="salir()"
-            >
-              Salir
-            </button>
+            <button type="button" class="btn btn--fantasma btn--sm" (click)="salir()">Salir</button>
           } @else {
-            <a
-              routerLink="/login"
-              class="btn btn--fantasma btn--sm"
-            >
-              Ingresar
-            </a>
-            <a
-              routerLink="/registro"
-              class="btn btn--primario btn--sm"
-            >
-              Crear cuenta
-            </a>
+            <a routerLink="/login" class="btn btn--fantasma btn--sm"> Ingresar </a>
+            <a routerLink="/registro" class="btn btn--primario btn--sm"> Crear cuenta </a>
           }
 
           <button
@@ -128,10 +87,7 @@ interface EnlaceNav {
             (click)="menuAbierto.set(!menuAbierto())"
           >
             <svg viewBox="0 0 24 24" width="22" height="22">
-              <path
-                fill="currentColor"
-                d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z"
-              />
+              <path fill="currentColor" d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z" />
             </svg>
           </button>
         </div>

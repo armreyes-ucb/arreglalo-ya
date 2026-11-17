@@ -19,8 +19,7 @@ const ZONAS: Zona[] = [
   },
 ];
 
-const DESCRIPCION =
-  'Hay una fuga de agua debajo del lavamanos de la cocina.';
+const DESCRIPCION = 'Hay una fuga de agua debajo del lavamanos de la cocina.';
 
 describe('PublicarSolicitud', () => {
   async function crearComponente() {

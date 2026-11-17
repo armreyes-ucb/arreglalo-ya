@@ -14,10 +14,9 @@ export class UsuariosService {
 
   eliminarCuenta(payload: EliminarCuentaPayload): Promise<EliminacionCuentaResponse> {
     return firstValueFrom(
-      this.http.delete<EliminacionCuentaResponse>(
-        `${API_URL}/usuarios/mi-cuenta`,
-        { body: payload },
-      ),
+      this.http.delete<EliminacionCuentaResponse>(`${API_URL}/usuarios/mi-cuenta`, {
+        body: payload,
+      }),
     );
   }
 }

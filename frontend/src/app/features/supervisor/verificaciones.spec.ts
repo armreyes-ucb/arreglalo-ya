@@ -37,12 +37,7 @@ const EXPEDIENTE_NUEVO: ExpedienteVerificacion = {
 describe('BandejaVerificaciones', () => {
   async function crearComponente() {
     const verificacion = {
-      bandeja: vi
-        .fn()
-        .mockResolvedValue([
-          EXPEDIENTE_VIEJO,
-          EXPEDIENTE_NUEVO,
-        ]),
+      bandeja: vi.fn().mockResolvedValue([EXPEDIENTE_VIEJO, EXPEDIENTE_NUEVO]),
     };
 
     await TestBed.configureTestingModule({
@@ -54,15 +49,10 @@ describe('BandejaVerificaciones', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(
-      BandejaVerificaciones,
-    );
+    const fixture = TestBed.createComponent(BandejaVerificaciones);
     await fixture.whenStable();
     const componente = fixture.componentInstance as any;
-    componente.expedientes.set([
-      EXPEDIENTE_VIEJO,
-      EXPEDIENTE_NUEVO,
-    ]);
+    componente.expedientes.set([EXPEDIENTE_VIEJO, EXPEDIENTE_NUEVO]);
     componente.cargando.set(false);
     fixture.detectChanges();
     return { componente, fixture };

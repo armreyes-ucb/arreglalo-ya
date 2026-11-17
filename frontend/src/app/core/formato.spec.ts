@@ -15,9 +15,7 @@ describe('formato', () => {
   });
 
   it('formatea fechas y valores inválidos', () => {
-    expect(formatearFecha('2026-11-10T10:00:00.000Z')).not.toBe(
-      'Sin fecha',
-    );
+    expect(formatearFecha('2026-11-10T10:00:00.000Z')).not.toBe('Sin fecha');
     expect(formatearFecha('no-es-fecha')).toBe('Sin fecha');
   });
 

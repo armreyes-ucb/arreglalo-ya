@@ -1,19 +1,6 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import {
-  ActivatedRoute,
-  Router,
-  RouterLink,
-} from '@angular/router';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { mensajeDeError } from '../../core/errores';
 import { ToastService } from '../../core/toast.service';
@@ -29,8 +16,8 @@ import { ToastService } from '../../core/toast.service';
             <span class="monograma">AY</span>
             <h1 class="mt-2">Crear cuenta</h1>
             <p class="muted">
-              Regístrate en menos de un minuto. Te enviaremos un
-              código por SMS para confirmar tu teléfono.
+              Regístrate en menos de un minuto. Te enviaremos un código por SMS para confirmar tu
+              teléfono.
             </p>
           </div>
 
@@ -43,10 +30,7 @@ import { ToastService } from '../../core/toast.service';
               <span class="paso__numero">1</span>
               Tus datos
             </span>
-            <span
-              class="paso"
-              [class.paso--activo]="paso() === 2"
-            >
+            <span class="paso" [class.paso--activo]="paso() === 2">
               <span class="paso__numero">2</span>
               Código SMS
             </span>
@@ -60,23 +44,14 @@ import { ToastService } from '../../core/toast.service';
 
           @if (volver() === '/activar-trabajador') {
             <div class="alerta alerta--info">
-              <span>
-                Crea tu cuenta para continuar con la activación
-                como trabajador.
-              </span>
+              <span> Crea tu cuenta para continuar con la activación como trabajador. </span>
             </div>
           }
 
           @if (paso() === 1) {
-            <form
-              class="formulario"
-              [formGroup]="datos"
-              (ngSubmit)="continuar()"
-            >
+            <form class="formulario" [formGroup]="datos" (ngSubmit)="continuar()">
               <div class="campo">
-                <label class="etiqueta" for="nombre"
-                  >Nombre completo</label
-                >
+                <label class="etiqueta" for="nombre">Nombre completo</label>
                 <input
                   id="nombre"
                   type="text"
@@ -86,20 +61,16 @@ import { ToastService } from '../../core/toast.service';
                   autocomplete="name"
                 />
                 @if (
-                  datos.controls.nombre_completo.touched &&
-                  datos.controls.nombre_completo.invalid
+                  datos.controls.nombre_completo.touched && datos.controls.nombre_completo.invalid
                 ) {
                   <span class="error-campo">
-                    Escribe tu nombre completo (mínimo 3
-                    caracteres).
+                    Escribe tu nombre completo (mínimo 3 caracteres).
                   </span>
                 }
               </div>
 
               <div class="campo">
-                <label class="etiqueta" for="telefono"
-                  >Teléfono</label
-                >
+                <label class="etiqueta" for="telefono">Teléfono</label>
                 <input
                   id="telefono"
                   type="tel"
@@ -109,15 +80,12 @@ import { ToastService } from '../../core/toast.service';
                   autocomplete="tel"
                 />
                 <span class="ayuda">
-                  Lo usaremos para el código de verificación y
-                  como contacto.
+                  Lo usaremos para el código de verificación y como contacto.
                 </span>
               </div>
 
               <div class="campo">
-                <label class="etiqueta" for="password"
-                  >Contraseña</label
-                >
+                <label class="etiqueta" for="password">Contraseña</label>
                 <input
                   id="password"
                   type="password"
@@ -126,38 +94,23 @@ import { ToastService } from '../../core/toast.service';
                   placeholder="Mínimo 8 caracteres"
                   autocomplete="new-password"
                 />
-                @if (
-                  datos.controls.password.touched &&
-                  datos.controls.password.invalid
-                ) {
-                  <span class="error-campo">
-                    La contraseña debe tener al menos 8
-                    caracteres.
-                  </span>
+                @if (datos.controls.password.touched && datos.controls.password.invalid) {
+                  <span class="error-campo"> La contraseña debe tener al menos 8 caracteres. </span>
                 }
               </div>
 
               <label class="check">
-                <input
-                  type="checkbox"
-                  formControlName="acepto_terminos"
-                />
+                <input type="checkbox" formControlName="acepto_terminos" />
                 <span>
                   Acepto los
-                  <a routerLink="/terminos" target="_blank"
-                    >términos y condiciones</a
-                  >
-                  y el tratamiento de mis datos para la
-                  prestación del servicio.
+                  <a routerLink="/terminos" target="_blank">términos y condiciones</a>
+                  y el tratamiento de mis datos para la prestación del servicio.
                 </span>
               </label>
               @if (
-                datos.controls.acepto_terminos.touched &&
-                datos.controls.acepto_terminos.invalid
+                datos.controls.acepto_terminos.touched && datos.controls.acepto_terminos.invalid
               ) {
-                <span class="error-campo">
-                  Debes aceptar los términos para continuar.
-                </span>
+                <span class="error-campo"> Debes aceptar los términos para continuar. </span>
               }
 
               <button
@@ -165,19 +118,11 @@ import { ToastService } from '../../core/toast.service';
                 class="btn btn--primario btn--bloque"
                 [disabled]="enviandoCodigo()"
               >
-                {{
-                  enviandoCodigo()
-                    ? 'Enviando código…'
-                    : 'Enviar código SMS'
-                }}
+                {{ enviandoCodigo() ? 'Enviando código…' : 'Enviar código SMS' }}
               </button>
             </form>
           } @else {
-            <form
-              class="formulario"
-              [formGroup]="codigoForm"
-              (ngSubmit)="confirmar()"
-            >
+            <form class="formulario" [formGroup]="codigoForm" (ngSubmit)="confirmar()">
               @if (codigoDesarrollo()) {
                 <div class="alerta alerta--info">
                   <span>
@@ -187,9 +132,7 @@ import { ToastService } from '../../core/toast.service';
                 </div>
               }
               <div class="campo">
-                <label class="etiqueta" for="codigo"
-                  >Código de 6 dígitos</label
-                >
+                <label class="etiqueta" for="codigo">Código de 6 dígitos</label>
                 <input
                   id="codigo"
                   type="text"
@@ -200,29 +143,15 @@ import { ToastService } from '../../core/toast.service';
                   placeholder="123456"
                   autocomplete="one-time-code"
                 />
-                <span class="ayuda">
-                  Lo enviamos al {{ telefonoIngresado() }}.
-                </span>
+                <span class="ayuda"> Lo enviamos al {{ telefonoIngresado() }}. </span>
               </div>
 
-              <button
-                type="submit"
-                class="btn btn--primario btn--bloque"
-                [disabled]="creando()"
-              >
-                {{
-                  creando()
-                    ? 'Creando tu cuenta…'
-                    : 'Confirmar y crear cuenta'
-                }}
+              <button type="submit" class="btn btn--primario btn--bloque" [disabled]="creando()">
+                {{ creando() ? 'Creando tu cuenta…' : 'Confirmar y crear cuenta' }}
               </button>
 
               <div class="fila fila--separada">
-                <button
-                  type="button"
-                  class="enlace-boton"
-                  (click)="volverDatos()"
-                >
+                <button type="button" class="enlace-boton" (click)="volverDatos()">
                   Cambiar mis datos
                 </button>
                 <button
@@ -262,26 +191,14 @@ export class Registro implements OnInit {
   protected readonly volver = signal('');
 
   protected readonly datos = this.fb.group({
-    nombre_completo: [
-      '',
-      [Validators.required, Validators.minLength(3)],
-    ],
-    telefono: [
-      '',
-      [Validators.required, Validators.minLength(7)],
-    ],
-    password: [
-      '',
-      [Validators.required, Validators.minLength(8)],
-    ],
+    nombre_completo: ['', [Validators.required, Validators.minLength(3)]],
+    telefono: ['', [Validators.required, Validators.minLength(7)]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
     acepto_terminos: [false, [Validators.requiredTrue]],
   });
 
   protected readonly codigoForm = this.fb.group({
-    codigo: [
-      '',
-      [Validators.required, Validators.pattern(/^\d{6}$/)],
-    ],
+    codigo: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
   });
 
   ngOnInit(): void {
@@ -302,13 +219,9 @@ export class Registro implements OnInit {
       const { telefono } = this.datos.getRawValue();
       const respuesta = await this.auth.solicitarCodigo(telefono);
       this.telefonoIngresado.set(telefono);
-      this.codigoDesarrollo.set(
-        respuesta.codigo_desarrollo ?? '',
-      );
+      this.codigoDesarrollo.set(respuesta.codigo_desarrollo ?? '');
       this.paso.set(2);
-      this.toast.info(
-        'Código enviado. Revisa los mensajes de tu teléfono.',
-      );
+      this.toast.info('Código enviado. Revisa los mensajes de tu teléfono.');
     } catch (error) {
       this.error.set(mensajeDeError(error));
     } finally {
@@ -319,12 +232,8 @@ export class Registro implements OnInit {
   protected async reenviarCodigo(): Promise<void> {
     this.enviandoCodigo.set(true);
     try {
-      const respuesta = await this.auth.solicitarCodigo(
-        this.telefonoIngresado(),
-      );
-      this.codigoDesarrollo.set(
-        respuesta.codigo_desarrollo ?? '',
-      );
+      const respuesta = await this.auth.solicitarCodigo(this.telefonoIngresado());
+      this.codigoDesarrollo.set(respuesta.codigo_desarrollo ?? '');
       this.toast.info('Código reenviado.');
     } catch (error) {
       this.error.set(mensajeDeError(error));
@@ -355,23 +264,14 @@ export class Registro implements OnInit {
         codigo: this.codigoForm.getRawValue().codigo,
       });
       try {
-        await this.auth.login(
-          valores.telefono,
-          valores.password,
-        );
+        await this.auth.login(valores.telefono, valores.password);
         this.toast.exito('Tu cuenta fue creada. ¡Bienvenido!');
-        await this.router.navigateByUrl(
-          this.volver() || '/cliente',
-        );
+        await this.router.navigateByUrl(this.volver() || '/cliente');
       } catch {
-        this.toast.exito(
-          'Tu cuenta fue creada. Ingresa con tu contraseña.',
-        );
+        this.toast.exito('Tu cuenta fue creada. Ingresa con tu contraseña.');
         await this.router.navigate(
           ['/login'],
-          this.volver()
-            ? { queryParams: { volver: this.volver() } }
-            : {},
+          this.volver() ? { queryParams: { volver: this.volver() } } : {},
         );
       }
     } catch (error) {

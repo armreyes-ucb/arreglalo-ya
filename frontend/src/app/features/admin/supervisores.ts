@@ -1,9 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { mensajeDeError } from '../../core/errores';
@@ -21,14 +16,9 @@ import { ToastService } from '../../core/toast.service';
           <div>
             <span class="migaja">Administración</span>
             <h1>Gestión de supervisores</h1>
-            <p>
-              Crea, edita y desactiva cuentas de supervisor. Solo
-              SUPERADMIN.
-            </p>
+            <p>Crea, edita y desactiva cuentas de supervisor. Solo SUPERADMIN.</p>
           </div>
-          <a routerLink="/admin" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/admin" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -44,8 +34,8 @@ import { ToastService } from '../../core/toast.service';
           <div class="tarjeta mb-2">
             <h2>Crear supervisor</h2>
             <p class="small muted mt-1">
-              Si el teléfono ya existe, se promociona a supervisor.
-              Se genera contraseña temporal si es nueva cuenta.
+              Si el teléfono ya existe, se promociona a supervisor. Se genera contraseña temporal si
+              es nueva cuenta.
             </p>
             <div class="formulario--rejilla mt-2">
               <div class="campo">
@@ -59,9 +49,7 @@ import { ToastService } from '../../core/toast.service';
                 />
               </div>
               <div class="campo">
-                <label class="etiqueta" for="nombre_completo"
-                  >Nombre completo</label
-                >
+                <label class="etiqueta" for="nombre_completo">Nombre completo</label>
                 <input
                   id="nombre_completo"
                   type="text"
@@ -137,11 +125,7 @@ import { ToastService } from '../../core/toast.service';
                         <td>
                           <span
                             class="insignia"
-                            [class]="
-                              s.estado === 'ACTIVO'
-                                ? 'insignia--verde'
-                                : 'insignia--rojo'
-                            "
+                            [class]="s.estado === 'ACTIVO' ? 'insignia--verde' : 'insignia--rojo'"
                           >
                             {{ s.estado }}
                           </span>
@@ -188,26 +172,13 @@ import { ToastService } from '../../core/toast.service';
 
         @if (mostrarEditar(); as s) {
           <div class="modal-fondo" (click)="cerrarEditar()">
-            <div
-              class="modal"
-              role="dialog"
-              aria-modal="true"
-              (click)="$event.stopPropagation()"
-            >
+            <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
               <div class="fila fila--separada">
                 <h2 style="margin:0">Editar supervisor</h2>
-                <button
-                  type="button"
-                  class="enlace-boton"
-                  (click)="cerrarEditar()"
-                >
-                  Cerrar
-                </button>
+                <button type="button" class="enlace-boton" (click)="cerrarEditar()">Cerrar</button>
               </div>
               <div class="campo mt-2">
-                <label class="etiqueta" for="edit-nombre"
-                  >Nombre completo</label
-                >
+                <label class="etiqueta" for="edit-nombre">Nombre completo</label>
                 <input
                   id="edit-nombre"
                   type="text"
@@ -217,9 +188,7 @@ import { ToastService } from '../../core/toast.service';
                 />
               </div>
               <div class="campo mt-2">
-                <label class="etiqueta" for="edit-password"
-                  >Nueva contraseña (opcional)</label
-                >
+                <label class="etiqueta" for="edit-password">Nueva contraseña (opcional)</label>
                 <input
                   id="edit-password"
                   type="password"
@@ -229,11 +198,7 @@ import { ToastService } from '../../core/toast.service';
                 />
               </div>
               <div class="fila mt-2" style="justify-content: flex-end">
-                <button
-                  type="button"
-                  class="btn btn--contorno"
-                  (click)="cerrarEditar()"
-                >
+                <button type="button" class="btn btn--contorno" (click)="cerrarEditar()">
                   Cancelar
                 </button>
                 <button

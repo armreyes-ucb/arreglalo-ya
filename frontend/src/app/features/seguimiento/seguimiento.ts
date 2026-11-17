@@ -1,16 +1,5 @@
-import {
-  Component,
-  DestroyRef,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   claseTonoPago,
@@ -37,11 +26,7 @@ import { PagosService } from '../../core/pagos.service';
 import { SolicitudesService } from '../../core/solicitudes.service';
 import { ToastService } from '../../core/toast.service';
 import { UploadsService } from '../../core/uploads.service';
-import {
-  FechaHoraPipe,
-  ImagenUrlPipe,
-  MonedaPipe,
-} from '../../shared/pipes';
+import { FechaHoraPipe, ImagenUrlPipe, MonedaPipe } from '../../shared/pipes';
 
 const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
   'PENDIENTE_PAGO',
@@ -52,13 +37,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
 
 @Component({
   selector: 'app-seguimiento',
-  imports: [
-    RouterLink,
-    ReactiveFormsModule,
-    FechaHoraPipe,
-    ImagenUrlPipe,
-    MonedaPipe,
-  ],
+  imports: [RouterLink, ReactiveFormsModule, FechaHoraPipe, ImagenUrlPipe, MonedaPipe],
   template: `
     <section class="pagina">
       <div class="contenedor">
@@ -81,37 +60,24 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
               <span class="migaja">Seguimiento en vivo</span>
               <div class="fila">
                 <h1>{{ detalle.tipo_problema }}</h1>
-                <span
-                  class="insignia"
-                  [class]="
-                    'insignia ' + claseTono(detalle.estado)
-                  "
-                >
+                <span class="insignia" [class]="'insignia ' + claseTono(detalle.estado)">
                   {{ etiquetaEstado(detalle.estado) }}
                 </span>
               </div>
               <p>
-                {{
-                  etiquetaEspecialidad(detalle.especialidad)
-                }}
+                {{ etiquetaEspecialidad(detalle.especialidad) }}
                 · {{ detalle.zona?.nombre }}
               </p>
             </div>
             <div class="fila">
-              <span class="small muted">
-                Actualización automática cada 15 s
-              </span>
+              <span class="small muted"> Actualización automática cada 15 s </span>
               <button
                 type="button"
                 class="btn btn--contorno btn--sm"
                 [disabled]="actualizando()"
                 (click)="refrescar(false)"
               >
-                {{
-                  actualizando()
-                    ? 'Actualizando…'
-                    : 'Actualizar estado'
-                }}
+                {{ actualizando() ? 'Actualizando…' : 'Actualizar estado' }}
               </button>
             </div>
           </div>
@@ -145,10 +111,8 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
             <div class="alerta alerta--aviso mb-2">
               <span>
                 <strong>{{ etiquetaEstadoReclamo(rep.estado) }}.</strong>
-                El saldo del 75% queda bloqueado hasta que un
-                supervisor resuelva el reclamo. La transferencia
-                al técnico no se realizará mientras el reclamo
-                siga abierto.
+                El saldo del 75% queda bloqueado hasta que un supervisor resuelva el reclamo. La
+                transferencia al técnico no se realizará mientras el reclamo siga abierto.
               </span>
             </div>
           }
@@ -172,8 +136,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 } @else {
                   <div class="alerta alerta--aviso mt-2">
                     <span>
-                      La dirección exacta y el WhatsApp se
-                      habilitan cuando el pago del 25% se
+                      La dirección exacta y el WhatsApp se habilitan cuando el pago del 25% se
                       confirme (RN11).
                     </span>
                   </div>
@@ -186,10 +149,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                     <h2 style="margin:0">Pago del 25%</h2>
                     <span
                       class="insignia"
-                      [class]="
-                        'insignia ' +
-                        claseTonoPago(pagoActual.estado_qr)
-                      "
+                      [class]="'insignia ' + claseTonoPago(pagoActual.estado_qr)"
                     >
                       {{ etiquetaEstadoQr(pagoActual.estado_qr) }}
                     </span>
@@ -197,64 +157,36 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
 
                   <div class="rejilla rejilla--2 mt-2">
                     <div class="estadistica">
-                      <span class="estadistica__texto"
-                        >Precio acordado</span
-                      >
-                      <strong>{{
-                        pagoActual.precio_total_acordado | moneda
-                      }}</strong>
+                      <span class="estadistica__texto">Precio acordado</span>
+                      <strong>{{ pagoActual.precio_total_acordado | moneda }}</strong>
                     </div>
                     <div class="estadistica">
-                      <span class="estadistica__texto"
-                        >Saldo en persona (75%)</span
-                      >
-                      <strong>{{
-                        pagoActual.saldo_75 | moneda
-                      }}</strong>
+                      <span class="estadistica__texto">Saldo en persona (75%)</span>
+                      <strong>{{ pagoActual.saldo_75 | moneda }}</strong>
                     </div>
                   </div>
 
                   <div class="pila mt-2">
                     <div class="fila fila--separada">
                       <span class="muted">Pago inicial (25%)</span>
-                      <strong>{{
-                        pagoActual.pago_inicial_25 | moneda
-                      }}</strong>
+                      <strong>{{ pagoActual.pago_inicial_25 | moneda }}</strong>
                     </div>
                     <div class="fila fila--separada">
-                      <span class="muted"
-                        >Comisión de la plataforma (5%)</span
-                      >
-                      <strong>{{
-                        pagoActual.comision_5 | moneda
-                      }}</strong>
+                      <span class="muted">Comisión de la plataforma (5%)</span>
+                      <strong>{{ pagoActual.comision_5 | moneda }}</strong>
                     </div>
                     <div class="fila fila--separada">
-                      <span class="muted"
-                        >Parte del técnico (20%)</span
-                      >
-                      <strong>{{
-                        pagoActual.parte_trabajador_20 | moneda
-                      }}</strong>
+                      <span class="muted">Parte del técnico (20%)</span>
+                      <strong>{{ pagoActual.parte_trabajador_20 | moneda }}</strong>
                     </div>
                     <div class="fila fila--separada">
-                      <span class="muted"
-                        >Cliente marcó "Ya pagué"</span
-                      >
-                      <strong>{{
-                        pagoActual.ya_pague_cliente
-                          ? 'Sí'
-                          : 'Todavía no'
-                      }}</strong>
+                      <span class="muted">Cliente marcó "Ya pagué"</span>
+                      <strong>{{ pagoActual.ya_pague_cliente ? 'Sí' : 'Todavía no' }}</strong>
                     </div>
                     <div class="fila fila--separada">
-                      <span class="muted"
-                        >Técnico confirmó el saldo</span
-                      >
+                      <span class="muted">Técnico confirmó el saldo</span>
                       <strong>{{
-                        pagoActual.saldo_75_confirmado_trabajador
-                          ? 'Sí'
-                          : 'Todavía no'
+                        pagoActual.saldo_75_confirmado_trabajador ? 'Sí' : 'Todavía no'
                       }}</strong>
                     </div>
                   </div>
@@ -262,15 +194,10 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                   @if (pagoActual.transferido_al_trabajador) {
                     <div class="alerta alerta--exito mt-2">
                       <span>
-                        Transferencia simulada realizada al
-                        técnico.
-                        @if (
-                          pagoActual.comprobante_transferencia
-                        ) {
+                        Transferencia simulada realizada al técnico.
+                        @if (pagoActual.comprobante_transferencia) {
                           Comprobante:
-                          {{
-                            pagoActual.comprobante_transferencia
-                          }}.
+                          {{ pagoActual.comprobante_transferencia }}.
                         }
                       </span>
                     </div>
@@ -283,9 +210,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 @if (precioFinal(); as precio) {
                   <div class="fila fila--separada mt-2">
                     <div>
-                      <strong>{{
-                        precio.monto | moneda
-                      }}</strong>
+                      <strong>{{ precio.monto | moneda }}</strong>
                       <p class="small muted" style="margin:0">
                         {{ etiquetaTipoPrecio(precio.tipo) }} ·
                         {{ precio.fecha | fechaHora }}
@@ -293,10 +218,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                     </div>
                     <span
                       class="insignia"
-                      [class]="
-                        'insignia ' +
-                        claseTonoPrecio(precio.aprobado_cliente)
-                      "
+                      [class]="'insignia ' + claseTonoPrecio(precio.aprobado_cliente)"
                     >
                       {{ etiquetaAprobacion(precio.aprobado_cliente) }}
                     </span>
@@ -305,9 +227,8 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                   @if (puedeResponderPrecioFinal()) {
                     <div class="alerta alerta--info mt-2">
                       <span>
-                        El técnico registró el precio final. Si lo
-                        apruebas, la solicitud pasa a "En progreso"
-                        y el saldo del 75% se recalcula.
+                        El técnico registró el precio final. Si lo apruebas, la solicitud pasa a "En
+                        progreso" y el saldo del 75% se recalcula.
                       </span>
                     </div>
                     <div class="fila mt-2">
@@ -329,15 +250,14 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                       </button>
                     </div>
                     <p class="small muted mt-1">
-                      Si rechazas, la solicitud se anula y se
-                      registra la devolución del pago inicial.
+                      Si rechazas, la solicitud se anula y se registra la devolución del pago
+                      inicial.
                     </p>
                   }
                 } @else if (puedeRegistrarPrecioFinal()) {
                   <p class="small muted mt-1">
-                    Registra el monto definitivo tras la visita.
-                    Viene precargado con el precio acordado en la
-                    oferta; ajústalo solo si cambió.
+                    Registra el monto definitivo tras la visita. Viene precargado con el precio
+                    acordado en la oferta; ajústalo solo si cambió.
                   </p>
                   <form
                     class="formulario mt-2"
@@ -345,9 +265,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                     (ngSubmit)="registrarPrecioFinal()"
                   >
                     <div class="campo">
-                      <label class="etiqueta" for="montoFinal"
-                        >Precio final (Bs)</label
-                      >
+                      <label class="etiqueta" for="montoFinal">Precio final (Bs)</label>
                       <input
                         id="montoFinal"
                         type="number"
@@ -360,9 +278,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                     <button
                       type="submit"
                       class="btn btn--primario btn--bloque mt-2"
-                      [disabled]="
-                        formPrecioFinal.invalid || procesando()
-                      "
+                      [disabled]="formPrecioFinal.invalid || procesando()"
                     >
                       {{ procesando() ? 'Guardando…' : 'Registrar precio final' }}
                     </button>
@@ -370,11 +286,9 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 } @else {
                   <p class="small muted mt-1">
                     @if (esTrabajador()) {
-                      El precio final se habilita cuando el pago
-                      del 25% esté confirmado.
+                      El precio final se habilita cuando el pago del 25% esté confirmado.
                     } @else {
-                      El técnico registrará el precio final después
-                      de la visita.
+                      El técnico registrará el precio final después de la visita.
                     }
                   </p>
                 }
@@ -395,37 +309,18 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 </div>
 
                 @if (incrementos().length === 0) {
-                  <p class="small muted mt-2">
-                    No hay incrementos registrados.
-                  </p>
+                  <p class="small muted mt-2">No hay incrementos registrados.</p>
                 } @else {
                   <div class="pila mt-2">
-                    @for (
-                      incremento of incrementos();
-                      track incremento.id
-                    ) {
-                      <div
-                        class="tarjeta tarjeta--plana"
-                        style="padding: 0.85rem"
-                      >
+                    @for (incremento of incrementos(); track incremento.id) {
+                      <div class="tarjeta tarjeta--plana" style="padding: 0.85rem">
                         <div class="fila fila--separada">
-                          <strong>{{
-                            incremento.monto | moneda
-                          }}</strong>
+                          <strong>{{ incremento.monto | moneda }}</strong>
                           <span
                             class="insignia"
-                            [class]="
-                              'insignia ' +
-                              claseTonoPrecio(
-                                incremento.aprobado_cliente
-                              )
-                            "
+                            [class]="'insignia ' + claseTonoPrecio(incremento.aprobado_cliente)"
                           >
-                            {{
-                              etiquetaAprobacion(
-                                incremento.aprobado_cliente
-                              )
-                            }}
+                            {{ etiquetaAprobacion(incremento.aprobado_cliente) }}
                           </span>
                         </div>
                         <p class="small mt-1">
@@ -434,10 +329,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                         @if (incremento.foto_evidencia_url) {
                           <a
                             class="small"
-                            [href]="
-                              incremento.foto_evidencia_url
-                                | imagenUrl
-                            "
+                            [href]="incremento.foto_evidencia_url | imagenUrl"
                             target="_blank"
                             rel="noopener"
                             >Ver foto de evidencia</a
@@ -453,12 +345,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                               type="button"
                               class="btn btn--primario btn--sm"
                               [disabled]="procesando()"
-                              (click)="
-                                responderIncremento(
-                                  incremento,
-                                  true
-                                )
-                              "
+                              (click)="responderIncremento(incremento, true)"
                             >
                               Aprobar
                             </button>
@@ -466,12 +353,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                               type="button"
                               class="btn btn--peligro btn--sm"
                               [disabled]="procesando()"
-                              (click)="
-                                responderIncremento(
-                                  incremento,
-                                  false
-                                )
-                              "
+                              (click)="responderIncremento(incremento, false)"
                             >
                               Rechazar
                             </button>
@@ -483,9 +365,8 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 }
                 @if (esCliente() && hayIncrementoPendiente()) {
                   <p class="small muted mt-2">
-                    Si rechazas un incremento, la solicitud se
-                    anula y se registra la devolución del pago
-                    inicial.
+                    Si rechazas un incremento, la solicitud se anula y se registra la devolución del
+                    pago inicial.
                   </p>
                 }
               </div>
@@ -496,19 +377,16 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 @if (detalle.estado === 'FINALIZADA') {
                   <div class="alerta alerta--exito mt-2">
                     <span>
-                      Servicio finalizado. El pago del 25% fue
-                      conciliado y la parte del técnico quedó
-                      transferida.
+                      Servicio finalizado. El pago del 25% fue conciliado y la parte del técnico
+                      quedó transferida.
                     </span>
                   </div>
-                } @else if (
-                  detalle.estado === 'TERMINADA_TRABAJADOR'
-                ) {
+                } @else if (detalle.estado === 'TERMINADA_TRABAJADOR') {
                   @if (esCliente()) {
                     @if (puedeYaPague()) {
                       <p class="small muted mt-1">
-                        El técnico marcó el trabajo como terminado.
-                        Confirma que le pagaste el 75% en persona.
+                        El técnico marcó el trabajo como terminado. Confirma que le pagaste el 75%
+                        en persona.
                       </p>
                       <button
                         type="button"
@@ -521,19 +399,16 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                     } @else {
                       <div class="alerta alerta--info mt-2">
                         <span>
-                          Marcaste "Ya pagué". Falta que el técnico
-                          confirme el cobro o que se cumplan las
-                          48 horas para el cierre automático.
+                          Marcaste "Ya pagué". Falta que el técnico confirme el cobro o que se
+                          cumplan las 48 horas para el cierre automático.
                         </span>
                       </div>
                     }
                   } @else {
                     @if (puedeConfirmarCobro()) {
                       <p class="small muted mt-1">
-                        Confirma si recibiste el saldo del 75% en
-                        persona. Si no lo recibiste, reporta el
-                        impago para que un supervisor revise el
-                        caso.
+                        Confirma si recibiste el saldo del 75% en persona. Si no lo recibiste,
+                        reporta el impago para que un supervisor revise el caso.
                       </p>
                       <div class="fila mt-2">
                         <button
@@ -556,9 +431,8 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                     } @else {
                       <div class="alerta alerta--info mt-2">
                         <span>
-                          Ya confirmaste el saldo. La solicitud se
-                          cerrará cuando el cliente marque "Ya
-                          pagué" o al cumplirse las 48 horas.
+                          Ya confirmaste el saldo. La solicitud se cerrará cuando el cliente marque
+                          "Ya pagué" o al cumplirse las 48 horas.
                         </span>
                       </div>
                     }
@@ -566,8 +440,8 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 } @else if (detalle.estado === 'EN_PROGRESO') {
                   @if (esTrabajador()) {
                     <p class="small muted mt-1">
-                      Cuando termines el trabajo, márcalo para que
-                      el cliente pueda confirmar el pago del 75%.
+                      Cuando termines el trabajo, márcalo para que el cliente pueda confirmar el
+                      pago del 75%.
                     </p>
                     <button
                       type="button"
@@ -580,27 +454,22 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                   } @else {
                     <div class="alerta alerta--info mt-2">
                       <span>
-                        El trabajo está en progreso. El técnico lo
-                        marcará como terminado al finalizar.
+                        El trabajo está en progreso. El técnico lo marcará como terminado al
+                        finalizar.
                       </span>
                     </div>
                   }
                 } @else if (detalle.estado === 'CONFIRMADA') {
                   <div class="alerta alerta--info mt-2">
                     <span>
-                      Pago inicial confirmado. El técnico debe
-                      registrar el precio final tras la visita
-                      para iniciar el trabajo.
+                      Pago inicial confirmado. El técnico debe registrar el precio final tras la
+                      visita para iniciar el trabajo.
                     </span>
                   </div>
-                } @else if (
-                  detalle.estado === 'CANCELADA' ||
-                  detalle.estado === 'ANULADA'
-                ) {
+                } @else if (detalle.estado === 'CANCELADA' || detalle.estado === 'ANULADA') {
                   <div class="alerta alerta--aviso mt-2">
                     <span>
-                      La solicitud ya no está activa. Revisa el
-                      historial para conocer el detalle.
+                      La solicitud ya no está activa. Revisa el historial para conocer el detalle.
                     </span>
                   </div>
                 }
@@ -610,10 +479,8 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 <div class="tarjeta">
                   <h2>Cancelar solicitud</h2>
                   <p class="small muted mt-1">
-                    Cancela solo si no puedes continuar con el
-                    servicio. Se aplican las reglas de aviso de 2
-                    horas, devoluciones y suspensión por
-                    incumplimiento.
+                    Cancela solo si no puedes continuar con el servicio. Se aplican las reglas de
+                    aviso de 2 horas, devoluciones y suspensión por incumplimiento.
                   </p>
                   <button
                     type="button"
@@ -636,26 +503,16 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                   }
                 </div>
                 @if (detalle.historial.length === 0) {
-                  <p class="small muted mt-2">
-                    Todavía no hay eventos registrados.
-                  </p>
+                  <p class="small muted mt-2">Todavía no hay eventos registrados.</p>
                 } @else {
                   <ul class="linea-tiempo mt-2">
-                    @for (
-                      evento of detalle.historial;
-                      track evento.fecha_hora + evento.estado
-                    ) {
+                    @for (evento of detalle.historial; track evento.fecha_hora + evento.estado) {
                       <li>
-                        <strong>{{
-                          etiquetaEstado(evento.estado)
-                        }}</strong>
+                        <strong>{{ etiquetaEstado(evento.estado) }}</strong>
                         <span>
                           {{ evento.fecha_hora | fechaHora }}
                           ·
-                          {{
-                            evento.usuario_nombre ??
-                              'Sistema'
-                          }}
+                          {{ evento.usuario_nombre ?? 'Sistema' }}
                         </span>
                       </li>
                     }
@@ -668,32 +525,21 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
                 <div class="pila mt-2">
                   <div class="fila fila--separada">
                     <span class="muted">Cliente</span>
-                    <strong>{{
-                      detalle.cliente_id ===
-                      usuarioId()
-                        ? 'Tú'
-                        : 'Cliente'
-                    }}</strong>
+                    <strong>{{ detalle.cliente_id === usuarioId() ? 'Tú' : 'Cliente' }}</strong>
                   </div>
                   <div class="fila fila--separada">
                     <span class="muted">Técnico</span>
                     <strong>{{
-                      detalle.trabajador_confirmado_id
-                        ? 'Asignado'
-                        : 'Pendiente'
+                      detalle.trabajador_confirmado_id ? 'Asignado' : 'Pendiente'
                     }}</strong>
                   </div>
                   <div class="fila fila--separada">
                     <span class="muted">Cita preferida</span>
-                    <strong>{{
-                      detalle.fecha_cita_preferida | fechaHora
-                    }}</strong>
+                    <strong>{{ detalle.fecha_cita_preferida | fechaHora }}</strong>
                   </div>
                   <div class="fila fila--separada">
                     <span class="muted">Urgente</span>
-                    <strong>{{
-                      detalle.urgente ? 'Sí (+10%)' : 'No'
-                    }}</strong>
+                    <strong>{{ detalle.urgente ? 'Sí (+10%)' : 'No' }}</strong>
                   </div>
                 </div>
               </div>
@@ -705,37 +551,19 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
 
     @if (mostrarCancelacion()) {
       <div class="modal-fondo" (click)="cerrarCancelacion()">
-        <div
-          class="modal"
-          role="dialog"
-          aria-modal="true"
-          (click)="$event.stopPropagation()"
-        >
+        <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
           <div class="fila fila--separada">
             <h2 style="margin:0">Cancelar solicitud</h2>
-            <button
-              type="button"
-              class="enlace-boton"
-              (click)="cerrarCancelacion()"
-            >
-              Cerrar
-            </button>
+            <button type="button" class="enlace-boton" (click)="cerrarCancelacion()">Cerrar</button>
           </div>
           <p class="small muted">
-            Indica el motivo. Si cancelas con menos de 2 horas
-            de aviso, puede aplicarse una penalidad y una
-            suspensión al técnico.
+            Indica el motivo. Si cancelas con menos de 2 horas de aviso, puede aplicarse una
+            penalidad y una suspensión al técnico.
           </p>
 
-          <form
-            class="formulario mt-2"
-            [formGroup]="formCancelar"
-            (ngSubmit)="cancelarSolicitud()"
-          >
+          <form class="formulario mt-2" [formGroup]="formCancelar" (ngSubmit)="cancelarSolicitud()">
             <div class="campo">
-              <label class="etiqueta" for="motivoCancelar"
-                >Motivo</label
-              >
+              <label class="etiqueta" for="motivoCancelar">Motivo</label>
               <textarea
                 id="motivoCancelar"
                 class="input"
@@ -746,9 +574,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
             <button
               type="submit"
               class="btn btn--peligro btn--bloque mt-2"
-              [disabled]="
-                formCancelar.invalid || procesando()
-              "
+              [disabled]="formCancelar.invalid || procesando()"
             >
               {{ procesando() ? 'Cancelando…' : 'Confirmar cancelación' }}
             </button>
@@ -759,26 +585,14 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
 
     @if (mostrarIncremento()) {
       <div class="modal-fondo" (click)="cerrarIncremento()">
-        <div
-          class="modal"
-          role="dialog"
-          aria-modal="true"
-          (click)="$event.stopPropagation()"
-        >
+        <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
           <div class="fila fila--separada">
             <h2 style="margin:0">Registrar incremento</h2>
-            <button
-              type="button"
-              class="enlace-boton"
-              (click)="cerrarIncremento()"
-            >
-              Cerrar
-            </button>
+            <button type="button" class="enlace-boton" (click)="cerrarIncremento()">Cerrar</button>
           </div>
           <p class="small muted">
-            El cliente debe aprobar el incremento. Si lo
-            rechaza, la solicitud se anula y se devuelve el pago
-            inicial.
+            El cliente debe aprobar el incremento. Si lo rechaza, la solicitud se anula y se
+            devuelve el pago inicial.
           </p>
 
           <form
@@ -787,9 +601,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
             (ngSubmit)="registrarIncremento()"
           >
             <div class="campo">
-              <label class="etiqueta" for="montoIncremento"
-                >Monto (Bs)</label
-              >
+              <label class="etiqueta" for="montoIncremento">Monto (Bs)</label>
               <input
                 id="montoIncremento"
                 type="number"
@@ -800,9 +612,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
               />
             </div>
             <div class="campo">
-              <label class="etiqueta" for="motivoIncremento"
-                >Motivo</label
-              >
+              <label class="etiqueta" for="motivoIncremento">Motivo</label>
               <textarea
                 id="motivoIncremento"
                 class="input"
@@ -811,9 +621,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
               ></textarea>
             </div>
             <div class="campo">
-              <label class="etiqueta" for="evidencia"
-                >Foto de evidencia</label
-              >
+              <label class="etiqueta" for="evidencia">Foto de evidencia</label>
               <input
                 id="evidencia"
                 type="file"
@@ -825,15 +633,9 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
             <button
               type="submit"
               class="btn btn--ambar btn--bloque mt-2"
-              [disabled]="
-                formIncremento.invalid || procesando()
-              "
+              [disabled]="formIncremento.invalid || procesando()"
             >
-              {{
-                procesando()
-                  ? 'Enviando…'
-                  : 'Enviar incremento al cliente'
-              }}
+              {{ procesando() ? 'Enviando…' : 'Enviar incremento al cliente' }}
             </button>
           </form>
         </div>
@@ -842,37 +644,19 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
 
     @if (mostrarImpago()) {
       <div class="modal-fondo" (click)="cerrarImpago()">
-        <div
-          class="modal"
-          role="dialog"
-          aria-modal="true"
-          (click)="$event.stopPropagation()"
-        >
+        <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
           <div class="fila fila--separada">
             <h2 style="margin:0">Reportar impago</h2>
-            <button
-              type="button"
-              class="enlace-boton"
-              (click)="cerrarImpago()"
-            >
-              Cerrar
-            </button>
+            <button type="button" class="enlace-boton" (click)="cerrarImpago()">Cerrar</button>
           </div>
           <p class="small muted">
-            El reclamo queda en revisión por un supervisor y el
-            saldo del 75% no se transfiere mientras siga
-            abierto.
+            El reclamo queda en revisión por un supervisor y el saldo del 75% no se transfiere
+            mientras siga abierto.
           </p>
 
-          <form
-            class="formulario mt-2"
-            [formGroup]="formImpago"
-            (ngSubmit)="reportarImpago()"
-          >
+          <form class="formulario mt-2" [formGroup]="formImpago" (ngSubmit)="reportarImpago()">
             <div class="campo">
-              <label class="etiqueta" for="motivoImpago"
-                >Motivo del impago</label
-              >
+              <label class="etiqueta" for="motivoImpago">Motivo del impago</label>
               <textarea
                 id="motivoImpago"
                 class="input"
@@ -885,11 +669,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
               class="btn btn--peligro btn--bloque mt-2"
               [disabled]="formImpago.invalid || procesando()"
             >
-              {{
-                procesando()
-                  ? 'Enviando…'
-                  : 'Reportar y abrir reclamo'
-              }}
+              {{ procesando() ? 'Enviando…' : 'Reportar y abrir reclamo' }}
             </button>
           </form>
         </div>
@@ -899,9 +679,7 @@ const ESTADOS_CANCELABLES: EstadoSolicitud[] = [
 })
 export class Seguimiento implements OnInit {
   private readonly ruta = inject(ActivatedRoute);
-  private readonly solicitudesService = inject(
-    SolicitudesService,
-  );
+  private readonly solicitudesService = inject(SolicitudesService);
   private readonly pagosService = inject(PagosService);
   private readonly uploadsService = inject(UploadsService);
   private readonly auth = inject(AuthService);
@@ -909,13 +687,10 @@ export class Seguimiento implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly solicitud =
-    signal<SolicitudDetalle | null>(null);
+  protected readonly solicitud = signal<SolicitudDetalle | null>(null);
   protected readonly pago = signal<Pago | null>(null);
   protected readonly precios = signal<Precio[]>([]);
-  protected readonly reporte = signal<ReportePublico | null>(
-    null,
-  );
+  protected readonly reporte = signal<ReportePublico | null>(null);
   protected readonly cargando = signal(true);
   protected readonly actualizando = signal(false);
   protected readonly procesando = signal(false);
@@ -924,110 +699,58 @@ export class Seguimiento implements OnInit {
   protected readonly mostrarCancelacion = signal(false);
   protected readonly mostrarIncremento = signal(false);
   protected readonly mostrarImpago = signal(false);
-  protected readonly archivoEvidencia = signal<File | null>(
-    null,
-  );
-  protected readonly resultadoCancelacion =
-    signal<ResolucionCancelacion | null>(null);
+  protected readonly archivoEvidencia = signal<File | null>(null);
+  protected readonly resultadoCancelacion = signal<ResolucionCancelacion | null>(null);
 
   protected readonly etiquetaEstado = etiquetaEstadoSolicitud;
   protected readonly etiquetaEstadoQr = etiquetaEstadoQr;
-  protected readonly etiquetaEstadoDevolucion =
-    etiquetaEstadoDevolucion;
-  protected readonly etiquetaEstadoReclamo =
-    etiquetaEstadoReclamo;
-  protected readonly etiquetaEspecialidad =
-    etiquetaEspecialidad;
+  protected readonly etiquetaEstadoDevolucion = etiquetaEstadoDevolucion;
+  protected readonly etiquetaEstadoReclamo = etiquetaEstadoReclamo;
+  protected readonly etiquetaEspecialidad = etiquetaEspecialidad;
   protected readonly etiquetaTipoPrecio = etiquetaTipoPrecio;
   protected readonly claseTono = claseTonoSolicitud;
   protected readonly claseTonoPago = claseTonoPago;
 
-  protected readonly formPrecioFinal = this.fb.nonNullable.group(
-    {
-      monto: [
-        0,
-        [Validators.required, Validators.min(0.5)],
-      ],
-    },
-  );
+  protected readonly formPrecioFinal = this.fb.nonNullable.group({
+    monto: [0, [Validators.required, Validators.min(0.5)]],
+  });
 
-  protected readonly formIncremento =
-    this.fb.nonNullable.group({
-      monto: [
-        0,
-        [Validators.required, Validators.min(0.5)],
-      ],
-      motivo: [
-        '',
-        [
-          Validators.required,
-          Validators.minLength(3),
-          Validators.maxLength(500),
-        ],
-      ],
-    });
+  protected readonly formIncremento = this.fb.nonNullable.group({
+    monto: [0, [Validators.required, Validators.min(0.5)]],
+    motivo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(500)]],
+  });
 
   protected readonly formImpago = this.fb.nonNullable.group({
-    motivo: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(500),
-      ],
-    ],
+    motivo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(500)]],
   });
 
   protected readonly formCancelar = this.fb.nonNullable.group({
-    motivo: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(500),
-      ],
-    ],
+    motivo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(500)]],
   });
 
-  private intervaloCodigo: ReturnType<typeof setInterval> | null =
-    null;
+  private intervaloCodigo: ReturnType<typeof setInterval> | null = null;
   private refrescando = false;
 
-  protected readonly usuarioId = computed(
-    () => this.auth.usuario()?.id ?? '',
-  );
+  protected readonly usuarioId = computed(() => this.auth.usuario()?.id ?? '');
 
-  protected readonly esTrabajador = computed(
-    () => this.auth.rolActivo() === 'TRABAJADOR',
-  );
+  protected readonly esTrabajador = computed(() => this.auth.rolActivo() === 'TRABAJADOR');
 
-  protected readonly esCliente = computed(
-    () => this.auth.rolActivo() === 'CLIENTE',
-  );
+  protected readonly esCliente = computed(() => this.auth.rolActivo() === 'CLIENTE');
 
   protected readonly volverUrl = computed(() =>
-    this.esTrabajador()
-      ? '/trabajador/mis-ofertas'
-      : '/cliente/mis-solicitudes',
+    this.esTrabajador() ? '/trabajador/mis-ofertas' : '/cliente/mis-solicitudes',
   );
 
   protected readonly precioFinal = computed(
-    () =>
-      this.precios().find(
-        (precio) => precio.tipo === 'FINAL',
-      ) ?? null,
+    () => this.precios().find((precio) => precio.tipo === 'FINAL') ?? null,
   );
 
   protected readonly incrementos = computed(() =>
-    this.precios().filter(
-      (precio) => precio.tipo === 'INCREMENTO',
-    ),
+    this.precios().filter((precio) => precio.tipo === 'INCREMENTO'),
   );
 
   protected readonly hayIncrementoPendiente = computed(() =>
-    this.incrementos().some(
-      (incremento) => incremento.aprobado_cliente === null,
-    ),
+    this.incrementos().some((incremento) => incremento.aprobado_cliente === null),
   );
 
   protected readonly puedeRegistrarPrecioFinal = computed(
@@ -1045,9 +768,7 @@ export class Seguimiento implements OnInit {
   );
 
   protected readonly puedeRegistrarIncremento = computed(
-    () =>
-      this.esTrabajador() &&
-      this.solicitud()?.estado === 'EN_PROGRESO',
+    () => this.esTrabajador() && this.solicitud()?.estado === 'EN_PROGRESO',
   );
 
   protected readonly puedeYaPague = computed(
@@ -1067,9 +788,7 @@ export class Seguimiento implements OnInit {
   );
 
   protected readonly puedeCancelar = computed(() =>
-    ESTADOS_CANCELABLES.includes(
-      (this.solicitud()?.estado ?? '') as EstadoSolicitud,
-    ),
+    ESTADOS_CANCELABLES.includes((this.solicitud()?.estado ?? '') as EstadoSolicitud),
   );
 
   constructor() {
@@ -1080,18 +799,14 @@ export class Seguimiento implements OnInit {
     void this.cargar().finally(() => this.iniciarPolling());
   }
 
-  protected etiquetaAprobacion(
-    aprobado: boolean | null,
-  ): string {
+  protected etiquetaAprobacion(aprobado: boolean | null): string {
     if (aprobado === null) {
       return 'Pendiente';
     }
     return aprobado ? 'Aprobado' : 'Rechazado';
   }
 
-  protected claseTonoPrecio(
-    aprobado: boolean | null,
-  ): string {
+  protected claseTonoPrecio(aprobado: boolean | null): string {
     if (aprobado === null) {
       return 'insignia--ambar';
     }
@@ -1114,12 +829,8 @@ export class Seguimiento implements OnInit {
       }
       const detalle = await this.solicitudesService.detalle(id);
       const [pagoResultado, preciosResultado] = await Promise.all([
-        this.solicitudesService
-          .pago(id)
-          .catch(() => undefined),
-        this.solicitudesService
-          .precios(id)
-          .catch(() => undefined),
+        this.solicitudesService.pago(id).catch(() => undefined),
+        this.solicitudesService.precios(id).catch(() => undefined),
       ]);
 
       this.solicitud.set(detalle);
@@ -1163,20 +874,14 @@ export class Seguimiento implements OnInit {
     );
   }
 
-  protected async responderPrecioFinal(
-    aprobado: boolean,
-  ): Promise<void> {
+  protected async responderPrecioFinal(aprobado: boolean): Promise<void> {
     const id = this.solicitud()?.id;
     if (!id) {
       return;
     }
 
     await this.ejecutar(
-      () =>
-        this.solicitudesService.responderPrecioFinal(
-          id,
-          aprobado,
-        ),
+      () => this.solicitudesService.responderPrecioFinal(id, aprobado),
       aprobado
         ? 'Precio final aprobado. La solicitud pasó a en progreso.'
         : 'Precio final rechazado. La solicitud fue anulada y se registró la devolución.',
@@ -1215,9 +920,7 @@ export class Seguimiento implements OnInit {
       return;
     }
     if (!archivo) {
-      this.errorAccion.set(
-        'Adjunta una foto de evidencia para el incremento.',
-      );
+      this.errorAccion.set('Adjunta una foto de evidencia para el incremento.');
       return;
     }
 
@@ -1232,9 +935,7 @@ export class Seguimiento implements OnInit {
         foto_evidencia_url: url,
       });
       this.mostrarIncremento.set(false);
-      this.toast.exito(
-        'Incremento enviado. El cliente debe aprobarlo.',
-      );
+      this.toast.exito('Incremento enviado. El cliente debe aprobarlo.');
       await this.refrescar(true);
     } catch (error) {
       this.errorAccion.set(mensajeDeError(error));
@@ -1243,22 +944,14 @@ export class Seguimiento implements OnInit {
     }
   }
 
-  protected async responderIncremento(
-    incremento: Precio,
-    aprobado: boolean,
-  ): Promise<void> {
+  protected async responderIncremento(incremento: Precio, aprobado: boolean): Promise<void> {
     const id = this.solicitud()?.id;
     if (!id) {
       return;
     }
 
     await this.ejecutar(
-      () =>
-        this.solicitudesService.responderIncremento(
-          id,
-          incremento.id,
-          aprobado,
-        ),
+      () => this.solicitudesService.responderIncremento(id, incremento.id, aprobado),
       aprobado
         ? 'Incremento aprobado. El saldo del 75% fue actualizado.'
         : 'Incremento rechazado. La solicitud fue anulada y se registró la devolución.',
@@ -1284,9 +977,7 @@ export class Seguimiento implements OnInit {
     }
 
     await this.ejecutar(async () => {
-      const resultado = await this.pagosService.marcarYaPague(
-        pago.id,
-      );
+      const resultado = await this.pagosService.marcarYaPague(pago.id);
       this.aplicarResolucionPago(resultado);
     }, 'Marcaste "Ya pagué". Queda pendiente la confirmación del técnico.');
   }
@@ -1298,11 +989,7 @@ export class Seguimiento implements OnInit {
     }
 
     await this.ejecutar(async () => {
-      const resultado =
-        await this.pagosService.confirmarPago75(
-          pago.id,
-          true,
-        );
+      const resultado = await this.pagosService.confirmarPago75(pago.id, true);
       this.aplicarResolucionPago(resultado);
     }, 'Cobro confirmado. La solicitud se cerró o quedó a la espera del cierre automático.');
   }
@@ -1329,17 +1016,14 @@ export class Seguimiento implements OnInit {
     this.procesando.set(true);
     this.errorAccion.set('');
     try {
-      const resultado =
-        await this.pagosService.confirmarPago75(
-          pago.id,
-          false,
-          this.formImpago.getRawValue().motivo,
-        );
+      const resultado = await this.pagosService.confirmarPago75(
+        pago.id,
+        false,
+        this.formImpago.getRawValue().motivo,
+      );
       this.aplicarResolucionPago(resultado);
       this.mostrarImpago.set(false);
-      this.toast.info(
-        'Reclamo abierto. En revisión por supervisor.',
-      );
+      this.toast.info('Reclamo abierto. En revisión por supervisor.');
       await this.refrescar(true);
     } catch (error) {
       this.errorAccion.set(mensajeDeError(error));
@@ -1370,11 +1054,10 @@ export class Seguimiento implements OnInit {
     this.procesando.set(true);
     this.errorAccion.set('');
     try {
-      const resultado =
-        await this.solicitudesService.cancelar(
-          id,
-          this.formCancelar.getRawValue().motivo,
-        );
+      const resultado = await this.solicitudesService.cancelar(
+        id,
+        this.formCancelar.getRawValue().motivo,
+      );
       this.resultadoCancelacion.set(resultado);
       this.mostrarCancelacion.set(false);
       this.toast.exito('Solicitud cancelada.');
@@ -1393,9 +1076,7 @@ export class Seguimiento implements OnInit {
     this.cargando.set(false);
   }
 
-  private aplicarResolucionPago(
-    resultado: ResolucionPagoFinal,
-  ): void {
+  private aplicarResolucionPago(resultado: ResolucionPagoFinal): void {
     this.pago.set(resultado.pago);
     this.reporte.set(resultado.reporte);
   }
@@ -1408,17 +1089,13 @@ export class Seguimiento implements OnInit {
     if (actual > 0) {
       return;
     }
-    const sugerido =
-      this.pago()?.precio_total_acordado ?? 0;
+    const sugerido = this.pago()?.precio_total_acordado ?? 0;
     if (sugerido > 0) {
       this.formPrecioFinal.patchValue({ monto: sugerido });
     }
   }
 
-  private async ejecutar(
-    accion: () => Promise<unknown>,
-    mensajeExito: string,
-  ): Promise<void> {
+  private async ejecutar(accion: () => Promise<unknown>, mensajeExito: string): Promise<void> {
     this.procesando.set(true);
     this.errorAccion.set('');
     try {

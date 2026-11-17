@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   claseTonoSolicitud,
@@ -33,12 +27,7 @@ interface FiltroEstado {
             <h1>Mis solicitudes</h1>
             <p>Revisa el estado y el historial de cada trabajo.</p>
           </div>
-          <a
-            routerLink="/cliente/publicar"
-            class="btn btn--ambar"
-          >
-            Nueva solicitud
-          </a>
+          <a routerLink="/cliente/publicar" class="btn btn--ambar"> Nueva solicitud </a>
         </div>
 
         <div class="fila mb-2">
@@ -46,9 +35,7 @@ interface FiltroEstado {
             <button
               type="button"
               class="chip"
-              [class.chip--activo]="
-                filtroActivo() === filtro.valor
-              "
+              [class.chip--activo]="filtroActivo() === filtro.valor"
               (click)="filtroActivo.set(filtro.valor)"
             >
               {{ filtro.etiqueta }}
@@ -70,29 +57,15 @@ interface FiltroEstado {
             <div class="vacio">
               <div class="vacio__icono">+</div>
               <h3>No hay solicitudes en este estado</h3>
-              <p>
-                Publica una nueva solicitud o cambia el filtro para
-                ver otras.
-              </p>
-              <a
-                routerLink="/cliente/publicar"
-                class="btn btn--primario"
-              >
-                Publicar solicitud
-              </a>
+              <p>Publica una nueva solicitud o cambia el filtro para ver otras.</p>
+              <a routerLink="/cliente/publicar" class="btn btn--primario"> Publicar solicitud </a>
             </div>
           </div>
         } @else {
           <div class="pila">
-            @for (
-              solicitud of filtradas();
-              track solicitud.id
-            ) {
+            @for (solicitud of filtradas(); track solicitud.id) {
               <a
-                [routerLink]="[
-                  '/cliente/mis-solicitudes',
-                  solicitud.id,
-                ]"
+                [routerLink]="['/cliente/mis-solicitudes', solicitud.id]"
                 class="tarjeta"
                 style="color: inherit"
               >
@@ -109,36 +82,20 @@ interface FiltroEstado {
                       <div class="fila">
                         <strong>{{ solicitud.tipo_problema }}</strong>
                         @if (solicitud.urgente) {
-                          <span
-                            class="insignia insignia--rojo"
-                            >Urgente</span
-                          >
+                          <span class="insignia insignia--rojo">Urgente</span>
                         }
                       </div>
                       <div class="small muted">
-                        {{
-                          etiquetaEspecialidad(
-                            solicitud.especialidad
-                          )
-                        }}
+                        {{ etiquetaEspecialidad(solicitud.especialidad) }}
                         · {{ solicitud.zona?.nombre }}
                       </div>
                       <div class="small muted">
                         Cita:
-                        {{
-                          solicitud.fecha_cita_preferida
-                            | fechaHora
-                        }}
+                        {{ solicitud.fecha_cita_preferida | fechaHora }}
                       </div>
                     </div>
                   </div>
-                  <span
-                    class="insignia"
-                    [class]="
-                      'insignia ' +
-                      claseTono(solicitud.estado)
-                    "
-                  >
+                  <span class="insignia" [class]="'insignia ' + claseTono(solicitud.estado)">
                     {{ etiquetaEstado(solicitud.estado) }}
                   </span>
                 </div>
@@ -151,19 +108,14 @@ interface FiltroEstado {
   `,
 })
 export class MisSolicitudes implements OnInit {
-  private readonly solicitudesService = inject(
-    SolicitudesService,
-  );
+  private readonly solicitudesService = inject(SolicitudesService);
 
   protected readonly solicitudes = signal<Solicitud[]>([]);
   protected readonly cargando = signal(true);
   protected readonly error = signal('');
-  protected readonly filtroActivo = signal<
-    EstadoSolicitud | 'TODAS'
-  >('TODAS');
+  protected readonly filtroActivo = signal<EstadoSolicitud | 'TODAS'>('TODAS');
   protected readonly etiquetaEstado = etiquetaEstadoSolicitud;
-  protected readonly etiquetaEspecialidad =
-    etiquetaEspecialidad;
+  protected readonly etiquetaEspecialidad = etiquetaEspecialidad;
   protected readonly claseTono = claseTonoSolicitud;
 
   protected readonly filtros: FiltroEstado[] = [
@@ -181,9 +133,7 @@ export class MisSolicitudes implements OnInit {
     if (filtro === 'TODAS') {
       return this.solicitudes();
     }
-    return this.solicitudes().filter(
-      (solicitud) => solicitud.estado === filtro,
-    );
+    return this.solicitudes().filter((solicitud) => solicitud.estado === filtro);
   });
 
   ngOnInit(): void {

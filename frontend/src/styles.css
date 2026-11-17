@@ -29,8 +29,7 @@
   --sombra: 0 10px 30px rgba(11, 37, 69, 0.08);
   --sombra-sm: 0 3px 10px rgba(11, 37, 69, 0.06);
   --contenedor: 1120px;
-  --fuente: "Inter", "Segoe UI", system-ui, -apple-system, Roboto,
-    Helvetica, Arial, sans-serif;
+  --fuente: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -201,11 +200,7 @@ textarea {
 
 .tarjeta--destacada {
   border-color: var(--azul-100);
-  background: linear-gradient(
-    150deg,
-    var(--azul-800),
-    var(--azul-900) 70%
-  );
+  background: linear-gradient(150deg, var(--azul-800), var(--azul-900) 70%);
   color: #eaf2fb;
 }
 
@@ -810,7 +805,7 @@ textarea {
 }
 
 .linea-tiempo li::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 5px;
   top: 7px;
@@ -822,7 +817,7 @@ textarea {
 }
 
 .linea-tiempo li::after {
-  content: "";
+  content: '';
   position: absolute;
   left: 9px;
   top: 18px;
@@ -1094,11 +1089,7 @@ textarea {
 /* ===== Hero / inicio ===== */
 .hero {
   background:
-    radial-gradient(
-      circle at 85% 15%,
-      rgba(242, 165, 65, 0.22),
-      transparent 45%
-    ),
+    radial-gradient(circle at 85% 15%, rgba(242, 165, 65, 0.22), transparent 45%),
     linear-gradient(150deg, var(--azul-800), var(--azul-900) 75%);
   color: #eaf2fb;
   padding: 3.5rem 0 3rem;

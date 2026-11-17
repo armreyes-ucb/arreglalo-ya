@@ -1,6 +1,4 @@
-import {
-  provideZonelessChangeDetection,
-} from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
@@ -52,9 +50,7 @@ describe('ActivacionTrabajador', () => {
     const router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
-    const fixture = TestBed.createComponent(
-      ActivacionTrabajador,
-    );
+    const fixture = TestBed.createComponent(ActivacionTrabajador);
     return {
       componente: fixture.componentInstance as any,
       auth,
@@ -119,9 +115,7 @@ describe('ActivacionTrabajador', () => {
       especialidades: ['PLOMERIA', 'ELECTRICIDAD'],
       zonas: [1],
     });
-    expect(router.navigate).toHaveBeenCalledWith([
-      '/trabajador/verificacion',
-    ]);
+    expect(router.navigate).toHaveBeenCalledWith(['/trabajador/verificacion']);
     expect(componente.guardando()).toBe(false);
   });
 });

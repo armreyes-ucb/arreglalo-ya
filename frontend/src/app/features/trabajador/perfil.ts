@@ -1,13 +1,5 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-} from '@angular/forms';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   ESPECIALIDADES,
@@ -16,11 +8,7 @@ import {
 } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
 import { formatearNivel } from '../../core/formato';
-import type {
-  Especialidad,
-  PerfilTrabajadorPropio,
-  Zona,
-} from '../../core/models';
+import type { Especialidad, PerfilTrabajadorPropio, Zona } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { TrabajadoresService } from '../../core/trabajadores.service';
 import { UploadsService } from '../../core/uploads.service';
@@ -38,15 +26,10 @@ import { ImagenUrlPipe } from '../../shared/pipes';
             <span class="migaja">Trabajador</span>
             <h1>Mi perfil profesional</h1>
             <p>
-              Muestra tus especialidades, precios referenciales y
-              fotos de trabajos a los clientes.
+              Muestra tus especialidades, precios referenciales y fotos de trabajos a los clientes.
             </p>
           </div>
-          <a
-            routerLink="/trabajador"
-            class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/trabajador" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -58,13 +41,8 @@ import { ImagenUrlPipe } from '../../shared/pipes';
           <div class="tarjeta centrado">
             <div class="vacio__icono">!</div>
             <h2>Tu perfil todavía no existe</h2>
-            <p class="muted">
-              Activa el rol de trabajador para crear tu perfil
-              profesional.
-            </p>
-            <a
-              routerLink="/activar-trabajador"
-              class="btn btn--primario"
+            <p class="muted">Activa el rol de trabajador para crear tu perfil profesional.</p>
+            <a routerLink="/activar-trabajador" class="btn btn--primario"
               >Activar rol de trabajador</a
             >
           </div>
@@ -82,26 +60,15 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                   {{ datos.nombre_completo }}
                 </h2>
                 <div class="fila mt-1">
-                  <span
-                    class="insignia"
-                    [class]="
-                      'insignia ' + claseTono(datos.estado)
-                    "
-                  >
-                    {{
-                      etiquetaEstadoTrabajador(datos.estado)
-                    }}
+                  <span class="insignia" [class]="'insignia ' + claseTono(datos.estado)">
+                    {{ etiquetaEstadoTrabajador(datos.estado) }}
                   </span>
                   <span class="etiqueta-suave">
                     {{ formatearNivel(datos.nivel_verificacion, datos.antecedentes_vencidos) }}
                   </span>
-                  <span class="etiqueta-suave">
-                    {{ datos.trabajos_completados }} trabajo(s)
-                  </span>
+                  <span class="etiqueta-suave"> {{ datos.trabajos_completados }} trabajo(s) </span>
                   @if (datos.promedio > 0) {
-                    <span class="etiqueta-suave">
-                      ★ {{ datos.promedio.toFixed(1) }}
-                    </span>
+                    <span class="etiqueta-suave"> ★ {{ datos.promedio.toFixed(1) }} </span>
                   }
                 </div>
               </div>
@@ -113,48 +80,25 @@ import { ImagenUrlPipe } from '../../shared/pipes';
             </div>
           </div>
 
-          <form
-            class="pila"
-            [formGroup]="formulario"
-            (ngSubmit)="guardar()"
-          >
+          <form class="pila" [formGroup]="formulario" (ngSubmit)="guardar()">
             <div class="tarjeta">
               <h2>Especialidades</h2>
               <div class="rejilla rejilla--2 mt-1">
-                @for (
-                  especialidad of especialidades;
-                  track especialidad.valor
-                ) {
+                @for (especialidad of especialidades; track especialidad.valor) {
                   <label
                     class="opcion"
-                    [class.opcion--activa]="
-                      seleccionadas().includes(
-                        especialidad.valor
-                      )
-                    "
+                    [class.opcion--activa]="seleccionadas().includes(especialidad.valor)"
                   >
                     <input
                       type="checkbox"
-                      [checked]="
-                        seleccionadas().includes(
-                          especialidad.valor
-                        )
-                      "
-                      (change)="
-                        alternarEspecialidad(
-                          especialidad.valor
-                        )
-                      "
+                      [checked]="seleccionadas().includes(especialidad.valor)"
+                      (change)="alternarEspecialidad(especialidad.valor)"
                     />
                     <span>
-                      <strong>{{
-                        especialidad.etiqueta
-                      }}</strong>
-                      <span
-                        class="small muted"
-                        style="display:block"
-                        >{{ especialidad.descripcion }}</span
-                      >
+                      <strong>{{ especialidad.etiqueta }}</strong>
+                      <span class="small muted" style="display:block">{{
+                        especialidad.descripcion
+                      }}</span>
                     </span>
                   </label>
                 }
@@ -164,29 +108,21 @@ import { ImagenUrlPipe } from '../../shared/pipes';
             <div class="tarjeta">
               <h2>Precios referenciales (Bs)</h2>
               <p class="small muted">
-                Son montos de referencia; el precio final se acuerda
-                en cada oferta.
+                Son montos de referencia; el precio final se acuerda en cada oferta.
               </p>
               <div class="formulario--rejilla mt-1">
-                @for (
-                  especialidad of especialidades;
-                  track especialidad.valor
-                ) {
+                @for (especialidad of especialidades; track especialidad.valor) {
                   <div class="campo">
-                    <label
-                      class="etiqueta"
-                      [for]="'precio-' + especialidad.valor"
-                      >{{ especialidad.etiqueta }}</label
-                    >
+                    <label class="etiqueta" [for]="'precio-' + especialidad.valor">{{
+                      especialidad.etiqueta
+                    }}</label>
                     <input
                       [id]="'precio-' + especialidad.valor"
                       type="number"
                       class="input"
                       min="0"
                       step="0.5"
-                      [formControlName]="
-                        'precio_' + especialidad.valor
-                      "
+                      [formControlName]="'precio_' + especialidad.valor"
                       placeholder="0.00"
                     />
                   </div>
@@ -200,22 +136,16 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                 @for (zona of zonas(); track zona.id) {
                   <label
                     class="opcion"
-                    [class.opcion--activa]="
-                      zonasSeleccionadas().includes(zona.id)
-                    "
+                    [class.opcion--activa]="zonasSeleccionadas().includes(zona.id)"
                   >
                     <input
                       type="checkbox"
-                      [checked]="
-                        zonasSeleccionadas().includes(zona.id)
-                      "
+                      [checked]="zonasSeleccionadas().includes(zona.id)"
                       (change)="alternarZona(zona.id)"
                     />
                     <span>
                       <strong>{{ zona.nombre }}</strong>
-                      <span
-                        class="small muted"
-                        style="display:block"
+                      <span class="small muted" style="display:block"
                         >{{ zona.otb }} · {{ zona.municipio }}</span
                       >
                     </span>
@@ -227,9 +157,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
             <div class="tarjeta">
               <h2>Horarios de atención</h2>
               <div class="campo mt-1">
-                <label class="etiqueta" for="horarios"
-                  >Describe tu disponibilidad</label
-                >
+                <label class="etiqueta" for="horarios">Describe tu disponibilidad</label>
                 <input
                   id="horarios"
                   type="text"
@@ -242,9 +170,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
 
             <div class="tarjeta">
               <h2>Fotos de trabajos</h2>
-              <p class="small muted">
-                Muestra trabajos anteriores. Máximo 6 fotos.
-              </p>
+              <p class="small muted">Muestra trabajos anteriores. Máximo 6 fotos.</p>
               <input
                 type="file"
                 class="input"
@@ -260,11 +186,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                   @for (foto of fotos(); track foto) {
                     <div>
                       <img [src]="foto | imagenUrl" alt="Trabajo" />
-                      <button
-                        type="button"
-                        class="enlace-boton small"
-                        (click)="quitarFoto(foto)"
-                      >
+                      <button type="button" class="enlace-boton small" (click)="quitarFoto(foto)">
                         Quitar
                       </button>
                     </div>
@@ -273,14 +195,8 @@ import { ImagenUrlPipe } from '../../shared/pipes';
               }
             </div>
 
-            <button
-              type="submit"
-              class="btn btn--primario"
-              [disabled]="guardando()"
-            >
-              {{
-                guardando() ? 'Guardando…' : 'Guardar cambios'
-              }}
+            <button type="submit" class="btn btn--primario" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
             </button>
           </form>
         }
@@ -290,21 +206,17 @@ import { ImagenUrlPipe } from '../../shared/pipes';
 })
 export class PerfilTrabajador implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
-  private readonly trabajadoresService = inject(
-    TrabajadoresService,
-  );
+  private readonly trabajadoresService = inject(TrabajadoresService);
   private readonly zonasService = inject(ZonasService);
   private readonly uploads = inject(UploadsService);
   private readonly toast = inject(ToastService);
 
   protected readonly especialidades = ESPECIALIDADES;
-  protected readonly etiquetaEstadoTrabajador =
-    etiquetaEstadoTrabajador;
+  protected readonly etiquetaEstadoTrabajador = etiquetaEstadoTrabajador;
   protected readonly claseTono = claseTonoTrabajador;
   protected readonly formatearNivel = formatearNivel;
 
-  protected readonly perfil =
-    signal<PerfilTrabajadorPropio | null>(null);
+  protected readonly perfil = signal<PerfilTrabajadorPropio | null>(null);
   protected readonly zonas = signal<Zona[]>([]);
   protected readonly seleccionadas = signal<Especialidad[]>([]);
   protected readonly zonasSeleccionadas = signal<number[]>([]);
@@ -327,9 +239,7 @@ export class PerfilTrabajador implements OnInit {
     void this.cargar();
   }
 
-  protected alternarEspecialidad(
-    especialidad: Especialidad,
-  ): void {
+  protected alternarEspecialidad(especialidad: Especialidad): void {
     this.seleccionadas.update((actuales) =>
       actuales.includes(especialidad)
         ? actuales.filter((item) => item !== especialidad)
@@ -353,9 +263,7 @@ export class PerfilTrabajador implements OnInit {
       return;
     }
     if (archivo.size > 5 * 1024 * 1024) {
-      this.toast.error(
-        `${archivo.name} supera el límite de 5 MB.`,
-      );
+      this.toast.error(`${archivo.name} supera el límite de 5 MB.`);
       return;
     }
     this.subiendoFoto.set(true);
@@ -370,9 +278,7 @@ export class PerfilTrabajador implements OnInit {
   }
 
   protected quitarFoto(url: string): void {
-    this.fotos.update((fotos) =>
-      fotos.filter((foto) => foto !== url),
-    );
+    this.fotos.update((fotos) => fotos.filter((foto) => foto !== url));
   }
 
   protected async guardar(): Promise<void> {
@@ -389,23 +295,20 @@ export class PerfilTrabajador implements OnInit {
     const precios: Record<string, number> = {};
     for (const especialidad of ESPECIALIDADES) {
       const clave = `precio_${especialidad.valor}`;
-      const valor = Number(
-        valores[clave as keyof typeof valores],
-      );
+      const valor = Number(valores[clave as keyof typeof valores]);
       if (Number.isFinite(valor) && valor > 0) {
         precios[especialidad.valor] = valor;
       }
     }
     this.guardando.set(true);
     try {
-      const actualizado =
-        await this.trabajadoresService.actualizarPerfil({
-          especialidades: this.seleccionadas(),
-          zonas_ids: this.zonasSeleccionadas(),
-          horarios: valores.horarios.trim(),
-          precios_estimados: precios,
-          fotos_urls: this.fotos(),
-        });
+      const actualizado = await this.trabajadoresService.actualizarPerfil({
+        especialidades: this.seleccionadas(),
+        zonas_ids: this.zonasSeleccionadas(),
+        horarios: valores.horarios.trim(),
+        precios_estimados: precios,
+        fotos_urls: this.fotos(),
+      });
       this.perfil.set(actualizado);
       this.aplicarPerfil(actualizado);
       this.toast.exito('Perfil actualizado correctamente.');
@@ -439,22 +342,16 @@ export class PerfilTrabajador implements OnInit {
     }
   }
 
-  private aplicarPerfil(
-    perfil: PerfilTrabajadorPropio,
-  ): void {
+  private aplicarPerfil(perfil: PerfilTrabajadorPropio): void {
     this.seleccionadas.set([...perfil.especialidades]);
-    this.zonasSeleccionadas.set(
-      perfil.zonas.map((zona) => zona.id),
-    );
+    this.zonasSeleccionadas.set(perfil.zonas.map((zona) => zona.id));
     this.fotos.set([...perfil.fotos_trabajos]);
     const precios: Record<string, string> = {
       horarios: perfil.horarios ?? '',
     };
     for (const especialidad of ESPECIALIDADES) {
-      const valor =
-        perfil.precios_estimados[especialidad.valor];
-      precios[`precio_${especialidad.valor}`] =
-        valor !== undefined ? String(valor) : '';
+      const valor = perfil.precios_estimados[especialidad.valor];
+      precios[`precio_${especialidad.valor}`] = valor !== undefined ? String(valor) : '';
     }
     this.formulario.patchValue(precios);
   }

@@ -1,16 +1,7 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  claseTonoReclamo,
-  etiquetaEstadoReclamo,
-} from '../../core/catalogos';
+import { claseTonoReclamo, etiquetaEstadoReclamo } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
 import type { ReclamoPublico } from '../../core/models';
 import { ReputacionService } from '../../core/reputacion.service';
@@ -26,13 +17,9 @@ import { ToastService } from '../../core/toast.service';
           <div>
             <span class="migaja">Trabajador</span>
             <h1>Mis reclamos asignados</h1>
-            <p>
-              Responde a los reclamos de tus clientes en un máximo de 48 horas.
-            </p>
+            <p>Responde a los reclamos de tus clientes en un máximo de 48 horas.</p>
           </div>
-          <a routerLink="/trabajador" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/trabajador" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -49,9 +36,7 @@ import { ToastService } from '../../core/toast.service';
             <div class="tarjeta centrado">
               <div class="vacio__icono">✓</div>
               <h2>No tienes reclamos pendientes</h2>
-              <p class="muted">
-                Todos los trabajos se cerraron sin problemas.
-              </p>
+              <p class="muted">Todos los trabajos se cerraron sin problemas.</p>
             </div>
           } @else {
             <div class="pila">
@@ -61,24 +46,23 @@ import { ToastService } from '../../core/toast.service';
                     <div>
                       <strong>Solicitud {{ reclamo.solicitud_id.slice(0, 8) }}…</strong>
                       <div class="small muted">
-                        Abierto {{ reclamo.fecha_apertura }}
-                        · {{ reclamo.horas_para_responder ?? '—' }}h para responder
+                        Abierto {{ reclamo.fecha_apertura }} ·
+                        {{ reclamo.horas_para_responder ?? '—' }}h para responder
                       </div>
                       <p class="mt-1">{{ reclamo.motivo }}</p>
                       @if (reclamo.evidencia_fotos.length) {
                         <div class="galeria mt-1">
                           @for (foto of reclamo.evidencia_fotos; track foto) {
-                            <img [src]="foto" alt="Evidencia" style="width: 80px; height: 80px; object-fit: cover" />
+                            <img
+                              [src]="foto"
+                              alt="Evidencia"
+                              style="width: 80px; height: 80px; object-fit: cover"
+                            />
                           }
                         </div>
                       }
                     </div>
-                    <span
-                      class="insignia"
-                      [class]="
-                        'insignia ' + claseTonoReclamo(reclamo.estado)
-                      "
-                    >
+                    <span class="insignia" [class]="'insignia ' + claseTonoReclamo(reclamo.estado)">
                       {{ etiquetaEstadoReclamo(reclamo.estado) }}
                     </span>
                   </div>
@@ -87,13 +71,10 @@ import { ToastService } from '../../core/toast.service';
                       <span>Tu respuesta: {{ reclamo.respuesta_trabajador }}</span>
                     </div>
                   } @else if (
-                    reclamo.estado === 'ABIERTO' ||
-                    reclamo.estado === 'EN_REVISION_SUPERVISOR'
+                    reclamo.estado === 'ABIERTO' || reclamo.estado === 'EN_REVISION_SUPERVISOR'
                   ) {
                     <div class="campo mt-2">
-                      <label class="etiqueta" for="resp-{{ reclamo.id }}"
-                        >Tu respuesta</label
-                      >
+                      <label class="etiqueta" for="resp-{{ reclamo.id }}">Tu respuesta</label>
                       <textarea
                         id="resp-{{ reclamo.id }}"
                         class="input"

@@ -95,8 +95,6 @@ describe('BuscarTrabajadores', () => {
 
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain(
-      'Desde Bs 50,00',
-    );
+    expect(fixture.nativeElement.textContent).toContain('Desde Bs 50,00');
   });
 });

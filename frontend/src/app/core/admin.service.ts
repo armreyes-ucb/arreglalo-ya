@@ -50,89 +50,56 @@ export class AdminService {
   private readonly http = inject(HttpClient);
 
   listarSupervisores(): Promise<UsuarioPublico[]> {
+    return firstValueFrom(this.http.get<UsuarioPublico[]>(`${API_URL}/admin/supervisores`));
+  }
+
+  crearSupervisor(payload: CrearSupervisorPayload): Promise<SupervisorCreado> {
     return firstValueFrom(
-      this.http.get<UsuarioPublico[]>(`${API_URL}/admin/supervisores`),
+      this.http.post<SupervisorCreado>(`${API_URL}/admin/supervisores`, payload),
     );
   }
 
-  crearSupervisor(
-    payload: CrearSupervisorPayload,
-  ): Promise<SupervisorCreado> {
+  actualizarSupervisor(id: string, payload: ActualizarSupervisorPayload): Promise<UsuarioPublico> {
     return firstValueFrom(
-      this.http.post<SupervisorCreado>(
-        `${API_URL}/admin/supervisores`,
-        payload,
-      ),
-    );
-  }
-
-  actualizarSupervisor(
-    id: string,
-    payload: ActualizarSupervisorPayload,
-  ): Promise<UsuarioPublico> {
-    return firstValueFrom(
-      this.http.patch<UsuarioPublico>(
-        `${API_URL}/admin/supervisores/${id}`,
-        payload,
-      ),
+      this.http.patch<UsuarioPublico>(`${API_URL}/admin/supervisores/${id}`, payload),
     );
   }
 
   desactivarSupervisor(id: string): Promise<UsuarioPublico> {
     return firstValueFrom(
-      this.http.patch<UsuarioPublico>(
-        `${API_URL}/admin/supervisores/${id}/desactivar`,
-        {},
-      ),
+      this.http.patch<UsuarioPublico>(`${API_URL}/admin/supervisores/${id}/desactivar`, {}),
     );
   }
 
   reactivarSupervisor(id: string): Promise<UsuarioPublico> {
     return firstValueFrom(
-      this.http.patch<UsuarioPublico>(
-        `${API_URL}/admin/supervisores/${id}/reactivar`,
-        {},
-      ),
+      this.http.patch<UsuarioPublico>(`${API_URL}/admin/supervisores/${id}/reactivar`, {}),
     );
   }
 
   listarZonas(): Promise<Zona[]> {
-    return firstValueFrom(
-      this.http.get<Zona[]>(`${API_URL}/admin/zonas`),
-    );
+    return firstValueFrom(this.http.get<Zona[]>(`${API_URL}/admin/zonas`));
   }
 
   crearZona(payload: CrearZonaPayload): Promise<Zona> {
-    return firstValueFrom(
-      this.http.post<Zona>(`${API_URL}/admin/zonas`, payload),
-    );
+    return firstValueFrom(this.http.post<Zona>(`${API_URL}/admin/zonas`, payload));
   }
 
   actualizarZona(id: number, payload: ActualizarZonaPayload): Promise<Zona> {
-    return firstValueFrom(
-      this.http.patch<Zona>(`${API_URL}/admin/zonas/${id}`, payload),
-    );
+    return firstValueFrom(this.http.patch<Zona>(`${API_URL}/admin/zonas/${id}`, payload));
   }
 
   eliminarZona(id: number): Promise<void> {
-    return firstValueFrom(
-      this.http.delete<void>(`${API_URL}/admin/zonas/${id}`),
-    );
+    return firstValueFrom(this.http.delete<void>(`${API_URL}/admin/zonas/${id}`));
   }
 
   obtenerConfiguracion(): Promise<ConfiguracionPlataforma> {
-    return firstValueFrom(
-      this.http.get<ConfiguracionPlataforma>(
-        `${API_URL}/admin/configuracion`,
-      ),
-    );
+    return firstValueFrom(this.http.get<ConfiguracionPlataforma>(`${API_URL}/admin/configuracion`));
   }
 
   historialConfiguracion(): Promise<CambioConfiguracion[]> {
     return firstValueFrom(
-      this.http.get<CambioConfiguracion[]>(
-        `${API_URL}/admin/configuracion/historial`,
-      ),
+      this.http.get<CambioConfiguracion[]>(`${API_URL}/admin/configuracion/historial`),
     );
   }
 
@@ -140,10 +107,7 @@ export class AdminService {
     payload: Partial<ConfiguracionPlataforma>,
   ): Promise<ConfiguracionPlataforma> {
     return firstValueFrom(
-      this.http.put<ConfiguracionPlataforma>(
-        `${API_URL}/admin/configuracion`,
-        payload,
-      ),
+      this.http.put<ConfiguracionPlataforma>(`${API_URL}/admin/configuracion`, payload),
     );
   }
 
@@ -163,10 +127,7 @@ export class AdminService {
     if (payload?.desde) params = params.set('desde', payload.desde);
     if (payload?.hasta) params = params.set('hasta', payload.hasta);
     return firstValueFrom(
-      this.http.get<ReporteSolicitudes>(
-        `${API_URL}/admin/reportes/solicitudes`,
-        { params },
-      ),
+      this.http.get<ReporteSolicitudes>(`${API_URL}/admin/reportes/solicitudes`, { params }),
     );
   }
 
@@ -175,10 +136,7 @@ export class AdminService {
     if (payload?.desde) params = params.set('desde', payload.desde);
     if (payload?.hasta) params = params.set('hasta', payload.hasta);
     return firstValueFrom(
-      this.http.get<ReporteComisiones>(
-        `${API_URL}/admin/reportes/comisiones`,
-        { params },
-      ),
+      this.http.get<ReporteComisiones>(`${API_URL}/admin/reportes/comisiones`, { params }),
     );
   }
 
@@ -187,10 +145,7 @@ export class AdminService {
     if (payload?.desde) params = params.set('desde', payload.desde);
     if (payload?.hasta) params = params.set('hasta', payload.hasta);
     return firstValueFrom(
-      this.http.get<ReporteDevoluciones>(
-        `${API_URL}/admin/reportes/devoluciones`,
-        { params },
-      ),
+      this.http.get<ReporteDevoluciones>(`${API_URL}/admin/reportes/devoluciones`, { params }),
     );
   }
 
@@ -199,10 +154,7 @@ export class AdminService {
     if (payload?.desde) params = params.set('desde', payload.desde);
     if (payload?.hasta) params = params.set('hasta', payload.hasta);
     return firstValueFrom(
-      this.http.get<ReporteReclamos>(
-        `${API_URL}/admin/reportes/reclamos`,
-        { params },
-      ),
+      this.http.get<ReporteReclamos>(`${API_URL}/admin/reportes/reclamos`, { params }),
     );
   }
 }

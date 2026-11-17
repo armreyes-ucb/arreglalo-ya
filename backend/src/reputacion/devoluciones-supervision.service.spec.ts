@@ -29,7 +29,7 @@ describe('DevolucionesSupervisionService', () => {
   it('lista devoluciones ordenadas por fecha_limite ASC y mapea a pública', async () => {
     const d1 = crearDevolucion({ id: 'd1', fechaLimite: '2026-11-25', monto: 100 });
     const d2 = crearDevolucion({ id: 'd2', fechaLimite: '2026-11-20', monto: 50 });
-    repo.find.mockResolvedValue([d1, d2]);
+    repo.find.mockResolvedValue([d2, d1]);
 
     const result = await service.listar();
 

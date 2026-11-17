@@ -1,16 +1,7 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  claseTonoTrabajador,
-  etiquetaEstadoTrabajador,
-} from '../../core/catalogos';
+import { claseTonoTrabajador, etiquetaEstadoTrabajador } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
 import type { SuspensionRegistrada } from '../../core/models';
 import { SupervisionService } from '../../core/supervision.service';
@@ -30,14 +21,11 @@ const FIBONACCI = [1, 2, 3, 5, 8, 13, 21];
             <span class="migaja">Supervisor</span>
             <h1>Suspensiones (Sanciones Fibonacci)</h1>
             <p>
-              Lista de suspensiones activas e historial. Aplica nuevas
-              suspensiones según la serie de Fibonacci (1, 2, 3, 5, 8, 13, 21
-              días).
+              Lista de suspensiones activas e historial. Aplica nuevas suspensiones según la serie
+              de Fibonacci (1, 2, 3, 5, 8, 13, 21 días).
             </p>
           </div>
-          <a routerLink="/supervisor" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/supervisor" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -53,14 +41,12 @@ const FIBONACCI = [1, 2, 3, 5, 8, 13, 21];
           <div class="tarjeta mb-2">
             <h2>Nueva suspensión</h2>
             <p class="small muted mt-1">
-              Selecciona un trabajador (por ID) y el motivo. Los días se
-              calculan automáticamente según su número de falta.
+              Selecciona un trabajador (por ID) y el motivo. Los días se calculan automáticamente
+              según su número de falta.
             </p>
             <div class="formulario--rejilla mt-2">
               <div class="campo">
-                <label class="etiqueta" for="trabajador_id"
-                  >ID del trabajador *</label
-                >
+                <label class="etiqueta" for="trabajador_id">ID del trabajador *</label>
                 <input
                   id="trabajador_id"
                   type="text"
@@ -82,14 +68,18 @@ const FIBONACCI = [1, 2, 3, 5, 8, 13, 21];
             </div>
             <div class="alerta alerta--info mt-2" style="margin:0">
               <span
-                >La suspensión durará {{ diasFibonacci() }} día(s) según su
-                {{ numeroFalta() }}.ª falta.</span
+                >La suspensión durará {{ diasFibonacci() }} día(s) según su {{ numeroFalta() }}.ª
+                falta.</span
               >
             </div>
             <button
               type="button"
               class="btn btn--primario mt-2"
-              [disabled]="aplicando() || !nuevaSuspension.trabajador_id.trim() || !nuevaSuspension.motivo.trim()"
+              [disabled]="
+                aplicando() ||
+                !nuevaSuspension.trabajador_id.trim() ||
+                !nuevaSuspension.motivo.trim()
+              "
               (click)="aplicar()"
             >
               {{ aplicando() ? 'Aplicando…' : 'Aplicar suspensión' }}
@@ -112,21 +102,15 @@ const FIBONACCI = [1, 2, 3, 5, 8, 13, 21];
                       <div>
                         <strong>{{ s.trabajador_id.slice(0, 8) }}…</strong>
                         <div class="small muted">
-                          Falta #{{ s.numero_falta }} ·
-                          {{ s.dias_fibonacci }} día(s) ·
+                          Falta #{{ s.numero_falta }} · {{ s.dias_fibonacci }} día(s) ·
                           {{ s.activa ? 'Activa' : 'Finalizada' }}
                         </div>
                         <p class="small mt-1">{{ s.motivo }}</p>
-                        <div class="small muted">
-                          {{ s.inicio | fecha }} → {{ s.fin | fecha }}
-                        </div>
+                        <div class="small muted">{{ s.inicio | fecha }} → {{ s.fin | fecha }}</div>
                       </div>
                       <span
                         class="insignia"
-                        [class]="
-                          'insignia ' +
-                          (s.activa ? 'insignia--rojo' : 'insignia--neutro')
-                        "
+                        [class]="'insignia ' + (s.activa ? 'insignia--rojo' : 'insignia--neutro')"
                       >
                         {{ s.activa ? 'Activa' : 'Finalizada' }}
                       </span>
