@@ -394,7 +394,7 @@ describe('SolicitudesService', () => {
     });
   });
 
-  it('RF32/CP27: advierte del cliente conflictivo sin exponer el motivo ni datos privados', async () => {
+  it('RF32/CP27/CP34: advierte del cliente conflictivo sin exponer el motivo ni datos privados', async () => {
     solicitudRepository.findOne.mockResolvedValue(
       crearSolicitud({
         trabajadorConfirmadoId: PERFIL_ID,

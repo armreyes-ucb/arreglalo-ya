@@ -278,7 +278,7 @@ describe('UsuariosService - RF06 borrado de cuenta', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-  it('anonimiza la cuenta y conserva los registros históricos', async () => {
+  it('CP22: sin solicitudes activas anonimiza la cuenta y conserva los registros históricos', async () => {
     const { service, manager, perfil, documentStorage } = crearServicio({
       solicitudes: [
         [],

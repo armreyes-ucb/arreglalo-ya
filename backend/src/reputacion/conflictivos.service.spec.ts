@@ -126,6 +126,32 @@ describe('ConflictivosService', () => {
     expect(resultado.motivo).toBe('Reincidencia');
   });
 
+  it('CP34: al tercer reporte el cliente queda marcado y la advertencia no muestra sus datos', async () => {
+    const existente = crearConflictivo({ reportesAcumulados: 2 });
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Usuario) {
+        return crearUsuario();
+      }
+      if (entidad === ClienteConflictivoEntidad) {
+        return existente;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+
+    const resultado = await servicio.registrar(
+      { cliente_id: CLIENTE_ID, motivo: 'Tercer reporte comprobado' },
+      SUPERVISOR_ID,
+    );
+
+    expect(resultado.reportes_acumulados).toBe(3);
+    expect(resultado.advertir).toBe(true);
+    expect(resultado).not.toHaveProperty('nombre_completo');
+    expect(resultado).not.toHaveProperty('telefono');
+    expect(JSON.stringify(resultado)).not.toContain('Cliente Prueba');
+    expect(JSON.stringify(resultado)).not.toContain('+59170000001');
+  });
+
   it('rechaza registrar a un usuario que no es cliente', async () => {
     const { manager } = crearManager((entidad) =>
       entidad === Usuario

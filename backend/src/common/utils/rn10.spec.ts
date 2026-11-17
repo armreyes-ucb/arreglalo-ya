@@ -48,6 +48,13 @@ describe('RN10 - requisitos para ofertar', () => {
     );
   });
 
+  it('CP06: un trabajador suspendido no puede ofertar', () => {
+    const perfil = crearPerfil({ estado: EstadoTrabajador.SUSPENDIDO });
+    const evaluacion = evaluarTrabajadorParaOferta(perfil, true, HOY);
+    expect(evaluacion.puedeOfertar).toBe(false);
+    expect(evaluacion.motivo).toContain('no está activo');
+  });
+
   it('bloquea a un trabajador con nivel de verificación menor a 2', () => {
     const perfil = crearPerfil({ nivelVerificacion: 1 });
     expect(motivoBloqueoOferta(perfil, true, HOY)).toContain(

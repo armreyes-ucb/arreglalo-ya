@@ -308,7 +308,7 @@ describe('TrabajadoresService - RF05 pausa', () => {
     expect(resultado.pausa.aviso).toBe(false);
   });
 
-  it('da de baja el rol a los 60 días de pausa y conserva CLIENTE (CP12)', async () => {
+  it('CP12: a los 30 días de pausa y 31 sin reactivar da de baja el rol y conserva CLIENTE', async () => {
     const hoy = new Date(`${hoyISO()}T12:00:00.000Z`);
     perfil = crearPerfil({
       estado: EstadoTrabajador.PAUSADO,

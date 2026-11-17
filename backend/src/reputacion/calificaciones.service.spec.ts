@@ -199,7 +199,7 @@ describe('CalificacionesService', () => {
     expect(recalcular).not.toHaveBeenCalled();
   });
 
-  it('rechaza una segunda calificación del mismo trabajo en el mismo día (RN12)', async () => {
+  it('CP15: rechaza una segunda calificación del mismo trabajo en el mismo día (RN12)', async () => {
     const { manager } = crearManager((entidad) => {
       if (entidad === Solicitud) {
         return solicitud;

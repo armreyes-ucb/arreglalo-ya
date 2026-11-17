@@ -165,7 +165,7 @@ describe('ReclamosService', () => {
     expect(resultado.estado).toBe(EstadoReclamo.ABIERTO);
   });
 
-  it('rechaza reclamos pasados los 7 días (RN07)', async () => {
+  it('CP10: rechaza un reclamo presentado en el día 8 (RN07)', async () => {
     solicitud = crearSolicitud({
       cerradaEn: new Date(Date.now() - 8 * 24 * 3_600_000),
     });

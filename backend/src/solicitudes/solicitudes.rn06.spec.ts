@@ -133,6 +133,32 @@ describe('SolicitudesService - RN06 anulación automática', () => {
     );
   });
 
+  it('CP07: anula una solicitud normal sin confirmar al día 31', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.PUBLICADA,
+      venceEn: new Date(AHORA.getTime() - 1),
+    });
+    const { service } = crearServicio([solicitud], null, configuracion);
+
+    const anuladas = await service.anularVencidas(AHORA);
+
+    expect(anuladas).toBe(1);
+    expect(solicitud.estado).toBe(EstadoSolicitud.ANULADA);
+  });
+
+  it('CP07: no anula una solicitud normal que todavía está dentro del plazo', async () => {
+    const solicitud = crearSolicitud({
+      estado: EstadoSolicitud.PUBLICADA,
+      venceEn: new Date(AHORA.getTime() + 60_000),
+    });
+    const { service } = crearServicio([solicitud], null, configuracion);
+
+    const anuladas = await service.anularVencidas(AHORA);
+
+    expect(anuladas).toBe(0);
+    expect(solicitud.estado).toBe(EstadoSolicitud.PUBLICADA);
+  });
+
   it('CP07: no anula una PENDIENTE_PAGO cuyo QR sigue vigente', async () => {
     const solicitud = crearSolicitud({
       estado: EstadoSolicitud.PENDIENTE_PAGO,
