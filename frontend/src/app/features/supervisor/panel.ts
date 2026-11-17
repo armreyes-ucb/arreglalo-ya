@@ -43,7 +43,7 @@ import { VerificacionService } from '../../core/verificacion.service';
           </div>
         }
 
-        <div class="rejilla rejilla--3 seccion">
+        <div class="rejilla rejilla--4 seccion">
           <div class="tarjeta">
             <span class="estadistica__texto"
               >Expedientes en bandeja</span
@@ -75,6 +75,46 @@ import { VerificacionService } from '../../core/verificacion.service';
               >En todos los expedientes</span
             >
           </div>
+          <div class="tarjeta">
+            <span class="estadistica__texto"
+              >Reclamos pendientes</span
+            >
+            <span class="estadistica__valor">{{
+              reclamosPendientes()
+            }}</span>
+            <span class="small muted"
+              >En bandeja de supervisión</span
+            >
+          </div>
+        </div>
+
+        <div class="rejilla rejilla--4 seccion">
+          <div class="tarjeta">
+            <h3>Verificaciones</h3>
+            <p class="small muted">Expedientes de trabajadores</p>
+            <a routerLink="/supervisor/verificaciones" class="btn btn--contorno btn--sm mt-1">Ir a verificaciones</a>
+          </div>
+          <div class="tarjeta">
+            <h3>Reclamos</h3>
+            <p class="small muted">Bandeja y resolución</p>
+            <a routerLink="/supervisor/reclamos" class="btn btn--contorno btn--sm mt-1">Ir a reclamos</a>
+          </div>
+          <div class="tarjeta">
+            <h3>Sanciones Fibonacci</h3>
+            <p class="small muted">Aplicar suspensiones</p>
+            <a routerLink="/supervisor/sanciones" class="btn btn--contorno btn--sm mt-1">Ir a sanciones</a>
+          </div>
+          <div class="tarjeta">
+            <h3>Clientes conflictivos</h3>
+            <p class="small muted">Registrar y listar</p>
+            <a routerLink="/supervisor/conflictivos" class="btn btn--contorno btn--sm mt-1">Ir a conflictivos</a>
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <h3>Devoluciones a supervisar</h3>
+          <p class="small muted">Revisa las devoluciones pendientes de autorización.</p>
+          <a routerLink="/supervisor/devoluciones" class="btn btn--contorno btn--sm mt-1">Ver devoluciones</a>
         </div>
 
         <div class="tarjeta">
@@ -187,6 +227,8 @@ export class PanelSupervisor implements OnInit {
       0,
     ),
   );
+
+  protected readonly reclamosPendientes = computed(() => 0);
 
   ngOnInit(): void {
     void this.cargar();

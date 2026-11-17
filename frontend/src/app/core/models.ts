@@ -74,6 +74,10 @@ export type DecisionRevision =
   | 'RECHAZAR'
   | 'REQUIERE_DATOS';
 
+export type DecisionReclamo =
+  | 'FALTA_TRABAJADOR'
+  | 'RECHAZADO';
+
 export interface UsuarioPublico {
   id: string;
   nombre_completo: string;
@@ -419,4 +423,180 @@ export interface ResolucionCancelacion {
   devolucion: DevolucionPublica | null;
   suspension: SuspensionPublica | null;
   transferencia: TransferenciaSimulada | null;
+}
+
+export interface CalificacionPublica {
+  id: string;
+  solicitud_id: string;
+  autor_id: string;
+  destinatario_id: string;
+  estrellas: number;
+  calidad: number | null;
+  puntualidad: number | null;
+  trato: number | null;
+  precio_justo: number | null;
+  comentario: string | null;
+  respuesta_trabajador: string | null;
+  fecha: string;
+}
+
+export interface PromedioHabilidad {
+  calidad: number | null;
+  puntualidad: number | null;
+  trato: number | null;
+  precio_justo: number | null;
+}
+
+export interface ResumenReputacion {
+  trabajador_id: string;
+  promedio: number;
+  total_trabajos: number;
+  total_calificaciones: number;
+  por_habilidad: PromedioHabilidad;
+  calificaciones: CalificacionPublica[];
+}
+
+export interface ReclamoPublico {
+  id: string;
+  solicitud_id: string;
+  motivo: string;
+  evidencia_fotos: string[];
+  respuesta_trabajador: string | null;
+  estado: EstadoReclamo;
+  resolucion_supervisor: string | null;
+  fecha_apertura: string;
+  horas_para_responder: number | null;
+  horas_sla_supervisor: number | null;
+  fuera_de_plazo: boolean;
+  vencido_sla: boolean;
+}
+
+export interface SuspensionRegistrada extends SuspensionPublica {
+  activa: boolean;
+}
+
+export interface ClienteConflictivoPublico {
+  id: string;
+  cliente_id: string;
+  reportes_acumulados: number;
+  motivo: string;
+  fecha_registro: string;
+  advertir: boolean;
+}
+
+export interface ResolucionReclamo {
+  reclamo: ReclamoPublico;
+  suspension: SuspensionRegistrada | null;
+}
+
+export interface ConfiguracionPlataforma {
+  comision_pct: number;
+  pago_inicial_pct: number;
+  factor_urgente: number;
+  minutos_vigencia_qr: number;
+  horas_cancelacion_sin_penalidad: number;
+  dias_habiles_devolucion: number;
+  horas_cierre_automatico: number;
+  dias_caducidad_solicitud: number;
+  dias_tope_urgente: number;
+  dias_pausa_maxima: number;
+  dias_pausa_baja: number;
+  dias_aviso_antecedentes: number;
+  dias_reclamo: number;
+  horas_respuesta_reclamo: number;
+  horas_sla_supervisor: number;
+}
+
+export interface CambioConfiguracion {
+  id: string;
+  campo: string;
+  valor_anterior: string | null;
+  valor_nuevo: string;
+  usuario_id: string;
+  fecha: string;
+}
+
+export interface ReporteSolicitudes {
+  total: number;
+  urgentes: number;
+  con_trabajador: number;
+  sin_trabajador: number;
+  por_estado: Partial<Record<EstadoSolicitud, number>>;
+}
+
+export interface ReporteComisiones {
+  comision_cobrada: number;
+  comision_devengada: number;
+  pagos_confirmados: number;
+  monto_total_acordado: number;
+  pago_inicial_total: number;
+}
+
+export interface ReporteDevoluciones {
+  total: number;
+  monto_total: number;
+  pendientes: number;
+  en_proceso: number;
+  completadas: number;
+  por_estado: Partial<Record<EstadoDevolucion, number>>;
+}
+
+export interface ReporteReclamos {
+  total: number;
+  abiertos: number;
+  vencidos_sla: number;
+  por_estado: Partial<Record<EstadoReclamo, number>>;
+}
+
+export interface ReporteAdministrativo {
+  desde: string | null;
+  hasta: string | null;
+  solicitudes: ReporteSolicitudes;
+  comisiones: ReporteComisiones;
+  devoluciones: ReporteDevoluciones;
+  reclamos: ReporteReclamos;
+}
+
+export interface PausaTrabajador {
+  pausado: boolean;
+  estado: 'ACTIVA' | 'VENCIDA' | 'BAJA' | null;
+  inicio: string | null;
+  vence_en: string | null;
+  dias_restantes: number | null;
+  aviso: boolean;
+  baja_en: string | null;
+}
+
+export interface PerfilTrabajadorPropio {
+  id: string;
+  usuario_id: string;
+  nombre_completo: string;
+  telefono: string;
+  especialidades: Especialidad[];
+  horarios: string | null;
+  precios_estimados: Record<string, number>;
+  promedio: number;
+  trabajos_completados: number;
+  estado: EstadoTrabajador;
+  nivel_verificacion: number;
+  acepto_contrato_digital: boolean;
+  zonas: Zona[];
+  fotos_trabajos: string[];
+  vence_antecedentes: string | null;
+  antecedentes_por_vencer: boolean;
+  antecedentes_vencidos: boolean;
+  puede_ofertar: boolean;
+  motivo_bloqueo: string | null;
+  pausa: PausaTrabajador;
+}
+
+export interface SupervisorCreado {
+  supervisor: UsuarioPublico;
+  password_temporal: string | null;
+  creado: boolean;
+}
+
+export interface EliminacionCuentaResponse {
+  anonimizado: boolean;
+  ya_anonimizado: boolean;
 }

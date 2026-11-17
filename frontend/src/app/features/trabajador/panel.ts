@@ -72,24 +72,23 @@ import { VerificacionService } from '../../core/verificacion.service';
               Activar rol de trabajador
             </a>
           </div>
-        } @else if (perfil(); as datos) {
-          @if (error()) {
-            <div class="alerta alerta--error">
-              <span>{{ error() }}</span>
-            </div>
-          }
+} @else if (perfil(); as datos) {
+            @if (error()) {
+              <div class="alerta alerta--error">
+                <span>{{ error() }}</span>
+              </div>
+            }
+            @if (!datos.puede_ofertar) {
+              <div class="alerta alerta--aviso">
+                <span>
+                  <strong>No puedes ofertar todavía.</strong>
+                  {{ datos.motivo_bloqueo }}
+                </span>
+              </div>
+            }
 
-          @if (!datos.puede_ofertar) {
-            <div class="alerta alerta--aviso">
-              <span>
-                <strong>No puedes ofertar todavía.</strong>
-                {{ datos.motivo_bloqueo }}
-              </span>
-            </div>
-          }
-
-          <div class="rejilla rejilla--3 seccion">
-            <div class="tarjeta">
+            <div class="rejilla rejilla--3 seccion">
+              <div class="tarjeta">
               <span class="estadistica__texto">Estado</span>
               <div class="fila mt-1">
                 <span
@@ -212,58 +211,77 @@ import { VerificacionService } from '../../core/verificacion.service';
                   Editar perfil
                 </a>
               </div>
-            </div>
+          </div>
 
-            <div class="tarjeta">
-              <div class="tarjeta__cabecera">
-                <h2>Ofertas recientes</h2>
-                <a
-                  routerLink="/trabajador/mis-ofertas"
-                  class="small"
-                  >Ver todas</a
-                >
-              </div>
-              @if (ofertas().length === 0) {
-                <div class="vacio">
-                  <div class="vacio__icono">+</div>
-                  <p>
-                    Aún no enviaste ofertas. Revisa los trabajos
-                    disponibles en tus zonas.
-                  </p>
-                  <a
-                    routerLink="/trabajador/trabajos"
-                    class="btn btn--primario btn--sm"
-                  >
-                    Buscar trabajos
-                  </a>
-                </div>
-              } @else {
-                <div class="pila">
-                  @for (
-                    oferta of ofertas().slice(0, 3);
-                    track oferta.id
-                  ) {
-                    <div class="tarjeta tarjeta--plana">
-                      <strong>{{
-                        oferta.solicitud.tipo_problema
-                      }}</strong>
-                      <div class="small muted">
-                        {{ oferta.solicitud.zona?.nombre }} ·
-                        Bs
-                        {{
-                          (
-                            oferta.precio_estimado +
-                            oferta.costo_transporte
-                          ).toFixed(2)
-                        }}
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
+          <div class="tarjeta">
+            <h2>Calificaciones y reclamos</h2>
+            <p class="small muted">
+              Revisa tus calificaciones recibidas, responde y gestiona reclamos.
+            </p>
+            <div class="fila mt-1" style="gap: 0.5rem">
+              <a routerLink="/trabajador/calificaciones" class="btn btn--contorno btn--sm">Calificaciones</a>
+              <a routerLink="/trabajador/reclamos" class="btn btn--contorno btn--sm">Reclamos</a>
             </div>
           </div>
-        }
+
+          <div class="tarjeta">
+            <h2>Pausar cuenta</h2>
+            <p class="small muted">
+              Puedes pausar tu cuenta hasta 30 días. Si pasan 60 días sin reactivar, se da de baja el rol.
+</p>
+            <a routerLink="/trabajador/pausa" class="btn btn--contorno btn--sm mt-1">Gestionar pausa</a>
+          </div>
+
+          <div class="tarjeta">
+            <div class="tarjeta__cabecera">
+              <h2>Ofertas recientes</h2>
+              <a
+                routerLink="/trabajador/mis-ofertas"
+                class="small"
+                >Ver todas</a
+              >
+            </div>
+            @if (ofertas().length === 0) {
+              <div class="vacio">
+                <div class="vacio__icono">+</div>
+                <p>
+                  Aún no enviaste ofertas. Revisa los trabajos
+                  disponibles en tus zonas.
+                </p>
+                <a
+                  routerLink="/trabajador/trabajos"
+                  class="btn btn--primario btn--sm"
+                >
+                  Buscar trabajos
+                </a>
+              </div>
+            } @else {
+              <div class="pila">
+                @for (
+                  oferta of ofertas().slice(0, 3);
+                  track oferta.id
+                ) {
+                  <div class="tarjeta tarjeta--plana">
+                    <strong>{{
+                      oferta.solicitud.tipo_problema
+                    }}</strong>
+                    <div class="small muted">
+                      {{ oferta.solicitud.zona?.nombre }} ·
+                      Bs
+                      {{
+                        (
+                          oferta.precio_estimado +
+                          oferta.costo_transporte
+                        ).toFixed(2)
+                      }}
+                    </div>
+                  </div>
+                }
+              </div>
+}
+          </div>
+        </div>
+      }
       </div>
     </section>
   `,

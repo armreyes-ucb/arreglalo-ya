@@ -16,6 +16,10 @@ export interface ActualizarPerfilPayload {
   fotos_urls?: string[];
 }
 
+export interface CambiarPausaPayload {
+  accion: 'PAUSAR' | 'REACTIVAR';
+}
+
 @Injectable({ providedIn: 'root' })
 export class TrabajadoresService {
   private readonly http = inject(HttpClient);
@@ -34,6 +38,17 @@ export class TrabajadoresService {
     return firstValueFrom(
       this.http.patch<PerfilTrabajadorPropio>(
         `${API_URL}/trabajadores/perfil`,
+        payload,
+      ),
+    );
+  }
+
+  cambiarPausa(
+    payload: CambiarPausaPayload,
+  ): Promise<PerfilTrabajadorPropio> {
+    return firstValueFrom(
+      this.http.patch<PerfilTrabajadorPropio>(
+        `${API_URL}/trabajadores/pausa`,
         payload,
       ),
     );

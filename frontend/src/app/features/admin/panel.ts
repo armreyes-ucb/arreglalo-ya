@@ -26,76 +26,40 @@ import { AuthService } from '../../core/auth.service';
           >
         </div>
 
-        <div class="alerta alerta--info">
-          <span>
-            Los módulos de configuración, reportes, suspensiones y
-            gestión de usuarios se implementan en el siguiente
-            sprint del proyecto.
-          </span>
-        </div>
-
-        <div class="rejilla rejilla--3">
+        <div class="rejilla rejilla--4 seccion">
           <div class="tarjeta">
-            <h3>Gestión de usuarios</h3>
-            <p class="small muted">
-              Consulta de cuentas, roles y estados. Próximamente.
-            </p>
-            <span class="insignia insignia--neutro"
-              >Próximo sprint</span
-            >
-          </div>
-          <div class="tarjeta">
-            <h3>Reportes y métricas</h3>
-            <p class="small muted">
-              Solicitudes, ingresos, comisiones y tiempos de
-              atención. Próximamente.
-            </p>
-            <span class="insignia insignia--neutro"
-              >Próximo sprint</span
-            >
-          </div>
-          <div class="tarjeta">
-            <h3>Suspensiones y apelaciones</h3>
-            <p class="small muted">
-              Serie de Fibonacci y seguimiento de casos.
-              Próximamente.
-            </p>
-            <span class="insignia insignia--neutro"
-              >Próximo sprint</span
-            >
-          </div>
-          <div class="tarjeta">
-            <h3>Parámetros de la plataforma</h3>
-            <p class="small muted">
-              Comisión, redondeo y plazos de cancelación.
-              Próximamente.
-            </p>
-            <span class="insignia insignia--neutro"
-              >Próximo sprint</span
-            >
+            <h3>Supervisores</h3>
+            <p class="small muted">CRUD y contraseñas temporales</p>
+            <a routerLink="/admin/supervisores" class="btn btn--contorno btn--sm mt-1">Gestionar supervisores</a>
           </div>
           <div class="tarjeta">
             <h3>Zonas y especialidades</h3>
-            <p class="small muted">
-              Administración del catálogo geográfico y de oficios.
-              Próximamente.
-            </p>
-            <span class="insignia insignia--neutro"
-              >Próximo sprint</span
-            >
+            <p class="small muted">Catálogo geográfico y oficios</p>
+            <a routerLink="/admin/zonas" class="btn btn--contorno btn--sm mt-1">Gestionar zonas</a>
           </div>
           <div class="tarjeta">
-            <h3>Verificaciones</h3>
-            <p class="small muted">
-              Acceso directo a la bandeja de expedientes de
-              trabajadores.
-            </p>
-            <a
-              routerLink="/supervisor/verificaciones"
-              class="btn btn--primario btn--sm"
-              >Abrir bandeja</a
-            >
+            <h3>Parámetros de la plataforma</h3>
+            <p class="small muted">Comisión, redondeo, plazos</p>
+            <a routerLink="/admin/configuracion" class="btn btn--contorno btn--sm mt-1">Configurar</a>
           </div>
+          <div class="tarjeta">
+            <h3>Reportes</h3>
+            <p class="small muted">Solicitudes, ingresos, comisiones</p>
+            <a routerLink="/admin/reportes" class="btn btn--contorno btn--sm mt-1">Ver reportes</a>
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <h3>Verificaciones</h3>
+          <p class="small muted">
+            Acceso directo a la bandeja de expedientes de
+            trabajadores.
+          </p>
+          <a
+            routerLink="/supervisor/verificaciones"
+            class="btn btn--primario btn--sm"
+            >Abrir bandeja</a
+          >
         </div>
       </div>
     </section>

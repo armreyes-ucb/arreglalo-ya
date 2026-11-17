@@ -7,20 +7,26 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import {
   claseTonoPago,
+  claseTonoReclamo,
   claseTonoSolicitud,
   etiquetaEspecialidad,
   etiquetaEstadoQr,
+  etiquetaEstadoReclamo,
   etiquetaEstadoSolicitud,
 } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
 import type {
+  CalificacionPublica,
   OfertaConTrabajador,
   Pago,
+  ReclamoPublico,
   SolicitudDetalle,
 } from '../../core/models';
 import { PagosService } from '../../core/pagos.service';
+import { ReputacionService } from '../../core/reputacion.service';
 import { SolicitudesService } from '../../core/solicitudes.service';
 import { ToastService } from '../../core/toast.service';
 import {
@@ -34,6 +40,7 @@ import {
   selector: 'app-detalle-solicitud',
   imports: [
     RouterLink,
+    FormsModule,
     FechaPipe,
     FechaHoraPipe,
     ImagenUrlPipe,
@@ -477,6 +484,118 @@ import {
                 }
               </div>
 
+              @if (puedeCalificar()) {
+                <div class="tarjeta">
+                  <h2>Calificar y comentar</h2>
+                  @if (yaCalificoHoy()) {
+                    <div class="alerta alerta--info">
+                      <span>Ya calificaste este trabajo hoy (máximo 1 por día según RN12).</span>
+                    </div>
+                  } @else {
+                    <div class="pila mt-2">
+                      <div class="campo">
+                        <label class="etiqueta">Estrellas</label>
+                        <div class="fila" style="gap: 0.5rem">
+                          @for (n of [1,2,3,4,5]; track n) {
+                            <button
+                              type="button"
+                              class="btn btn--contorno btn--sm"
+                              [class.btn--primario]="calificacionEstrellas() === n"
+                              (click)="calificacionEstrellas.set(n)"
+                            >
+                              {{ n }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                      <div class="campo">
+                        <label class="etiqueta" for="comentario">Comentario (opcional)</label>
+                        <textarea
+                          id="comentario"
+                          class="input"
+                          rows="3"
+                          [(ngModel)]="comentarioTexto"
+                          placeholder="¿Cómo fue tu experiencia?"
+                        ></textarea>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn--primario btn--bloque mt-2"
+                        [disabled]="calificando() || !calificacionEstrellas()"
+                        (click)="calificar(calificacionEstrellas()!)"
+                      >
+                        {{ calificando() ? 'Enviando…' : 'Enviar calificación' }}
+                      </button>
+                      @if (errorReputacion()) {
+                        <div class="alerta alerta--error mt-2">
+                          <span>{{ errorReputacion() }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (puedeReclamar()) {
+                <div class="tarjeta">
+                  <h2>Reclamar</h2>
+                  <p class="small muted">
+                    Tienes hasta 7 días después del cierre para abrir un reclamo (RN07).
+                  </p>
+                  <div class="pila mt-2">
+                    <div class="campo">
+                      <label class="etiqueta" for="motivo">Motivo del reclamo *</label>
+                      <textarea
+                        id="motivo"
+                        class="input"
+                        rows="3"
+                        [(ngModel)]="reclamoMotivo"
+                        placeholder="Describe qué salió mal (mín. 10 caracteres)"
+                      ></textarea>
+                    </div>
+                    <div class="campo">
+                      <label class="etiqueta">Evidencia (hasta 5 fotos)</label>
+                      <input
+                        type="file"
+                        class="input"
+                        accept="image/*"
+                        multiple
+                        (change)="onEvidenciaChange($event)"
+                      />
+                      @if (reclamoEvidencia().length) {
+                        <div class="galeria mt-1">
+                          @for (foto of reclamoEvidencia(); track foto) {
+                            <div>
+                              <img [src]="foto" alt="Evidencia" style="width: 80px; height: 80px; object-fit: cover" />
+                              <button
+                                type="button"
+                                class="enlace-boton small"
+                                (click)="quitarEvidencia(foto)"
+                              >
+                                Quitar
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      class="btn btn--peligro btn--bloque mt-2"
+                      [disabled]="reclamando() || (reclamoMotivo().trim().length < 10)"
+                      (click)="reclamar(reclamoMotivo(), reclamoEvidencia())"
+                    >
+                      {{ reclamando() ? 'Enviando…' : 'Enviar reclamo' }}
+                    </button>
+                    @if (errorReputacion()) {
+                      <div class="alerta alerta--error mt-2">
+                        <span>{{ errorReputacion() }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
               <div class="tarjeta">
                 <h3>¿Qué sigue?</h3>
                 <p class="small muted">
@@ -704,6 +823,7 @@ export class DetalleSolicitud implements OnInit {
     SolicitudesService,
   );
   private readonly pagosService = inject(PagosService);
+  private readonly reputacionService = inject(ReputacionService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -726,12 +846,23 @@ export class DetalleSolicitud implements OnInit {
     'precio',
   );
 
+  protected readonly calificando = signal(false);
+  protected readonly reclamando = signal(false);
+  protected readonly misCalificaciones = signal<CalificacionPublica[]>([]);
+  protected readonly errorReputacion = signal('');
+  protected readonly calificacionEstrellas = signal<number | null>(null);
+  protected readonly comentarioTexto = signal('');
+  protected readonly reclamoMotivo = signal('');
+  protected readonly reclamoEvidencia = signal<string[]>([]);
+
   protected readonly etiquetaEstado = etiquetaEstadoSolicitud;
   protected readonly etiquetaEstadoQr = etiquetaEstadoQr;
+  protected readonly etiquetaEstadoReclamo = etiquetaEstadoReclamo;
   protected readonly etiquetaEspecialidad =
     etiquetaEspecialidad;
   protected readonly claseTono = claseTonoSolicitud;
   protected readonly claseTonoPago = claseTonoPago;
+  protected readonly claseTonoReclamo = claseTonoReclamo;
 
   protected readonly opcionesOrden: Array<{
     valor: 'precio' | 'reputacion';
@@ -776,6 +907,28 @@ export class DetalleSolicitud implements OnInit {
     ),
   );
 
+  protected readonly puedeCalificar = computed(() => {
+    const estado = this.solicitud()?.estado;
+    return [
+      'CONFIRMADA',
+      'EN_PROGRESO',
+      'TERMINADA_TRABAJADOR',
+      'FINALIZADA',
+    ].includes(estado ?? '');
+  });
+
+  protected readonly puedeReclamar = computed(() => {
+    const estado = this.solicitud()?.estado;
+    const cerradaEn = this.solicitud()?.cerrada_en;
+    if (estado !== 'FINALIZADA' || !cerradaEn) {
+      return false;
+    }
+    const dias = Math.floor(
+      (Date.now() - new Date(cerradaEn).getTime()) / (1000 * 60 * 60 * 24),
+    );
+    return dias <= 7;
+  });
+
   protected readonly ofertasOrdenadas = computed(() => {
     const lista = [...this.ofertas()];
     if (this.orden() === 'reputacion') {
@@ -788,6 +941,16 @@ export class DetalleSolicitud implements OnInit {
     }
     return lista.sort(
       (a, b) => this.totalOferta(a) - this.totalOferta(b),
+    );
+  });
+
+  protected readonly yaCalificoHoy = computed(() => {
+    const detalle = this.solicitud();
+    if (!detalle) return false;
+    return this.misCalificaciones().some(
+      (c) =>
+        c.solicitud_id === detalle.id &&
+        c.fecha === new Date().toISOString().split('T')[0],
     );
   });
 
@@ -956,8 +1119,11 @@ export class DetalleSolicitud implements OnInit {
     try {
       const detalle = await this.solicitudesService.detalle(id);
       this.solicitud.set(detalle);
-      await this.cargarOfertas(detalle);
-      await this.cargarPago(detalle);
+      await Promise.all([
+        this.cargarOfertas(detalle),
+        this.cargarPago(detalle),
+        this.cargarMisCalificaciones(),
+      ]);
     } catch (error) {
       this.error.set(mensajeDeError(error));
     } finally {
@@ -1017,6 +1183,96 @@ export class DetalleSolicitud implements OnInit {
     } catch {
       this.pago.set(null);
     }
+  }
+
+  private async cargarMisCalificaciones(): Promise<void> {
+    try {
+      this.misCalificaciones.set(await this.reputacionService.misCalificaciones());
+    } catch {
+      this.misCalificaciones.set([]);
+    }
+  }
+
+  protected async calificar(estrellas: number): Promise<void> {
+    const detalle = this.solicitud();
+    if (!detalle) return;
+
+    this.calificando.set(true);
+    this.errorReputacion.set('');
+    try {
+      await this.reputacionService.calificar(detalle.id, {
+        estrellas,
+        comentario: '',
+      });
+      this.toast.exito('Calificación registrada correctamente.');
+      await this.cargarMisCalificaciones();
+    } catch (error) {
+      this.errorReputacion.set(mensajeDeError(error));
+    } finally {
+      this.calificando.set(false);
+    }
+  }
+
+  protected async comentar(comentario: string): Promise<void> {
+    const detalle = this.solicitud();
+    if (!detalle) return;
+
+    this.calificando.set(true);
+    this.errorReputacion.set('');
+    try {
+      await this.reputacionService.comentar(detalle.id, {
+        comentario,
+      });
+      this.toast.exito('Comentario agregado correctamente.');
+      await this.cargarMisCalificaciones();
+    } catch (error) {
+      this.errorReputacion.set(mensajeDeError(error));
+    } finally {
+      this.calificando.set(false);
+    }
+  }
+
+  protected async reclamar(motivo: string, evidencia: string[]): Promise<void> {
+    const detalle = this.solicitud();
+    if (!detalle) return;
+
+    this.reclamando.set(true);
+    this.errorReputacion.set('');
+    try {
+      await this.reputacionService.reclamar(detalle.id, {
+        motivo,
+        evidencia_fotos: evidencia,
+      });
+      this.toast.exito('Reclamo registrado. El técnico tiene 48h para responder.');
+      await this.cargarMisCalificaciones();
+    } catch (error) {
+      this.errorReputacion.set(mensajeDeError(error));
+    } finally {
+      this.reclamando.set(false);
+    }
+  }
+
+  protected onEvidenciaChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    for (const file of Array.from(input.files)) {
+      if (file.size > 5 * 1024 * 1024) {
+        this.toast.error(`${file.name} supera 5 MB.`);
+        continue;
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        this.toast.error(`${file.name}: formato no soportado.`);
+        continue;
+      }
+      const url = URL.createObjectURL(file);
+      this.reclamoEvidencia.update((arr) => [...arr, url]);
+    }
+    input.value = '';
+  }
+
+  protected quitarEvidencia(url: string): void {
+    URL.revokeObjectURL(url);
+    this.reclamoEvidencia.update((arr) => arr.filter((u) => u !== url));
   }
 
   private iniciarContador(): void {

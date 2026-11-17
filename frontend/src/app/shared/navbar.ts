@@ -91,6 +91,13 @@ interface EnlaceNav {
                 }}</small>
               </span>
             </a>
+            <a
+              routerLink="/mi-cuenta"
+              class="btn btn--fantasma btn--sm"
+              title="Mi cuenta"
+            >
+              Cuenta
+            </a>
             <button
               type="button"
               class="btn btn--fantasma btn--sm"
@@ -173,6 +180,12 @@ export class Navbar {
             etiqueta: 'Verificación',
             ruta: '/trabajador/verificacion',
           },
+          {
+            etiqueta: 'Calificaciones',
+            ruta: '/trabajador/calificaciones',
+          },
+          { etiqueta: 'Reclamos', ruta: '/trabajador/reclamos' },
+          { etiqueta: 'Pausa', ruta: '/trabajador/pausa' },
         ];
       case 'SUPERVISOR':
         return [
@@ -181,9 +194,19 @@ export class Navbar {
             etiqueta: 'Verificaciones',
             ruta: '/supervisor/verificaciones',
           },
+          { etiqueta: 'Reclamos', ruta: '/supervisor/reclamos' },
+          { etiqueta: 'Sanciones', ruta: '/supervisor/sanciones' },
+          { etiqueta: 'Conflictivos', ruta: '/supervisor/conflictivos' },
+          { etiqueta: 'Devoluciones', ruta: '/supervisor/devoluciones' },
         ];
       case 'SUPERADMIN':
-        return [{ etiqueta: 'Panel', ruta: '/admin' }];
+        return [
+          { etiqueta: 'Panel', ruta: '/admin' },
+          { etiqueta: 'Supervisores', ruta: '/admin/supervisores' },
+          { etiqueta: 'Zonas', ruta: '/admin/zonas' },
+          { etiqueta: 'Configuración', ruta: '/admin/configuracion' },
+          { etiqueta: 'Reportes', ruta: '/admin/reportes' },
+        ];
       default: {
         const enlaces: EnlaceNav[] = [
           { etiqueta: 'Panel', ruta: '/cliente' },

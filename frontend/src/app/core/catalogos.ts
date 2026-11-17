@@ -313,6 +313,22 @@ export function claseTonoTrabajador(
   }
 }
 
+export function claseTonoReclamo(estado: EstadoReclamo | string): string {
+  switch (estado) {
+    case 'RESUELTO':
+      return 'insignia--verde';
+    case 'RECHAZADO':
+    case 'FALTA_TRABAJADOR':
+      return 'insignia--rojo';
+    case 'EN_REVISION_SUPERVISOR':
+      return 'insignia--ambar';
+    case 'RESPONDIDO':
+      return 'insignia--azul';
+    default:
+      return 'insignia--neutro';
+  }
+}
+
 export function nombreCorto(nombre: string): string {
   return nombre.trim().split(/\s+/).slice(0, 2).join(' ');
 }

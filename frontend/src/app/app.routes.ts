@@ -163,6 +163,30 @@ export const routes: Routes = [
             (m) => m.Seguimiento,
           ),
       },
+      {
+        path: 'calificaciones',
+        title: 'Mis calificaciones | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/trabajador/calificaciones').then(
+            (m) => m.CalificacionesTrabajador,
+          ),
+      },
+      {
+        path: 'reclamos',
+        title: 'Mis reclamos | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/trabajador/reclamos').then(
+            (m) => m.ReclamosTrabajador,
+          ),
+      },
+      {
+        path: 'pausa',
+        title: 'Pausar mi cuenta | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/trabajador/pausa').then(
+            (m) => m.PausaTrabajador,
+          ),
+      },
     ],
   },
   {
@@ -193,6 +217,38 @@ export const routes: Routes = [
             (m) => m.RevisionVerificacion,
           ),
       },
+      {
+        path: 'reclamos',
+        title: 'Bandeja de reclamos | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/supervisor/reclamos').then(
+            (m) => m.ReclamosSupervisor,
+          ),
+      },
+      {
+        path: 'sanciones',
+        title: 'Sanciones Fibonacci | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/supervisor/sanciones').then(
+            (m) => m.SancionesSupervisor,
+          ),
+      },
+      {
+        path: 'conflictivos',
+        title: 'Clientes conflictivos | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/supervisor/conflictivos').then(
+            (m) => m.ConflictivosSupervisor,
+          ),
+      },
+      {
+        path: 'devoluciones',
+        title: 'Devoluciones a supervisar | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/supervisor/devoluciones').then(
+            (m) => m.DevolucionesSupervisor,
+          ),
+      },
     ],
   },
   {
@@ -207,7 +263,48 @@ export const routes: Routes = [
             (m) => m.PanelAdmin,
           ),
       },
+      {
+        path: 'supervisores',
+        title: 'Gestión de supervisores | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/admin/supervisores').then(
+            (m) => m.SupervisoresAdmin,
+          ),
+      },
+      {
+        path: 'zonas',
+        title: 'Zonas y especialidades | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/admin/zonas').then(
+            (m) => m.ZonasAdmin,
+          ),
+      },
+      {
+        path: 'configuracion',
+        title: 'Parámetros de la plataforma | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/admin/configuracion').then(
+            (m) => m.ConfiguracionAdmin,
+          ),
+      },
+      {
+        path: 'reportes',
+        title: 'Reportes y métricas | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/admin/reportes').then(
+            (m) => m.ReportesAdmin,
+          ),
+      },
     ],
+  },
+  {
+    path: 'mi-cuenta',
+    title: 'Mi cuenta | Arréglalo Ya',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/cuenta/mi-cuenta').then(
+        (m) => m.MiCuenta,
+      ),
   },
   { path: '**', redirectTo: '' },
 ];
