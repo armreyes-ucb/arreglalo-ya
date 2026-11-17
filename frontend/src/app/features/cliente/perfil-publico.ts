@@ -52,10 +52,24 @@ import { ImagenUrlPipe, MonedaPipe } from '../../shared/pipes';
                   <div>
                     <h1>{{ perfil.nombre_completo }}</h1>
                     <div class="fila">
-                      <span class="insignia insignia--verde">
+                      <span
+                        class="insignia"
+                        [class.insignia--verde]="
+                          perfil.nivel_verificacion >= 2 &&
+                          !perfil.antecedentes_vencidos
+                        "
+                        [class.insignia--rojo]="
+                          perfil.antecedentes_vencidos
+                        "
+                        [class.insignia--neutro]="
+                          perfil.nivel_verificacion < 2 &&
+                          !perfil.antecedentes_vencidos
+                        "
+                      >
                         {{
                           formatearNivel(
-                            perfil.nivel_verificacion
+                            perfil.nivel_verificacion,
+                            perfil.antecedentes_vencidos
                           )
                         }}
                       </span>

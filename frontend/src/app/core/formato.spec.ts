@@ -3,6 +3,7 @@ import {
   formatearBs,
   formatearDistancia,
   formatearFecha,
+  formatearNivel,
   valorDatetimeLocal,
 } from './formato';
 
@@ -30,5 +31,11 @@ describe('formato', () => {
     expect(formatearDistancia(0)).toBe('En tu zona');
     expect(formatearDistancia(1)).toBe('Zona cercana');
     expect(formatearDistancia(2)).toBe('Zona vecina');
+  });
+
+  it('CP25: pierde la insignia Verificado con antecedentes vencidos', () => {
+    expect(formatearNivel(3)).toBe('Verificado');
+    expect(formatearNivel(3, true)).toBe('Antecedentes vencidos');
+    expect(formatearNivel(2, true)).not.toBe('Verificado');
   });
 });

@@ -25,6 +25,18 @@ export interface ResultadoPrecioFinal {
   saldo75: number;
 }
 
+/** RF34: parámetros vigentes al generar el QR (CP35). */
+export interface ParametrosPago {
+  comisionPct?: number;
+  pagoInicialPct?: number;
+  factorUrgente?: number;
+}
+
+export interface ParametrosCancelacion {
+  horasSinPenalidad?: number;
+  diasHabilesDevolucion?: number;
+}
+
 @Injectable()
 export class BusinessRulesService {
   redondearBs(valor: number): number {
@@ -36,18 +48,31 @@ export class BusinessRulesService {
     return Math.round(valor * 2) / 2;
   }
 
-  calcularPago(precio: number, urgente = false): ResultadoPago {
+  calcularPago(
+    precio: number,
+    urgente = false,
+    parametros: ParametrosPago = {},
+  ): ResultadoPago {
     if (!Number.isFinite(precio) || precio <= 0) {
       throw new BadRequestException(
         'El precio debe ser mayor a 0',
       );
     }
 
+    const factorUrgente = parametros.factorUrgente ?? 1.1;
+    const comisionPct = parametros.comisionPct ?? 5;
+    const pagoInicialPct = parametros.pagoInicialPct ?? 25;
+    this.validarPorcentajes(comisionPct, pagoInicialPct, factorUrgente);
+
     const total = this.redondearBs(
-      urgente ? precio * 1.1 : precio,
+      urgente ? precio * factorUrgente : precio,
     );
-    const pagoInicial25 = this.redondearBs(total * 0.25);
-    const comision5 = this.redondearBs(total * 0.05);
+    const pagoInicial25 = this.redondearBs(
+      total * (pagoInicialPct / 100),
+    );
+    const comision5 = this.redondearBs(
+      total * (comisionPct / 100),
+    );
     const parteTrabajador20 = pagoInicial25 - comision5;
     const saldo75 = this.redondearBs(
       total - pagoInicial25,
@@ -66,6 +91,7 @@ export class BusinessRulesService {
     precioFinal: number,
     pagoInicial25: number,
     urgente = false,
+    factorUrgente = 1.1,
   ): ResultadoPrecioFinal {
     if (!Number.isFinite(precioFinal) || precioFinal <= 0) {
       throw new BadRequestException(
@@ -80,9 +106,14 @@ export class BusinessRulesService {
         'El pago inicial no es válido',
       );
     }
+    if (!Number.isFinite(factorUrgente) || factorUrgente < 1) {
+      throw new BadRequestException(
+        'El factor de urgencia no es válido',
+      );
+    }
 
     const total = this.redondearBs(
-      urgente ? precioFinal * 1.1 : precioFinal,
+      urgente ? precioFinal * factorUrgente : precioFinal,
     );
     if (total < pagoInicial25) {
       throw new BadRequestException(
@@ -133,6 +164,7 @@ export class BusinessRulesService {
     cita: Date,
     ahora: Date,
     numeroFalta?: number,
+    parametros: ParametrosCancelacion = {},
   ): ResultadoCancelacion {
     if (
       !Number.isFinite(cita.getTime()) ||
@@ -143,10 +175,14 @@ export class BusinessRulesService {
       );
     }
 
+    const horasSinPenalidad =
+      parametros.horasSinPenalidad ?? 2;
+    const diasDevolucion =
+      parametros.diasHabilesDevolucion ?? 3;
     const horasRestantes =
       (cita.getTime() - ahora.getTime()) / 3_600_000;
 
-    if (horasRestantes >= 2) {
+    if (horasRestantes >= horasSinPenalidad) {
       return {
         horasRestantes,
         penalidad: false,
@@ -155,14 +191,17 @@ export class BusinessRulesService {
         numeroFalta: null,
         diasSuspension: 0,
         fechaLimiteDevolucion:
-          this.calcularFechaLimiteDevolucion(ahora),
+          this.calcularFechaLimiteDevolucion(
+            ahora,
+            diasDevolucion,
+          ),
       };
     }
 
     if (quien === 'TRABAJADOR') {
       if (numeroFalta === undefined) {
         throw new BadRequestException(
-          'El número de falta es obligatorio cuando el trabajador cancela con menos de 2 horas',
+          `El número de falta es obligatorio cuando el trabajador cancela con menos de ${horasSinPenalidad} horas`,
         );
       }
       return {
@@ -173,7 +212,10 @@ export class BusinessRulesService {
         numeroFalta,
         diasSuspension: this.diasSuspension(numeroFalta),
         fechaLimiteDevolucion:
-          this.calcularFechaLimiteDevolucion(ahora),
+          this.calcularFechaLimiteDevolucion(
+            ahora,
+            diasDevolucion,
+          ),
       };
     }
 
@@ -186,6 +228,41 @@ export class BusinessRulesService {
       diasSuspension: 0,
       fechaLimiteDevolucion: null,
     };
+  }
+
+  private validarPorcentajes(
+    comisionPct: number,
+    pagoInicialPct: number,
+    factorUrgente: number,
+  ): void {
+    if (
+      !Number.isFinite(comisionPct) ||
+      comisionPct < 0 ||
+      comisionPct > 100
+    ) {
+      throw new BadRequestException(
+        'La comisión debe estar entre 0 y 100',
+      );
+    }
+    if (
+      !Number.isFinite(pagoInicialPct) ||
+      pagoInicialPct <= 0 ||
+      pagoInicialPct > 100
+    ) {
+      throw new BadRequestException(
+        'El pago inicial debe estar entre 0 y 100',
+      );
+    }
+    if (comisionPct > pagoInicialPct) {
+      throw new BadRequestException(
+        'La comisión no puede superar el pago inicial',
+      );
+    }
+    if (!Number.isFinite(factorUrgente) || factorUrgente < 1) {
+      throw new BadRequestException(
+        'El factor de urgencia debe ser mayor o igual a 1',
+      );
+    }
   }
 
   private sumarDiasHabiles(desde: Date, dias: number): Date {

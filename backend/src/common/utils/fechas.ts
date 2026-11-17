@@ -32,6 +32,7 @@ export interface EstadoAntecedentes {
 export function calcularEstadoAntecedentes(
   venceAntecedentes: string | null,
   hoy = hoyISO(),
+  diasAviso = 15,
 ): EstadoAntecedentes {
   const registrado = Boolean(venceAntecedentes);
   const diasRestantes = venceAntecedentes
@@ -45,7 +46,7 @@ export function calcularEstadoAntecedentes(
     por_vencer:
       !vencido &&
       diasRestantes !== null &&
-      diasRestantes <= 15,
+      diasRestantes <= diasAviso,
     dias_restantes: diasRestantes,
   };
 }

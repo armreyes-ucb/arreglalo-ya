@@ -3,9 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { createObserveModule } from '@nestjs/observe';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AdminModule } from './admin/admin.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
+import { ConfiguracionModule } from './configuracion/configuracion.module.js';
 import { PagosModule } from './pagos/pagos.module.js';
 import { ReputacionModule } from './reputacion/reputacion.module.js';
 import { SolicitudesModule } from './solicitudes/solicitudes.module.js';
@@ -48,6 +50,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       serviceId: 'backend',
     }),
     ScheduleModule.forRoot(),
+    ConfiguracionModule,
     AuthModule,
     UsuariosModule,
     ZonasModule,
@@ -57,6 +60,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     PagosModule,
     ReputacionModule,
     UploadsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

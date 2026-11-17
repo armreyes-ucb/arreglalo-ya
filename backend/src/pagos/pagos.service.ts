@@ -15,6 +15,7 @@ import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { toPagoPublico } from '../common/mappers/pago-publico.mapper.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
 import { hoyISO } from '../common/utils/fechas.js';
+import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
@@ -31,8 +32,6 @@ import type {
 } from './interfaces/resolucion-pago-final.interface.js';
 import type { TransferenciaSimulada } from './interfaces/transferencia-simulada.interface.js';
 
-const MINUTOS_VIGENCIA_QR = 30;
-const HORAS_CIERRE_AUTOMATICO = 48;
 const MS_POR_HORA = 3_600_000;
 const ESTADOS_RECLAMO_ABIERTO = [
   EstadoReclamo.ABIERTO,
@@ -47,7 +46,12 @@ export class PagosService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly reglas: BusinessRulesService,
+    private readonly configuracion: ConfiguracionService,
   ) {}
+
+  private get horasCierreAutomatico(): number {
+    return this.configuracion.get().horas_cierre_automatico;
+  }
 
   async crearPagoInicial(
     manager: EntityManager,
@@ -80,12 +84,19 @@ export class PagosService {
       );
     }
 
+    const configuracion = this.configuracion.get();
     const calculo = this.reglas.calcularPago(
       oferta.precioEstimado,
       solicitud.urgente,
+      {
+        comisionPct: configuracion.comision_pct,
+        pagoInicialPct: configuracion.pago_inicial_pct,
+        factorUrgente: configuracion.factor_urgente,
+      },
     );
     const qrVenceEn = new Date(
-      ahora.getTime() + MINUTOS_VIGENCIA_QR * 60_000,
+      ahora.getTime() +
+        configuracion.minutos_vigencia_qr * 60_000,
     );
 
     if (!pago) {
@@ -107,11 +118,8 @@ export class PagosService {
         comprobanteTransferencia: null,
       });
     } else {
-      pago.precioTotalAcordado = calculo.total;
-      pago.pagoInicial25 = calculo.pagoInicial25;
-      pago.parteTrabajador20 = calculo.parteTrabajador20;
-      pago.comision5 = calculo.comision5;
-      pago.saldo75 = calculo.saldo75;
+      // CP35: los montos ya generados no se recalculan al renovar el QR;
+      // un cambio de porcentajes solo aplica a pagos nuevos.
       pago.codigoQrData = null;
       pago.qrVenceEn = qrVenceEn;
       pago.estadoQr = EstadoQr.PENDIENTE;
@@ -302,7 +310,7 @@ export class PagosService {
       const vencieron48Horas =
         fechaTerminada !== null &&
         fechaTerminada.getTime() +
-          HORAS_CIERRE_AUTOMATICO * MS_POR_HORA <=
+          this.horasCierreAutomatico * MS_POR_HORA <=
           Date.now();
 
       if (pago.saldo75ConfirmadoTrabajador || vencieron48Horas) {
@@ -448,7 +456,7 @@ export class PagosService {
       if (
         fechaTerminada !== null &&
         fechaTerminada.getTime() +
-          HORAS_CIERRE_AUTOMATICO * MS_POR_HORA <=
+          this.horasCierreAutomatico * MS_POR_HORA <=
           Date.now()
       ) {
         const transferencia = await this.finalizarSolicitud(
@@ -523,7 +531,7 @@ export class PagosService {
           if (
             !fechaTerminada ||
             fechaTerminada.getTime() +
-              HORAS_CIERRE_AUTOMATICO * MS_POR_HORA >
+              this.horasCierreAutomatico * MS_POR_HORA >
               Date.now()
           ) {
             return false;
@@ -576,7 +584,10 @@ export class PagosService {
     }
 
     const fechaLimite =
-      this.reglas.calcularFechaLimiteDevolucion(new Date());
+      this.reglas.calcularFechaLimiteDevolucion(
+        new Date(),
+        this.configuracion.get().dias_habiles_devolucion,
+      );
     const devolucion = manager.create(Devolucion, {
       pagoId: pago.id,
       motivo,

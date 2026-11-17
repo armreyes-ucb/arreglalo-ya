@@ -30,9 +30,12 @@ export function toEstadoVerificacionTrabajador(
   perfil: PerfilTrabajador,
   documentos: Documento[],
   cuenta: CuentaBancaria | null,
+  diasAvisoAntecedentes = 15,
 ): EstadoVerificacionTrabajador {
   const antecedentes = calcularEstadoAntecedentes(
     perfil.venceAntecedentes,
+    undefined,
+    diasAvisoAntecedentes,
   );
   const motivoBloqueo = motivoBloqueoOferta(
     perfil,

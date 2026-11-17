@@ -6,13 +6,22 @@ import { calcularPausa } from '../utils/pausa.js';
 import { motivoBloqueoOferta } from '../utils/rn10.js';
 import { toPublicZona } from './zona-publica.mapper.js';
 
+export interface OpcionesPerfilTrabajadorPropio {
+  diasAvisoAntecedentes?: number;
+  diasPausaMaxima?: number;
+  diasPausaBaja?: number;
+}
+
 export function toPerfilTrabajadorPropio(
   perfil: PerfilTrabajador,
   zonas: Zona[],
   fotosTrabajos: string[],
+  opciones: OpcionesPerfilTrabajadorPropio = {},
 ): PerfilTrabajadorPropio {
   const antecedentes = calcularEstadoAntecedentes(
     perfil.venceAntecedentes,
+    undefined,
+    opciones.diasAvisoAntecedentes,
   );
   const motivoBloqueo = motivoBloqueoOferta(
     perfil,
@@ -38,6 +47,9 @@ export function toPerfilTrabajadorPropio(
     antecedentes_vencidos: antecedentes.vencido,
     puede_ofertar: motivoBloqueo === null,
     motivo_bloqueo: motivoBloqueo,
-    pausa: calcularPausa(perfil),
+    pausa: calcularPausa(perfil, undefined, {
+      diasMaximosPausa: opciones.diasPausaMaxima,
+      diasBajaAutomatica: opciones.diasPausaBaja,
+    }),
   };
 }

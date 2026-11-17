@@ -84,7 +84,13 @@ export function formatearDistancia(distancia: number): string {
   return 'Zona vecina';
 }
 
-export function formatearNivel(nivel: number): string {
+export function formatearNivel(
+  nivel: number,
+  antecedentesVencidos = false,
+): string {
+  if (antecedentesVencidos) {
+    return 'Antecedentes vencidos';
+  }
   if (nivel >= 2) {
     return 'Verificado';
   }

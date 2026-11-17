@@ -11,6 +11,8 @@ import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import type { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
+import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.constants.js';
+import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
 import { ReclamosService } from './reclamos.service.js';
@@ -122,6 +124,9 @@ function crearServicio(
   return new ReclamosService(
     dataSource,
     suspensiones as SuspensionesService,
+    {
+      get: () => ({ ...CONFIGURACION_POR_DEFECTO }),
+    } as unknown as ConfiguracionService,
   );
 }
 

@@ -17,6 +17,7 @@ import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { toReclamoPublico } from '../common/mappers/reclamo-publico.mapper.js';
 import { toSuspensionRegistrada } from '../common/mappers/suspension-registrada.mapper.js';
+import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
@@ -28,9 +29,7 @@ import type { ResponderReclamoDto } from './dto/responder-reclamo.dto.js';
 import type { ReclamoPublico } from './interfaces/reclamo-publico.interface.js';
 import type { ResolucionReclamo } from './interfaces/resolucion-reclamo.interface.js';
 import {
-  DIAS_MAXIMOS_RECLAMO,
   ESTADOS_RECLAMO_ABIERTO,
-  HORAS_RESPUESTA_RECLAMO,
   MS_POR_HORA,
 } from './reputacion.constants.js';
 import { SuspensionesService } from './suspensiones.service.js';
@@ -44,6 +43,7 @@ export class ReclamosService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly suspensionesService: SuspensionesService,
+    private readonly configuracion: ConfiguracionService,
   ) {}
 
   /** RF30: el cliente reclama dentro de los 7 días desde el cierre (RN07). */
@@ -72,9 +72,10 @@ export class ReclamosService {
       const diasTranscurridos = Math.floor(
         (Date.now() - cierre.getTime()) / MS_POR_DIA,
       );
-      if (diasTranscurridos > DIAS_MAXIMOS_RECLAMO) {
+      const diasMaximos = this.configuracion.get().dias_reclamo;
+      if (diasTranscurridos > diasMaximos) {
         throw new BadRequestException(
-          `El plazo de ${DIAS_MAXIMOS_RECLAMO} días para reclamar venció`,
+          `El plazo de ${diasMaximos} días para reclamar venció`,
         );
       }
 
@@ -100,7 +101,7 @@ export class ReclamosService {
       });
       await manager.save(Reclamo, reclamo);
 
-      return toReclamoPublico(reclamo);
+      return this.mapear(reclamo);
     });
   }
 
@@ -143,9 +144,11 @@ export class ReclamosService {
       const horasTranscurridas =
         (Date.now() - reclamo.fechaApertura.getTime()) /
         MS_POR_HORA;
-      if (horasTranscurridas > HORAS_RESPUESTA_RECLAMO) {
+      const horasRespuesta =
+        this.configuracion.get().horas_respuesta_reclamo;
+      if (horasTranscurridas > horasRespuesta) {
         throw new BadRequestException(
-          `El plazo de ${HORAS_RESPUESTA_RECLAMO} horas para responder venció`,
+          `El plazo de ${horasRespuesta} horas para responder venció`,
         );
       }
 
@@ -153,7 +156,7 @@ export class ReclamosService {
       reclamo.estado = EstadoReclamo.RESPONDIDO;
       await manager.save(Reclamo, reclamo);
 
-      return toReclamoPublico(reclamo);
+      return this.mapear(reclamo);
     });
   }
 
@@ -184,7 +187,9 @@ export class ReclamosService {
     ahora: Date = new Date(),
   ): Promise<number> {
     const limite = new Date(
-      ahora.getTime() - HORAS_RESPUESTA_RECLAMO * MS_POR_HORA,
+      ahora.getTime() -
+        this.configuracion.get().horas_respuesta_reclamo *
+          MS_POR_HORA,
     );
     const resultado = await this.dataSource
       .getRepository(Reclamo)
@@ -206,7 +211,7 @@ export class ReclamosService {
         where: { estado: In(ESTADOS_RECLAMO_ABIERTO) },
         order: { fechaApertura: 'ASC' },
       });
-    return reclamos.map((reclamo) => toReclamoPublico(reclamo));
+    return reclamos.map((reclamo) => this.mapear(reclamo));
   }
 
   /**
@@ -257,7 +262,7 @@ export class ReclamosService {
       await manager.save(Reclamo, reclamo);
 
       return {
-        reclamo: toReclamoPublico(reclamo),
+        reclamo: this.mapear(reclamo),
         suspension: suspension
           ? toSuspensionRegistrada(suspension)
           : null,
@@ -285,7 +290,7 @@ export class ReclamosService {
         },
         order: { fechaApertura: 'DESC' },
       });
-    return reclamos.map((reclamo) => toReclamoPublico(reclamo));
+    return reclamos.map((reclamo) => this.mapear(reclamo));
   }
 
   /** RF30: reclamos de los trabajos del trabajador autenticado. */
@@ -315,7 +320,16 @@ export class ReclamosService {
         },
         order: { fechaApertura: 'DESC' },
       });
-    return reclamos.map((reclamo) => toReclamoPublico(reclamo));
+    return reclamos.map((reclamo) => this.mapear(reclamo));
+  }
+
+  /** RF34: aplica los plazos vigentes al estado derivado del reclamo. */
+  private mapear(reclamo: Reclamo): ReclamoPublico {
+    const configuracion = this.configuracion.get();
+    return toReclamoPublico(reclamo, undefined, {
+      horasRespuesta: configuracion.horas_respuesta_reclamo,
+      horasSla: configuracion.horas_sla_supervisor,
+    });
   }
 
   private async obtenerFechaFinalizacion(

@@ -2,13 +2,16 @@
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
   In,
   IsNull,
+  LessThanOrEqual,
   MoreThan,
   Repository,
   type EntityManager,
@@ -37,6 +40,7 @@ import { SancionesService } from '../common/services/sanciones.service.js';
 import { sumarDias } from '../common/utils/fechas.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { generarEnlaceWhatsApp } from '../common/utils/whatsapp.js';
+import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { REPORTES_PARA_ADVERTIR } from '../reputacion/reputacion.constants.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
@@ -94,8 +98,23 @@ const ESTADOS_RECLAMO_ABIERTO = [
   EstadoReclamo.EN_REVISION_SUPERVISOR,
 ];
 
+const ESTADOS_ANULABLES_RN06 = [
+  EstadoSolicitud.PUBLICADA,
+  EstadoSolicitud.CON_OFERTAS,
+  EstadoSolicitud.PENDIENTE_PAGO,
+];
+
+const ESTADOS_SIN_TOMAR_RN06 = [
+  EstadoSolicitud.PUBLICADA,
+  EstadoSolicitud.CON_OFERTAS,
+];
+
+const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class SolicitudesService {
+  private readonly logger = new Logger(SolicitudesService.name);
+
   constructor(
     @InjectRepository(Solicitud)
     private readonly solicitudRepository: Repository<Solicitud>,
@@ -122,6 +141,7 @@ export class SolicitudesService {
     private readonly reglas: BusinessRulesService,
     private readonly sanciones: SancionesService,
     private readonly dataSource: DataSource,
+    private readonly configuracion: ConfiguracionService,
   ) {}
 
   async crearSolicitud(
@@ -144,6 +164,7 @@ export class SolicitudesService {
 
     const ahora = new Date();
     const urgente = dto.urgente ?? false;
+    const configuracion = this.configuracion.get();
     const solicitud = this.solicitudRepository.create({
       clienteId,
       trabajadorConfirmadoId: null,
@@ -156,7 +177,10 @@ export class SolicitudesService {
       fechaCitaPreferida: fechaCita,
       urgente,
       estado: EstadoSolicitud.PUBLICADA,
-      venceEn: sumarDias(ahora, 30),
+      venceEn: sumarDias(
+        ahora,
+        configuracion.dias_caducidad_solicitud,
+      ),
       entroAlTope: urgente ? ahora : null,
       cerradaEn: null,
     });
@@ -172,6 +196,141 @@ export class SolicitudesService {
     });
 
     return toSolicitudPublica(solicitud, zona);
+  }
+
+  /**
+   * RN06 / RF15 / CP07 / CP08: anula las solicitudes sin trabajador
+   * confirmado a los 30 días o, si son urgentes, tras permanecer en el
+   * tope de prioridad el plazo configurado. Las solicitudes en
+   * `PENDIENTE_PAGO` solo se anulan por la regla de 30 días y cuando el
+   * QR ya venció, para no cortar un pago en curso.
+   */
+  async anularVencidas(ahora: Date = new Date()): Promise<number> {
+    const configuracion = this.configuracion.get();
+    const limiteTope = new Date(
+      ahora.getTime() -
+        configuracion.dias_tope_urgente * MS_POR_DIA,
+    );
+
+    const candidatas = await this.solicitudRepository.find({
+      where: [
+        {
+          trabajadorConfirmadoId: IsNull(),
+          estado: In(ESTADOS_ANULABLES_RN06),
+          venceEn: LessThanOrEqual(ahora),
+        },
+        {
+          trabajadorConfirmadoId: IsNull(),
+          estado: In(ESTADOS_SIN_TOMAR_RN06),
+          urgente: true,
+          entroAlTope: LessThanOrEqual(limiteTope),
+        },
+      ],
+    });
+
+    let anuladas = 0;
+    for (const candidata of candidatas) {
+      const anulada = await this.dataSource.transaction(
+        async (manager) => {
+          const solicitud = await manager.findOne(Solicitud, {
+            where: { id: candidata.id },
+            lock: { mode: 'pessimistic_write' },
+          });
+          if (
+            !solicitud ||
+            solicitud.trabajadorConfirmadoId !== null ||
+            !ESTADOS_ANULABLES_RN06.includes(solicitud.estado)
+          ) {
+            return false;
+          }
+
+          const vencidaPorPlazo =
+            solicitud.venceEn.getTime() <= ahora.getTime();
+          const vencidaEnTope =
+            solicitud.urgente &&
+            ESTADOS_SIN_TOMAR_RN06.includes(solicitud.estado) &&
+            solicitud.entroAlTope !== null &&
+            solicitud.entroAlTope.getTime() <=
+              limiteTope.getTime();
+          if (!vencidaPorPlazo && !vencidaEnTope) {
+            return false;
+          }
+
+          if (
+            solicitud.estado === EstadoSolicitud.PENDIENTE_PAGO
+          ) {
+            const pago = await manager.findOne(Pago, {
+              where: { solicitudId: solicitud.id },
+              lock: { mode: 'pessimistic_write' },
+            });
+            if (
+              pago &&
+              pago.estadoQr === EstadoQr.PENDIENTE &&
+              pago.qrVenceEn !== null &&
+              pago.qrVenceEn.getTime() > ahora.getTime()
+            ) {
+              return false;
+            }
+          }
+
+          await manager.update(
+            Oferta,
+            {
+              solicitudId: solicitud.id,
+              estado: In([
+                EstadoOferta.ENVIADA,
+                EstadoOferta.ELEGIDA,
+              ]),
+            },
+            { estado: EstadoOferta.CERRADA },
+          );
+          await manager.update(
+            Pago,
+            {
+              solicitudId: solicitud.id,
+              estadoQr: EstadoQr.PENDIENTE,
+            },
+            {
+              estadoQr: EstadoQr.VENCIDO,
+              codigoQrData: null,
+              qrVenceEn: null,
+            },
+          );
+
+          solicitud.estado = EstadoSolicitud.ANULADA;
+          await manager.save(Solicitud, solicitud);
+          await this.registrarHistorial(
+            manager,
+            solicitud.id,
+            EstadoSolicitud.ANULADA,
+            solicitud.clienteId,
+          );
+          return true;
+        },
+      );
+      if (anulada) {
+        anuladas += 1;
+      }
+    }
+
+    return anuladas;
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async anularVencidasProgramado(): Promise<void> {
+    try {
+      const anuladas = await this.anularVencidas();
+      if (anuladas > 0) {
+        this.logger.log(
+          `Solicitudes anuladas por caducidad: ${anuladas}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        'No se pudo anular las solicitudes vencidas',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   async listarDisponibles(
@@ -765,6 +924,7 @@ export class SolicitudesService {
         dto.monto,
         pago.pagoInicial25,
         solicitud.urgente,
+        this.configuracion.get().factor_urgente,
       );
       const precio = manager.create(Precio, {
         solicitudId,
@@ -1146,6 +1306,13 @@ export class SolicitudesService {
         solicitud.fechaCitaPreferida,
         ahora,
         numeroFalta,
+        {
+          horasSinPenalidad:
+            this.configuracion.get()
+              .horas_cancelacion_sin_penalidad,
+          diasHabilesDevolucion:
+            this.configuracion.get().dias_habiles_devolucion,
+        },
       );
 
       const pago = await manager.findOne(Pago, {

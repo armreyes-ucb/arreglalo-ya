@@ -142,7 +142,8 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                     <div class="small muted">
                       {{
                         formatearNivel(
-                          trabajador.nivel_verificacion
+                          trabajador.nivel_verificacion,
+                          trabajador.antecedentes_vencidos
                         )
                       }}
                     </div>

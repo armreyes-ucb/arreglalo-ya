@@ -7,16 +7,26 @@ import {
   MS_POR_HORA,
 } from '../../reputacion/reputacion.constants.js';
 
+export interface ParametrosReclamoPublico {
+  horasRespuesta?: number;
+  horasSla?: number;
+}
+
 export function toReclamoPublico(
   reclamo: Reclamo,
   ahora: Date = new Date(),
+  parametros: ParametrosReclamoPublico = {},
 ): ReclamoPublico {
+  const horasRespuesta =
+    parametros.horasRespuesta ?? HORAS_RESPUESTA_RECLAMO;
+  const horasSla =
+    parametros.horasSla ?? HORAS_REVISION_SUPERVISOR;
   const abierto = ESTADOS_RECLAMO_ABIERTO.includes(reclamo.estado);
   const horasTranscurridas =
     (ahora.getTime() - reclamo.fechaApertura.getTime()) /
     MS_POR_HORA;
   const horasRestantes = abierto
-    ? Math.max(0, HORAS_RESPUESTA_RECLAMO - horasTranscurridas)
+    ? Math.max(0, horasRespuesta - horasTranscurridas)
     : 0;
 
   return {
@@ -32,8 +42,8 @@ export function toReclamoPublico(
       ? Math.round(horasRestantes * 10) / 10
       : null,
     fuera_de_plazo:
-      abierto && horasTranscurridas > HORAS_RESPUESTA_RECLAMO,
+      abierto && horasTranscurridas > horasRespuesta,
     vencido_sla:
-      abierto && horasTranscurridas > HORAS_REVISION_SUPERVISOR,
+      abierto && horasTranscurridas > horasSla,
   };
 }

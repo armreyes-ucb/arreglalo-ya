@@ -22,24 +22,39 @@ const SIN_PAUSA: PausaTrabajador = {
   baja_en: null,
 };
 
+export interface OpcionesPausa {
+  diasMaximosPausa?: number;
+  diasBajaAutomatica?: number;
+  diasAviso?: number;
+}
+
 /**
  * Deriva el estado de la pausa a partir de `fecha_pausa`, sin columnas
  * adicionales: vence a los 30 días y la baja del rol llega a los 60.
+ * Los plazos se pueden ajustar desde la configuración (RF34).
  */
 export function calcularPausa(
   perfil: PerfilTrabajador,
   hoy = hoyISO(),
+  opciones: OpcionesPausa = {},
 ): PausaTrabajador {
   if (!perfil.fechaPausa) {
     return { ...SIN_PAUSA };
   }
 
+  const diasMaximosPausa =
+    opciones.diasMaximosPausa ?? DIAS_MAXIMOS_PAUSA;
+  const diasBajaAutomatica =
+    opciones.diasBajaAutomatica ?? DIAS_PARA_BAJA_AUTOMATICA;
+  const diasAviso =
+    opciones.diasAviso ?? DIAS_RESTANTES_PARA_AVISO;
+
   const inicio = hoyISO(perfil.fechaPausa);
   const venceEn = hoyISO(
-    sumarDias(perfil.fechaPausa, DIAS_MAXIMOS_PAUSA),
+    sumarDias(perfil.fechaPausa, diasMaximosPausa),
   );
   const bajaEn = hoyISO(
-    sumarDias(perfil.fechaPausa, DIAS_PARA_BAJA_AUTOMATICA),
+    sumarDias(perfil.fechaPausa, diasBajaAutomatica),
   );
   const diasRestantes = Math.max(
     0,
@@ -70,7 +85,7 @@ export function calcularPausa(
     vence_en: venceEn,
     dias_restantes: diasRestantes,
     aviso:
-      !vencida && diasRestantes <= DIAS_RESTANTES_PARA_AVISO,
+      !vencida && diasRestantes <= diasAviso,
     baja_en: bajaEn,
   };
 }

@@ -103,7 +103,7 @@ import { VerificacionService } from '../../core/verificacion.service';
               </div>
               <span class="small muted mt-1">
                 Nivel {{ datos.nivel_verificacion }} ·
-                {{ formatearNivel(datos.nivel_verificacion) }}
+                {{ formatearNivel(datos.nivel_verificacion, datos.antecedentes_vencidos) }}
               </span>
             </div>
             <div class="tarjeta">

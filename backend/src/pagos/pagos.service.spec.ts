@@ -17,6 +17,9 @@ import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.constants.js';
+import type { ConfiguracionPlataforma } from '../configuracion/interfaces/configuracion-plataforma.interface.js';
+import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
@@ -123,9 +126,11 @@ describe('PagosService', () => {
     getRepository: ReturnType<typeof vi.fn>;
   };
   let candidatasRepository: { find: ReturnType<typeof vi.fn> };
+  let configuracion: ConfiguracionPlataforma;
   let service: PagosService;
 
   beforeEach(() => {
+    configuracion = { ...CONFIGURACION_POR_DEFECTO };
     manager = {
       findOne: vi.fn(),
       create: vi.fn((_entidad, datos) => ({ ...datos })),
@@ -145,6 +150,9 @@ describe('PagosService', () => {
     service = new PagosService(
       dataSource as unknown as DataSource,
       new BusinessRulesService(),
+      {
+        get: () => ({ ...configuracion }),
+      } as unknown as ConfiguracionService,
     );
   });
 
@@ -202,6 +210,39 @@ describe('PagosService', () => {
     expect(actualizado.qrVenceEn?.getTime()).toBeGreaterThanOrEqual(
       antes + 29 * 60_000,
     );
+  });
+
+  it('CP35: un cambio de comisión no altera los montos ya generados', async () => {
+    const pago = crearPago({
+      qrVenceEn: new Date(Date.now() - 60_000),
+    });
+    manager.findOne.mockResolvedValue(pago);
+    configuracion = {
+      ...configuracion,
+      comision_pct: 6,
+      pago_inicial_pct: 25,
+    };
+
+    const renovado = await service.crearPagoInicial(
+      manager,
+      crearSolicitud(),
+      crearOferta(),
+    );
+
+    expect(renovado.precioTotalAcordado).toBe(400);
+    expect(renovado.pagoInicial25).toBe(100);
+    expect(renovado.comision5).toBe(20);
+    expect(renovado.parteTrabajador20).toBe(80);
+
+    manager.findOne.mockResolvedValue(null);
+    const nuevo = await service.crearPagoInicial(
+      manager,
+      crearSolicitud({ id: '99999999-9999-4999-8999-999999999999' }),
+      crearOferta(),
+    );
+    expect(nuevo.precioTotalAcordado).toBe(400);
+    expect(nuevo.pagoInicial25).toBe(100);
+    expect(nuevo.comision5).toBe(24);
   });
 
   it('CP36: no regenera el QR mientras el vigente no ha vencido', async () => {

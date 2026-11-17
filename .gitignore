@@ -12,6 +12,9 @@ dist/
 .env.*
 !.env.example
 
+# Configuración persistida en tiempo de ejecución (RF34)
+/backend/storage/
+
 # Logs de errores y sistema operativo
 npm-debug.log*
 .DS_Store

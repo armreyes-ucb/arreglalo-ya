@@ -25,6 +25,7 @@ const TRABAJADOR: TrabajadorMatch = {
   promedio: 4.8,
   trabajos_completados: 12,
   nivel_verificacion: 3,
+  antecedentes_vencidos: false,
   zonas: [ZONA],
   fotos_trabajos: [],
   distancia: 0,

@@ -25,8 +25,8 @@ import { toPerfilTrabajadorPropio } from '../common/mappers/perfil-trabajador-pr
 import { toTrabajadorMatch } from '../common/mappers/trabajador-match.mapper.js';
 import { toTrabajadorPerfilPublico } from '../common/mappers/trabajador-perfil-publico.mapper.js';
 import { sumarDias } from '../common/utils/fechas.js';
-import { DIAS_PARA_BAJA_AUTOMATICA } from '../common/utils/pausa.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
+import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { Documento } from '../entities/documento.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
@@ -68,6 +68,7 @@ export class TrabajadoresService {
     private readonly ofertaRepository: Repository<Oferta>,
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
+    private readonly configuracion: ConfiguracionService,
   ) {}
 
   async obtenerPerfilPropio(
@@ -76,7 +77,13 @@ export class TrabajadoresService {
     const perfil = await this.buscarPerfilPorUsuario(usuarioId);
     const zonas = await this.zonasDePerfil(perfil.id);
     const fotos = await this.fotosDePerfil(perfil.id);
-    return toPerfilTrabajadorPropio(perfil, zonas, fotos);
+    const configuracion = this.configuracion.get();
+    return toPerfilTrabajadorPropio(perfil, zonas, fotos, {
+      diasAvisoAntecedentes:
+        configuracion.dias_aviso_antecedentes,
+      diasPausaMaxima: configuracion.dias_pausa_maxima,
+      diasPausaBaja: configuracion.dias_pausa_baja,
+    });
   }
 
   async actualizarPerfil(
@@ -280,7 +287,7 @@ export class TrabajadoresService {
       }
       const limite = sumarDias(
         perfil.fechaPausa,
-        DIAS_PARA_BAJA_AUTOMATICA,
+        this.configuracion.get().dias_pausa_baja,
       );
       if (limite.getTime() > ahora.getTime()) {
         continue;

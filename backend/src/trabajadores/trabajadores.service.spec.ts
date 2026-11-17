@@ -10,6 +10,8 @@ import {
 import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
+import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.constants.js';
+import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import type { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import type { Suspension } from '../entities/suspension.entity.js';
 import type { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
@@ -112,6 +114,9 @@ describe('TrabajadoresService - CP26 match', () => {
       { find: vi.fn(async () => []) } as never,
       { find: vi.fn(async () => []) } as never,
       { findOne: vi.fn(), update: vi.fn() } as never,
+      {
+        get: () => ({ ...CONFIGURACION_POR_DEFECTO }),
+      } as unknown as ConfiguracionService,
     );
   });
 

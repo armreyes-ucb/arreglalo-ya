@@ -2,12 +2,16 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  Between,
   DataSource,
   In,
+  Not,
   Repository,
   type EntityManager,
 } from 'typeorm';
@@ -17,8 +21,13 @@ import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { TipoDocumento } from '../common/enums/tipo-documento.enum.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
-import { hoyISO, sumarAniosISO } from '../common/utils/fechas.js';
+import {
+  hoyISO,
+  sumarAniosISO,
+  sumarDias,
+} from '../common/utils/fechas.js';
 import { cifrarNumeroCuenta } from '../common/utils/cifrar-cuenta.js';
+import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { CuentaBancaria } from '../entities/cuenta-bancaria.entity.js';
 import { Documento } from '../entities/documento.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
@@ -51,6 +60,8 @@ const TIPOS_VERIFICACION: TipoDocumento[] = [
 
 @Injectable()
 export class VerificacionService {
+  private readonly logger = new Logger(VerificacionService.name);
+
   constructor(
     @InjectRepository(PerfilTrabajador)
     private readonly perfilRepository: Repository<PerfilTrabajador>,
@@ -60,6 +71,7 @@ export class VerificacionService {
     private readonly cuentaRepository: Repository<CuentaBancaria>,
     private readonly documentStorage: DocumentStorageService,
     private readonly dataSource: DataSource,
+    private readonly configuracion: ConfiguracionService,
   ) {}
 
   async cargarDocumentos(
@@ -217,7 +229,54 @@ export class VerificacionService {
       perfil,
       documentos,
       perfil.usuario.cuentaBancaria ?? null,
+      this.configuracion.get().dias_aviso_antecedentes,
     );
+  }
+
+  /**
+   * RF10: tarea diaria que revisa los REJAP próximos a vencer. El bloqueo
+   * de ofertas y la pérdida de la insignia se derivan de la fecha, así que
+   * aquí solo se registra el aviso operativo.
+   */
+  async avisarAntecedentesPorVencer(
+    ahora: Date = new Date(),
+  ): Promise<number> {
+    const diasAviso =
+      this.configuracion.get().dias_aviso_antecedentes;
+    const hoy = hoyISO(ahora);
+    const limite = hoyISO(sumarDias(ahora, diasAviso));
+
+    const perfiles = await this.perfilRepository.find({
+      where: {
+        venceAntecedentes: Between(hoy, limite),
+        estado: Not(EstadoTrabajador.BAJA),
+      },
+      relations: { usuario: true },
+    });
+
+    for (const perfil of perfiles) {
+      this.logger.warn(
+        `REJAP por vencer el ${perfil.venceAntecedentes}: trabajador ${perfil.usuario?.nombreCompleto ?? perfil.usuarioId}`,
+      );
+    }
+    return perfiles.length;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_8AM)
+  async avisarAntecedentesPorVencerProgramado(): Promise<void> {
+    try {
+      const avisados = await this.avisarAntecedentesPorVencer();
+      if (avisados > 0) {
+        this.logger.log(
+          `Avisos de vencimiento de antecedentes: ${avisados}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        'No se pudo revisar el vencimiento de antecedentes',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   async obtenerArchivoDocumento(

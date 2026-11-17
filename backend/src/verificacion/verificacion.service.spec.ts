@@ -17,6 +17,8 @@ import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { TipoDocumento } from '../common/enums/tipo-documento.enum.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
+import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.constants.js';
+import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import type { CuentaBancaria } from '../entities/cuenta-bancaria.entity.js';
 import type { Documento } from '../entities/documento.entity.js';
 import type { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
@@ -53,6 +55,9 @@ describe('VerificacionService - CP24', () => {
       cuentaRepository as unknown as Repository<CuentaBancaria>,
       documentStorage as unknown as DocumentStorageService,
       dataSource as unknown as DataSource,
+      {
+        get: () => ({ ...CONFIGURACION_POR_DEFECTO }),
+      } as unknown as ConfiguracionService,
     );
   });
 

@@ -93,7 +93,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                     }}
                   </span>
                   <span class="etiqueta-suave">
-                    {{ formatearNivel(datos.nivel_verificacion) }}
+                    {{ formatearNivel(datos.nivel_verificacion, datos.antecedentes_vencidos) }}
                   </span>
                   <span class="etiqueta-suave">
                     {{ datos.trabajos_completados }} trabajo(s)

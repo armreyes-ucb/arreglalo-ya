@@ -22,6 +22,8 @@ import { Rol } from '../common/enums/rol.enum.js';
 import { TipoPrecio } from '../common/enums/tipo-precio.enum.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
 import { SancionesService } from '../common/services/sanciones.service.js';
+import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.constants.js';
+import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import type { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
@@ -269,6 +271,9 @@ describe('SolicitudesService', () => {
       reglas,
       new SancionesService(reglas),
       dataSource as unknown as DataSource,
+      {
+        get: () => ({ ...CONFIGURACION_POR_DEFECTO }),
+      } as unknown as ConfiguracionService,
     );
   });
 

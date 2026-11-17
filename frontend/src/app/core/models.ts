@@ -209,6 +209,7 @@ export interface TrabajadorPublico {
   promedio: number;
   trabajos_completados: number;
   nivel_verificacion: number;
+  antecedentes_vencidos: boolean;
   zonas: Zona[];
   fotos_trabajos: string[];
 }

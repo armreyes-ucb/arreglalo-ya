@@ -6,6 +6,8 @@ import { EspecialidadTipo } from '../common/enums/especialidad-tipo.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
+import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.constants.js';
+import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import {
   diferenciaDias,
   hoyISO,
@@ -94,6 +96,9 @@ function crearServicio(perfil: PerfilTrabajador) {
     solicitudRepository as never,
     ofertaRepository as never,
     usuarioRepository as never,
+    {
+      get: () => ({ ...CONFIGURACION_POR_DEFECTO }),
+    } as unknown as ConfiguracionService,
   );
 
   return {
