@@ -27,17 +27,12 @@ export class ToastService {
   }
 
   cerrar(id: number): void {
-    this._toasts.update((toasts) =>
-      toasts.filter((toast) => toast.id !== id),
-    );
+    this._toasts.update((toasts) => toasts.filter((toast) => toast.id !== id));
   }
 
   private agregar(tipo: TipoToast, mensaje: string): void {
     const id = ++this.contador;
-    this._toasts.update((toasts) => [
-      ...toasts,
-      { id, tipo, mensaje },
-    ]);
+    this._toasts.update((toasts) => [...toasts, { id, tipo, mensaje }]);
     setTimeout(() => this.cerrar(id), 4500);
   }
 }

@@ -1,26 +1,16 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  claseTonoReclamo,
-  etiquetaEstadoReclamo,
-} from '../../core/catalogos';
+import { claseTonoReclamo, etiquetaEstadoReclamo } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
 import type { DecisionReclamo, ReclamoPublico } from '../../core/models';
 import { ReputacionService } from '../../core/reputacion.service';
 import { SupervisionService } from '../../core/supervision.service';
 import { ToastService } from '../../core/toast.service';
-import { FechaHoraPipe } from '../../shared/pipes';
 
 @Component({
   selector: 'app-reclamos-supervisor',
-  imports: [CommonModule, FormsModule, FechaHoraPipe],
+  imports: [CommonModule, FormsModule],
   template: `
     <section class="pagina">
       <div class="contenedor">
@@ -28,13 +18,9 @@ import { FechaHoraPipe } from '../../shared/pipes';
           <div>
             <span class="migaja">Supervisor</span>
             <h1>Bandeja de reclamos</h1>
-            <p>
-              Revisa y resuelve los reclamos abiertos. SLA: 72 horas.
-            </p>
+            <p>Revisa y resuelve los reclamos abiertos. SLA: 72 horas.</p>
           </div>
-          <a routerLink="/supervisor" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/supervisor" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -61,15 +47,19 @@ import { FechaHoraPipe } from '../../shared/pipes';
                     <div>
                       <strong>Solicitud {{ reclamo.solicitud_id.slice(0, 8) }}…</strong>
                       <div class="small muted">
-                        Abierto {{ reclamo.fecha_apertura }}
-                        · {{ reclamo.horas_para_responder ?? '—' }}h respuesta
-                        · {{ reclamo.horas_sla_supervisor ?? '—' }}h SLA
+                        Abierto {{ reclamo.fecha_apertura }} ·
+                        {{ reclamo.horas_para_responder ?? '—' }}h respuesta ·
+                        {{ reclamo.horas_sla_supervisor ?? '—' }}h SLA
                       </div>
                       <p class="mt-1">{{ reclamo.motivo }}</p>
                       @if (reclamo.evidencia_fotos.length) {
                         <div class="galeria mt-1">
                           @for (foto of reclamo.evidencia_fotos; track foto) {
-                            <img [src]="foto" alt="Evidencia" style="width: 80px; height: 80px; object-fit: cover" />
+                            <img
+                              [src]="foto"
+                              alt="Evidencia"
+                              style="width: 80px; height: 80px; object-fit: cover"
+                            />
                           }
                         </div>
                       }
@@ -84,12 +74,7 @@ import { FechaHoraPipe } from '../../shared/pipes';
                         </div>
                       }
                     </div>
-                    <span
-                      class="insignia"
-                      [class]="
-                        'insignia ' + claseTonoReclamo(reclamo.estado)
-                      "
-                    >
+                    <span class="insignia" [class]="'insignia ' + claseTonoReclamo(reclamo.estado)">
                       {{ etiquetaEstadoReclamo(reclamo.estado) }}
                     </span>
                   </div>
@@ -100,9 +85,7 @@ import { FechaHoraPipe } from '../../shared/pipes';
                     reclamo.estado === 'EN_REVISION_SUPERVISOR'
                   ) {
                     <div class="campo mt-2">
-                      <label class="etiqueta"
-                        >Resolución (mín. 3 caracteres)</label
-                      >
+                      <label class="etiqueta">Resolución (mín. 3 caracteres)</label>
                       <textarea
                         class="input"
                         rows="3"
@@ -120,15 +103,17 @@ import { FechaHoraPipe } from '../../shared/pipes';
                         <option value="FALTA_TRABAJADOR">
                           Falta del trabajador (aplica suspensión)
                         </option>
-                        <option value="RECHAZADO">
-                          Rechazar reclamo
-                        </option>
+                        <option value="RECHAZADO">Rechazar reclamo</option>
                       </select>
                     </div>
                     <button
                       type="button"
                       class="btn btn--primario btn--sm mt-2"
-                      [disabled]="resolviendo() === reclamo.id || !decisiones[reclamo.id] || !resoluciones[reclamo.id]?.trim()"
+                      [disabled]="
+                        resolviendo() === reclamo.id ||
+                        !decisiones[reclamo.id] ||
+                        !resoluciones[reclamo.id]?.trim()
+                      "
                       (click)="resolver(reclamo)"
                     >
                       {{ resolviendo() === reclamo.id ? 'Resolviendo…' : 'Resolver' }}
@@ -197,7 +182,9 @@ export class ReclamosSupervisor implements OnInit {
       });
       this.toast.exito('Reclamo resuelto correctamente.');
       const actualizados = this.reclamos().map((r) =>
-        r.id === reclamo.id ? { ...r, estado: 'RESUELTO' as const, resolucion_supervisor: resolucion } : r,
+        r.id === reclamo.id
+          ? { ...r, estado: 'RESUELTO' as const, resolucion_supervisor: resolucion }
+          : r,
       );
       this.reclamos.set(actualizados);
       this.decisiones[reclamo.id] = '';

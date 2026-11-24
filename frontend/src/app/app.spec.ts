@@ -1,11 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
-import {
-  provideHttpClientTesting,
-  HttpTestingController,
-} from '@angular/common/http/testing';
-import {
-  provideZonelessChangeDetection,
-} from '@angular/core';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
@@ -35,9 +30,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compilado = fixture.nativeElement as HTMLElement;
-    expect(compilado.querySelector('.nav__marca')?.textContent).toContain(
-      'Arréglalo',
-    );
+    expect(compilado.querySelector('.nav__marca')?.textContent).toContain('Arréglalo');
     expect(compilado.querySelector('router-outlet')).toBeTruthy();
   });
 });

@@ -10,8 +10,8 @@ import { RouterLink } from '@angular/router';
         <div class="pie__marca">
           <strong>Arréglalo Ya</strong>
           <p class="small">
-            Conectamos clientes con técnicos verificados de tu zona.
-            Pago seguro con QR y trabajadores revisados.
+            Conectamos clientes con técnicos verificados de tu zona. Pago seguro con QR y
+            trabajadores revisados.
           </p>
         </div>
         <nav class="pie__enlaces" aria-label="Enlaces del pie">
@@ -22,8 +22,7 @@ import { RouterLink } from '@angular/router';
           <a routerLink="/registro">Crear cuenta</a>
         </nav>
         <p class="small muted pie__legal">
-          Proyecto académico de Sistemas de Información. La Paz,
-          Bolivia.
+          Proyecto académico de Sistemas de Información. La Paz, Bolivia.
         </p>
       </div>
     </footer>

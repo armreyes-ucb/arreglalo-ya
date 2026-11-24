@@ -30,53 +30,34 @@ export class VerificacionService {
   private readonly http = inject(HttpClient);
 
   estado(): Promise<EstadoVerificacion> {
-    return firstValueFrom(
-      this.http.get<EstadoVerificacion>(
-        `${API_URL}/verificacion/estado`,
-      ),
-    );
+    return firstValueFrom(this.http.get<EstadoVerificacion>(`${API_URL}/verificacion/estado`));
   }
 
-  cargarDocumentos(
-    payload: CargaDocumentosPayload,
-  ): Promise<RespuestaCargaDocumentos> {
+  cargarDocumentos(payload: CargaDocumentosPayload): Promise<RespuestaCargaDocumentos> {
     const datos = new FormData();
     datos.append('banco', payload.banco);
     datos.append('numero_cuenta', payload.numero_cuenta);
     datos.append('titular', payload.titular);
     if (payload.vence_antecedentes) {
-      datos.append(
-        'vence_antecedentes',
-        payload.vence_antecedentes,
-      );
+      datos.append('vence_antecedentes', payload.vence_antecedentes);
     }
-    for (const [campo, archivo] of Object.entries(
-      payload.archivos,
-    )) {
+    for (const [campo, archivo] of Object.entries(payload.archivos)) {
       if (archivo) {
         datos.append(campo, archivo);
       }
     }
     return firstValueFrom(
-      this.http.post<RespuestaCargaDocumentos>(
-        `${API_URL}/verificacion/documentos`,
-        datos,
-      ),
+      this.http.post<RespuestaCargaDocumentos>(`${API_URL}/verificacion/documentos`, datos),
     );
   }
 
   bandeja(): Promise<ExpedienteVerificacion[]> {
     return firstValueFrom(
-      this.http.get<ExpedienteVerificacion[]>(
-        `${API_URL}/verificacion/bandeja`,
-      ),
+      this.http.get<ExpedienteVerificacion[]>(`${API_URL}/verificacion/bandeja`),
     );
   }
 
-  revisar(
-    trabajadorId: string,
-    payload: RevisionPayload,
-  ): Promise<ResultadoRevision> {
+  revisar(trabajadorId: string, payload: RevisionPayload): Promise<ResultadoRevision> {
     return firstValueFrom(
       this.http.patch<ResultadoRevision>(
         `${API_URL}/verificacion/${trabajadorId}/revisar`,
@@ -85,15 +66,11 @@ export class VerificacionService {
     );
   }
 
-  descargarDocumento(
-    trabajadorId: string,
-    documentoId: string,
-  ): Promise<Blob> {
+  descargarDocumento(trabajadorId: string, documentoId: string): Promise<Blob> {
     return firstValueFrom(
-      this.http.get(
-        `${API_URL}/verificacion/${trabajadorId}/documentos/${documentoId}/archivo`,
-        { responseType: 'blob' },
-      ),
+      this.http.get(`${API_URL}/verificacion/${trabajadorId}/documentos/${documentoId}/archivo`, {
+        responseType: 'blob',
+      }),
     );
   }
 }

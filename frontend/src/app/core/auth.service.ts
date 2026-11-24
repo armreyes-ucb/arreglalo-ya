@@ -1,10 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import {
-  Injectable,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { API_URL } from './api';
 import type {
@@ -44,21 +39,14 @@ export class AuthService {
   readonly cargando = this._cargando.asReadonly();
   readonly usuario = computed(() => this._sesion()?.usuario ?? null);
   readonly rolActivo = computed(() => this._sesion()?.rolActivo ?? null);
-  readonly roles = computed(
-    () => this._sesion()?.usuario.roles ?? [],
-  );
+  readonly roles = computed(() => this._sesion()?.usuario.roles ?? []);
   readonly autenticado = computed(() => this._sesion() !== null);
   readonly token = computed(() => this._sesion()?.token ?? null);
 
-  async solicitarCodigo(
-    telefono: string,
-  ): Promise<SolicitarCodigoResponse> {
+  async solicitarCodigo(telefono: string): Promise<SolicitarCodigoResponse> {
     return new Promise((resolve, reject) => {
       this.http
-        .post<SolicitarCodigoResponse>(
-          `${API_URL}/auth/solicitar-codigo`,
-          { telefono },
-        )
+        .post<SolicitarCodigoResponse>(`${API_URL}/auth/solicitar-codigo`, { telefono })
         .subscribe({ next: resolve, error: reject });
     });
   }
@@ -71,22 +59,17 @@ export class AuthService {
     });
   }
 
-  async login(
-    telefono: string,
-    password: string,
-  ): Promise<AuthTokenResponse> {
+  async login(telefono: string, password: string): Promise<AuthTokenResponse> {
     this._cargando.set(true);
     try {
-      const respuesta = await new Promise<AuthTokenResponse>(
-        (resolve, reject) => {
-          this.http
-            .post<AuthTokenResponse>(`${API_URL}/auth/login`, {
-              telefono,
-              password,
-            })
-            .subscribe({ next: resolve, error: reject });
-        },
-      );
+      const respuesta = await new Promise<AuthTokenResponse>((resolve, reject) => {
+        this.http
+          .post<AuthTokenResponse>(`${API_URL}/auth/login`, {
+            telefono,
+            password,
+          })
+          .subscribe({ next: resolve, error: reject });
+      });
       this.guardarSesion(respuesta);
       return respuesta;
     } finally {
@@ -95,33 +78,21 @@ export class AuthService {
   }
 
   async cambiarRol(rol: Rol): Promise<AuthTokenResponse> {
-    const respuesta = await new Promise<AuthTokenResponse>(
-      (resolve, reject) => {
-        this.http
-          .patch<AuthTokenResponse>(
-            `${API_URL}/usuarios/cambiar-rol`,
-            { rol },
-          )
-          .subscribe({ next: resolve, error: reject });
-      },
-    );
+    const respuesta = await new Promise<AuthTokenResponse>((resolve, reject) => {
+      this.http
+        .patch<AuthTokenResponse>(`${API_URL}/usuarios/cambiar-rol`, { rol })
+        .subscribe({ next: resolve, error: reject });
+    });
     this.guardarSesion(respuesta);
     return respuesta;
   }
 
-  async activarTrabajador(
-    payload: ActivacionPayload,
-  ): Promise<ActivacionTrabajadorResponse> {
-    const respuesta = await new Promise<ActivacionTrabajadorResponse>(
-      (resolve, reject) => {
-        this.http
-          .post<ActivacionTrabajadorResponse>(
-            `${API_URL}/usuarios/activar-trabajador`,
-            payload,
-          )
-          .subscribe({ next: resolve, error: reject });
-      },
-    );
+  async activarTrabajador(payload: ActivacionPayload): Promise<ActivacionTrabajadorResponse> {
+    const respuesta = await new Promise<ActivacionTrabajadorResponse>((resolve, reject) => {
+      this.http
+        .post<ActivacionTrabajadorResponse>(`${API_URL}/usuarios/activar-trabajador`, payload)
+        .subscribe({ next: resolve, error: reject });
+    });
     this.guardarSesion(respuesta);
     return respuesta;
   }
@@ -190,9 +161,7 @@ export class AuthService {
       const payload = JSON.parse(atob(normalizado)) as {
         exp?: number;
       };
-      return payload.exp
-        ? payload.exp * 1000
-        : Date.now() + 7 * 24 * 60 * 60 * 1000;
+      return payload.exp ? payload.exp * 1000 : Date.now() + 7 * 24 * 60 * 60 * 1000;
     } catch {
       return Date.now() + 7 * 24 * 60 * 60 * 1000;
     }

@@ -1,17 +1,11 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  claseTonoTrabajador,
-  etiquetaEstadoTrabajador,
-} from '../../core/catalogos';
+import { claseTonoTrabajador, etiquetaEstadoTrabajador } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
-import type { PerfilTrabajadorPropio, PausaTrabajador as PausaTrabajadorModel } from '../../core/models';
+import type {
+  PerfilTrabajadorPropio,
+  PausaTrabajador as PausaTrabajadorModel,
+} from '../../core/models';
 import { TrabajadoresService } from '../../core/trabajadores.service';
 import { ToastService } from '../../core/toast.service';
 import { FechaPipe } from '../../shared/pipes';
@@ -27,14 +21,12 @@ import { FechaPipe } from '../../shared/pipes';
             <span class="migaja">Trabajador</span>
             <h1>Pausar mi cuenta</h1>
             <p>
-              Puedes pausar tu cuenta de trabajador hasta 30 días. No aparecerás
-              en búsquedas ni recibirás ofertas. Si pasan 60 días sin
-              reactivar, se da de baja tu rol (no es una sanción).
+              Puedes pausar tu cuenta de trabajador hasta 30 días. No aparecerás en búsquedas ni
+              recibirás ofertas. Si pasan 60 días sin reactivar, se da de baja tu rol (no es una
+              sanción).
             </p>
           </div>
-          <a routerLink="/trabajador" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/trabajador" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -51,12 +43,7 @@ import { FechaPipe } from '../../shared/pipes';
             <div class="fila fila--separada">
               <div>
                 <h2 style="margin:0">{{ p.nombre_completo }}</h2>
-                <span
-                  class="insignia"
-                  [class]="
-                    'insignia ' + claseTono(p.estado)
-                  "
-                >
+                <span class="insignia" [class]="'insignia ' + claseTono(p.estado)">
                   {{ etiquetaEstadoTrabajador(p.estado) }}
                 </span>
               </div>
@@ -66,7 +53,8 @@ import { FechaPipe } from '../../shared/pipes';
           @if (p.estado === 'SUSPENDIDO' || p.estado === 'BAJA') {
             <div class="alerta alerta--error">
               <span
-                >No puedes pausar una cuenta {{ p.estado === 'SUSPENDIDO' ? 'suspendida' : 'dada de baja' }}.</span
+                >No puedes pausar una cuenta
+                {{ p.estado === 'SUSPENDIDO' ? 'suspendida' : 'dada de baja' }}.</span
               >
             </div>
           }
@@ -76,12 +64,10 @@ import { FechaPipe } from '../../shared/pipes';
               <h2>Estado de la pausa</h2>
               <div class="rejilla rejilla--3 mt-2">
                 <div class="estadistica">
-                  <span class="estadistica__texto"
-                    >{{ pausa().pausado ? 'En pausa' : 'Activa' }}</span
-                  >
-                  <span class="estadistica__valor">{{
-                    pausa().pausado ? 'SÍ' : 'NO'
+                  <span class="estadistica__texto">{{
+                    pausa().pausado ? 'En pausa' : 'Activa'
                   }}</span>
+                  <span class="estadistica__valor">{{ pausa().pausado ? 'SÍ' : 'NO' }}</span>
                   <span class="small muted">
                     {{ pausa().pausado ? 'No recibes ofertas' : 'Recibes trabajos' }}
                   </span>
@@ -89,9 +75,7 @@ import { FechaPipe } from '../../shared/pipes';
                 @if (pausa().pausado) {
                   <div class="estadistica">
                     <span class="estadistica__texto">Días restantes</span>
-                    <span class="estadistica__valor">{{
-                      pausa().dias_restantes ?? '—'
-                    }}</span>
+                    <span class="estadistica__valor">{{ pausa().dias_restantes ?? '—' }}</span>
                     <span class="small muted">
                       {{ pausa().estado }} ·
                       {{ pausa().vence_en | fecha }}
@@ -113,8 +97,8 @@ import { FechaPipe } from '../../shared/pipes';
             @if (pausa().aviso) {
               <div class="alerta alerta--aviso mb-2">
                 <span
-                  >¡Atención! Tu pausa vence en {{ pausa().dias_restantes }} día(s).
-                  Reactiva tu cuenta para no perder el rol de trabajador.</span
+                  >¡Atención! Tu pausa vence en {{ pausa().dias_restantes }} día(s). Reactiva tu
+                  cuenta para no perder el rol de trabajador.</span
                 >
               </div>
             }
@@ -123,8 +107,8 @@ import { FechaPipe } from '../../shared/pipes';
               <div class="tarjeta">
                 <h2>Pausar mi cuenta</h2>
                 <p class="small muted mt-1">
-                  Durante la pausa no aparecerás en búsquedas ni recibirás ofertas.
-                  Puedes reactivarte en cualquier momento antes de los 30 días.
+                  Durante la pausa no aparecerás en búsquedas ni recibirás ofertas. Puedes
+                  reactivarte en cualquier momento antes de los 30 días.
                 </p>
                 <button
                   type="button"
@@ -139,8 +123,7 @@ import { FechaPipe } from '../../shared/pipes';
               <div class="tarjeta">
                 <h2>Reactivar mi cuenta</h2>
                 <p class="small muted mt-1">
-                  Volverás a aparecer en búsquedas y recibir ofertas
-                  inmediatamente.
+                  Volverás a aparecer en búsquedas y recibir ofertas inmediatamente.
                 </p>
                 <button
                   type="button"

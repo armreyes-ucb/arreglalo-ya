@@ -61,10 +61,7 @@ export const ETIQUETAS_ESPECIALIDAD: Record<Especialidad, string> = {
   ELECTRODOMESTICOS: 'Electrodomésticos',
 };
 
-export const ETIQUETAS_ESTADO_SOLICITUD: Record<
-  EstadoSolicitud,
-  string
-> = {
+export const ETIQUETAS_ESTADO_SOLICITUD: Record<EstadoSolicitud, string> = {
   PUBLICADA: 'Publicada',
   CON_OFERTAS: 'Con ofertas',
   PENDIENTE_PAGO: 'Pendiente de pago',
@@ -83,10 +80,7 @@ export const ETIQUETAS_ESTADO_OFERTA: Record<EstadoOferta, string> = {
   RECHAZADA: 'Rechazada',
 };
 
-export const ETIQUETAS_ESTADO_TRABAJADOR: Record<
-  EstadoTrabajador,
-  string
-> = {
+export const ETIQUETAS_ESTADO_TRABAJADOR: Record<EstadoTrabajador, string> = {
   PENDIENTE: 'Pendiente de verificación',
   ACTIVO: 'Activo',
   PAUSADO: 'Pausado',
@@ -94,10 +88,7 @@ export const ETIQUETAS_ESTADO_TRABAJADOR: Record<
   BAJA: 'Dado de baja',
 };
 
-export const ETIQUETAS_ESTADO_REVISION: Record<
-  EstadoRevision,
-  string
-> = {
+export const ETIQUETAS_ESTADO_REVISION: Record<EstadoRevision, string> = {
   PENDIENTE: 'Pendiente',
   APROBADO: 'Aprobado',
   RECHAZADO: 'Rechazado',
@@ -141,10 +132,7 @@ export const ETIQUETAS_ESTADO_RECLAMO: Record<EstadoReclamo, string> = {
   RECHAZADO: 'Rechazado',
 };
 
-export const ETIQUETAS_ESTADO_DEVOLUCION: Record<
-  EstadoDevolucion,
-  string
-> = {
+export const ETIQUETAS_ESTADO_DEVOLUCION: Record<EstadoDevolucion, string> = {
   PENDIENTE: 'Pendiente',
   EN_PROCESO: 'En proceso',
   COMPLETADA: 'Completada',
@@ -165,44 +153,24 @@ export const MONOGRAMAS_ESPECIALIDAD: Record<Especialidad, string> = {
   ELECTRODOMESTICOS: 'ED',
 };
 
-export function etiquetaEspecialidad(
-  especialidad: Especialidad | string,
-): string {
-  return (
-    ETIQUETAS_ESPECIALIDAD[especialidad as Especialidad] ??
-    especialidad
-  );
+export function etiquetaEspecialidad(especialidad: Especialidad | string): string {
+  return ETIQUETAS_ESPECIALIDAD[especialidad as Especialidad] ?? especialidad;
 }
 
-export function etiquetaEstadoSolicitud(
-  estado: EstadoSolicitud | string,
-): string {
-  return (
-    ETIQUETAS_ESTADO_SOLICITUD[estado as EstadoSolicitud] ?? estado
-  );
+export function etiquetaEstadoSolicitud(estado: EstadoSolicitud | string): string {
+  return ETIQUETAS_ESTADO_SOLICITUD[estado as EstadoSolicitud] ?? estado;
 }
 
-export function etiquetaEstadoOferta(
-  estado: EstadoOferta | string,
-): string {
+export function etiquetaEstadoOferta(estado: EstadoOferta | string): string {
   return ETIQUETAS_ESTADO_OFERTA[estado as EstadoOferta] ?? estado;
 }
 
-export function etiquetaEstadoTrabajador(
-  estado: EstadoTrabajador | string,
-): string {
-  return (
-    ETIQUETAS_ESTADO_TRABAJADOR[estado as EstadoTrabajador] ??
-    estado
-  );
+export function etiquetaEstadoTrabajador(estado: EstadoTrabajador | string): string {
+  return ETIQUETAS_ESTADO_TRABAJADOR[estado as EstadoTrabajador] ?? estado;
 }
 
-export function etiquetaEstadoRevision(
-  estado: EstadoRevision | string,
-): string {
-  return (
-    ETIQUETAS_ESTADO_REVISION[estado as EstadoRevision] ?? estado
-  );
+export function etiquetaEstadoRevision(estado: EstadoRevision | string): string {
+  return ETIQUETAS_ESTADO_REVISION[estado as EstadoRevision] ?? estado;
 }
 
 export function etiquetaDocumento(tipo: TipoDocumento | string): string {
@@ -217,21 +185,12 @@ export function etiquetaTipoPrecio(tipo: TipoPrecio | string): string {
   return ETIQUETAS_TIPO_PRECIO[tipo as TipoPrecio] ?? tipo;
 }
 
-export function etiquetaEstadoReclamo(
-  estado: EstadoReclamo | string,
-): string {
-  return (
-    ETIQUETAS_ESTADO_RECLAMO[estado as EstadoReclamo] ?? estado
-  );
+export function etiquetaEstadoReclamo(estado: EstadoReclamo | string): string {
+  return ETIQUETAS_ESTADO_RECLAMO[estado as EstadoReclamo] ?? estado;
 }
 
-export function etiquetaEstadoDevolucion(
-  estado: EstadoDevolucion | string,
-): string {
-  return (
-    ETIQUETAS_ESTADO_DEVOLUCION[estado as EstadoDevolucion] ??
-    estado
-  );
+export function etiquetaEstadoDevolucion(estado: EstadoDevolucion | string): string {
+  return ETIQUETAS_ESTADO_DEVOLUCION[estado as EstadoDevolucion] ?? estado;
 }
 
 export function claseTonoPago(estado: EstadoQr | string): string {
@@ -248,9 +207,7 @@ export function claseTonoPago(estado: EstadoQr | string): string {
   }
 }
 
-export function claseTonoSolicitud(
-  estado: EstadoSolicitud | string,
-): string {
+export function claseTonoSolicitud(estado: EstadoSolicitud | string): string {
   switch (estado) {
     case 'CON_OFERTAS':
     case 'PENDIENTE_PAGO':
@@ -295,9 +252,7 @@ export function claseTonoRevision(estado: EstadoRevision | string): string {
   }
 }
 
-export function claseTonoTrabajador(
-  estado: EstadoTrabajador | string,
-): string {
+export function claseTonoTrabajador(estado: EstadoTrabajador | string): string {
   switch (estado) {
     case 'ACTIVO':
       return 'insignia--verde';

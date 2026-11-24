@@ -1,6 +1,4 @@
-import {
-  provideZonelessChangeDetection,
-} from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
@@ -23,11 +21,7 @@ const ESTADO: EstadoVerificacion = {
   documentos: [],
 };
 
-function archivo(
-  nombre: string,
-  tipo: string,
-  bytes = 1024,
-): File {
+function archivo(nombre: string, tipo: string, bytes = 1024): File {
   return { name: nombre, type: tipo, size: bytes } as File;
 }
 
@@ -69,9 +63,7 @@ describe('VerificacionTrabajador', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(
-      VerificacionTrabajador,
-    );
+    const fixture = TestBed.createComponent(VerificacionTrabajador);
     return {
       componente: fixture.componentInstance as any,
       cargarDocumentos,
@@ -91,38 +83,26 @@ describe('VerificacionTrabajador', () => {
 
     componente.seleccionarArchivo(
       'REJAP',
-      entrada(
-        archivo('rejap.pdf', 'application/pdf', 6 * 1024 * 1024),
-      ),
+      entrada(archivo('rejap.pdf', 'application/pdf', 6 * 1024 * 1024)),
     );
 
     expect(componente.archivos().REJAP).toBeUndefined();
-    expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining('5 MB'),
-    );
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('5 MB'));
   });
 
   it('rechaza formatos no permitidos', async () => {
     const { componente, toast } = await crearComponente();
 
-    componente.seleccionarArchivo(
-      'SELFIE',
-      entrada(archivo('selfie.gif', 'image/gif')),
-    );
+    componente.seleccionarArchivo('SELFIE', entrada(archivo('selfie.gif', 'image/gif')));
 
     expect(componente.archivos().SELFIE).toBeUndefined();
-    expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining('JPG, PNG o PDF'),
-    );
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('JPG, PNG o PDF'));
   });
 
   it('acepta un archivo válido y permite quitarlo', async () => {
     const { componente } = await crearComponente();
 
-    componente.seleccionarArchivo(
-      'SELFIE',
-      entrada(archivo('selfie.jpg', 'image/jpeg')),
-    );
+    componente.seleccionarArchivo('SELFIE', entrada(archivo('selfie.jpg', 'image/jpeg')));
     expect(componente.archivos().SELFIE?.name).toBe('selfie.jpg');
 
     componente.quitarArchivo('SELFIE');
@@ -130,8 +110,7 @@ describe('VerificacionTrabajador', () => {
   });
 
   it('exige la cuenta bancaria antes de enviar', async () => {
-    const { componente, cargarDocumentos } =
-      await crearComponente();
+    const { componente, cargarDocumentos } = await crearComponente();
 
     await componente.enviar();
 
@@ -140,8 +119,7 @@ describe('VerificacionTrabajador', () => {
   });
 
   it('exige todos los documentos antes de enviar', async () => {
-    const { componente, cargarDocumentos } =
-      await crearComponente();
+    const { componente, cargarDocumentos } = await crearComponente();
     componente.formulario.setValue({
       banco: 'Banco Unión',
       numero_cuenta: '12345678',
@@ -156,8 +134,7 @@ describe('VerificacionTrabajador', () => {
   });
 
   it('envía la cuenta bancaria y los cinco documentos', async () => {
-    const { componente, cargarDocumentos, toast } =
-      await crearComponente();
+    const { componente, cargarDocumentos, toast } = await crearComponente();
     componente.formulario.setValue({
       banco: 'Banco Unión',
       numero_cuenta: '12345678',

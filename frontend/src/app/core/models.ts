@@ -1,14 +1,6 @@
-export type Rol =
-  | 'CLIENTE'
-  | 'TRABAJADOR'
-  | 'SUPERVISOR'
-  | 'SUPERADMIN';
+export type Rol = 'CLIENTE' | 'TRABAJADOR' | 'SUPERVISOR' | 'SUPERADMIN';
 
-export type Especialidad =
-  | 'PLOMERIA'
-  | 'ALBANILERIA'
-  | 'ELECTRICIDAD'
-  | 'ELECTRODOMESTICOS';
+export type Especialidad = 'PLOMERIA' | 'ALBANILERIA' | 'ELECTRICIDAD' | 'ELECTRODOMESTICOS';
 
 export type EstadoSolicitud =
   | 'PUBLICADA'
@@ -21,24 +13,11 @@ export type EstadoSolicitud =
   | 'ANULADA'
   | 'CANCELADA';
 
-export type EstadoOferta =
-  | 'ENVIADA'
-  | 'ELEGIDA'
-  | 'CERRADA'
-  | 'RECHAZADA';
+export type EstadoOferta = 'ENVIADA' | 'ELEGIDA' | 'CERRADA' | 'RECHAZADA';
 
-export type EstadoTrabajador =
-  | 'PENDIENTE'
-  | 'ACTIVO'
-  | 'PAUSADO'
-  | 'SUSPENDIDO'
-  | 'BAJA';
+export type EstadoTrabajador = 'PENDIENTE' | 'ACTIVO' | 'PAUSADO' | 'SUSPENDIDO' | 'BAJA';
 
-export type EstadoQr =
-  | 'PENDIENTE'
-  | 'PAGADO'
-  | 'VENCIDO'
-  | 'DEVUELTO';
+export type EstadoQr = 'PENDIENTE' | 'PAGADO' | 'VENCIDO' | 'DEVUELTO';
 
 export type TipoPrecio = 'PREVIO' | 'FINAL' | 'INCREMENTO';
 
@@ -50,33 +29,16 @@ export type EstadoReclamo =
   | 'FALTA_TRABAJADOR'
   | 'RECHAZADO';
 
-export type EstadoDevolucion =
-  | 'PENDIENTE'
-  | 'EN_PROCESO'
-  | 'COMPLETADA';
+export type EstadoDevolucion = 'PENDIENTE' | 'EN_PROCESO' | 'COMPLETADA';
 
-export type EstadoRevision =
-  | 'PENDIENTE'
-  | 'APROBADO'
-  | 'RECHAZADO'
-  | 'REQUIERE_DATOS';
+export type EstadoRevision = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'REQUIERE_DATOS';
 
 export type TipoDocumento =
-  | 'CARNET_ANVERSO'
-  | 'CARNET_REVERSO'
-  | 'SELFIE'
-  | 'REJAP'
-  | 'CERTIFICADO'
-  | 'FOTO_TRABAJO';
+  'CARNET_ANVERSO' | 'CARNET_REVERSO' | 'SELFIE' | 'REJAP' | 'CERTIFICADO' | 'FOTO_TRABAJO';
 
-export type DecisionRevision =
-  | 'APROBAR'
-  | 'RECHAZAR'
-  | 'REQUIERE_DATOS';
+export type DecisionRevision = 'APROBAR' | 'RECHAZAR' | 'REQUIERE_DATOS';
 
-export type DecisionReclamo =
-  | 'FALTA_TRABAJADOR'
-  | 'RECHAZADO';
+export type DecisionReclamo = 'FALTA_TRABAJADOR' | 'RECHAZADO';
 
 export interface UsuarioPublico {
   id: string;
@@ -129,8 +91,7 @@ export interface EventoHistorial {
   usuario_nombre: string | null;
 }
 
-export interface SolicitudDetalle
-  extends Omit<Solicitud, 'direccion_oculta'> {
+export interface SolicitudDetalle extends Omit<Solicitud, 'direccion_oculta'> {
   direccion_oculta: string | null;
   whatsapp_url: string | null;
   total_ofertas: number;

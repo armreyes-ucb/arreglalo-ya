@@ -1,11 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import {
-  ActivatedRoute,
-  Router,
-  convertToParamMap,
-  provideRouter,
-} from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import type { ExpedienteVerificacion } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
@@ -56,9 +51,7 @@ describe('RevisionVerificacion', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(
-      RevisionVerificacion,
-    );
+    const fixture = TestBed.createComponent(RevisionVerificacion);
     await fixture.whenStable();
     const router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -82,8 +75,7 @@ describe('RevisionVerificacion', () => {
   });
 
   it('aprueba con nivel y vuelve a la bandeja', async () => {
-    const { componente, verificacion, router, toast } =
-      await crearComponente();
+    const { componente, verificacion, router, toast } = await crearComponente();
     componente.formulario.patchValue({
       decision: 'APROBAR',
       nivel_verificacion: 3,
@@ -99,11 +91,7 @@ describe('RevisionVerificacion', () => {
         nivel_verificacion: 3,
       }),
     );
-    expect(router.navigate).toHaveBeenCalledWith([
-      '/supervisor/verificaciones',
-    ]);
-    expect(toast.exito).toHaveBeenCalledWith(
-      'Verificación aprobada',
-    );
+    expect(router.navigate).toHaveBeenCalledWith(['/supervisor/verificaciones']);
+    expect(toast.exito).toHaveBeenCalledWith('Verificación aprobada');
   });
 });

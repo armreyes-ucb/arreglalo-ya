@@ -2,11 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_URL } from './api';
-import type {
-  SuspensionRegistrada,
-  ClienteConflictivoPublico,
-  DevolucionPublica,
-} from './models';
+import type { SuspensionRegistrada, ClienteConflictivoPublico, DevolucionPublica } from './models';
 
 export interface AplicarSuspensionPayload {
   trabajador_id: string;
@@ -28,29 +24,19 @@ export class SupervisionService {
       params = params.set('trabajador_id', trabajadorId);
     }
     return firstValueFrom(
-      this.http.get<SuspensionRegistrada[]>(
-        `${API_URL}/supervision/suspensiones`,
-        { params },
-      ),
+      this.http.get<SuspensionRegistrada[]>(`${API_URL}/supervision/suspensiones`, { params }),
     );
   }
 
-  aplicarSuspension(
-    payload: AplicarSuspensionPayload,
-  ): Promise<SuspensionRegistrada> {
+  aplicarSuspension(payload: AplicarSuspensionPayload): Promise<SuspensionRegistrada> {
     return firstValueFrom(
-      this.http.post<SuspensionRegistrada>(
-        `${API_URL}/supervision/suspensiones`,
-        payload,
-      ),
+      this.http.post<SuspensionRegistrada>(`${API_URL}/supervision/suspensiones`, payload),
     );
   }
 
   listarConflictivos(): Promise<ClienteConflictivoPublico[]> {
     return firstValueFrom(
-      this.http.get<ClienteConflictivoPublico[]>(
-        `${API_URL}/supervision/clientes-conflictivos`,
-      ),
+      this.http.get<ClienteConflictivoPublico[]>(`${API_URL}/supervision/clientes-conflictivos`),
     );
   }
 
@@ -62,9 +48,7 @@ export class SupervisionService {
     );
   }
 
-  registrarConflictivo(
-    payload: RegistrarConflictivoPayload,
-  ): Promise<ClienteConflictivoPublico> {
+  registrarConflictivo(payload: RegistrarConflictivoPayload): Promise<ClienteConflictivoPublico> {
     return firstValueFrom(
       this.http.post<ClienteConflictivoPublico>(
         `${API_URL}/supervision/clientes-conflictivos`,
@@ -75,9 +59,7 @@ export class SupervisionService {
 
   listarDevoluciones(): Promise<DevolucionPublica[]> {
     return firstValueFrom(
-      this.http.get<DevolucionPublica[]>(
-        `${API_URL}/supervision/devoluciones`,
-      ),
+      this.http.get<DevolucionPublica[]>(`${API_URL}/supervision/devoluciones`),
     );
   }
 }

@@ -1,9 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { mensajeDeError } from '../../core/errores';
@@ -19,12 +14,11 @@ import type {
 } from '../../core/models';
 import { AdminService } from '../../core/admin.service';
 import { ToastService } from '../../core/toast.service';
-import { FechaPipe } from '../../shared/pipes';
 import { MonedaPipe } from '../../shared/pipes';
 
 @Component({
   selector: 'app-reportes-admin',
-  imports: [CommonModule, FormsModule, FechaPipe, MonedaPipe],
+  imports: [CommonModule, FormsModule, MonedaPipe],
   template: `
     <section class="pagina">
       <div class="contenedor">
@@ -33,13 +27,11 @@ import { MonedaPipe } from '../../shared/pipes';
             <span class="migaja">Administración</span>
             <h1>Reportes financieros</h1>
             <p>
-              Genera reportes de solicitudes, comisiones, devoluciones y
-              reclamos filtrados por rango de fechas.
+              Genera reportes de solicitudes, comisiones, devoluciones y reclamos filtrados por
+              rango de fechas.
             </p>
           </div>
-          <a routerLink="/admin" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/admin" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         <div class="tarjeta mb-2">
@@ -47,21 +39,11 @@ import { MonedaPipe } from '../../shared/pipes';
           <div class="formulario--rejilla mt-2">
             <div class="campo">
               <label class="etiqueta" for="desde">Desde</label>
-              <input
-                id="desde"
-                type="date"
-                class="input"
-                [(ngModel)]="filtro.desde"
-              />
+              <input id="desde" type="date" class="input" [(ngModel)]="filtro.desde" />
             </div>
             <div class="campo">
               <label class="etiqueta" for="hasta">Hasta</label>
-              <input
-                id="hasta"
-                type="date"
-                class="input"
-                [(ngModel)]="filtro.hasta"
-              />
+              <input id="hasta" type="date" class="input" [(ngModel)]="filtro.hasta" />
             </div>
           </div>
           <button
@@ -93,24 +75,18 @@ import { MonedaPipe } from '../../shared/pipes';
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Con trabajador</span>
-                <span class="estadistica__valor">{{
-                  r.solicitudes.con_trabajador
-                }}</span>
+                <span class="estadistica__valor">{{ r.solicitudes.con_trabajador }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Sin trabajador</span>
-                <span class="estadistica__valor">{{
-                  r.solicitudes.sin_trabajador
-                }}</span>
+                <span class="estadistica__valor">{{ r.solicitudes.sin_trabajador }}</span>
               </div>
             </div>
             <div class="mt-2 small muted">
               Por estado:
               @for (estado of estadosSolicitud(); track estado) {
                 @if (r.solicitudes.por_estado[estado] !== undefined) {
-                  <span class="chip"
-                    >{{ estado }}: {{ r.solicitudes.por_estado[estado] }}</span
-                  >
+                  <span class="chip">{{ estado }}: {{ r.solicitudes.por_estado[estado] }}</span>
                 }
               }
             </div>
@@ -121,9 +97,7 @@ import { MonedaPipe } from '../../shared/pipes';
             <div class="rejilla rejilla--4 mt-2">
               <div class="estadistica">
                 <span class="estadistica__texto">Comisión cobrada</span>
-                <span class="estadistica__valor">{{
-                  r.comisiones.comision_cobrada | moneda
-                }}</span>
+                <span class="estadistica__valor">{{ r.comisiones.comision_cobrada | moneda }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Comisión devengada</span>
@@ -133,9 +107,7 @@ import { MonedaPipe } from '../../shared/pipes';
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Pagos confirmados</span>
-                <span class="estadistica__valor">{{
-                  r.comisiones.pagos_confirmados
-                }}</span>
+                <span class="estadistica__valor">{{ r.comisiones.pagos_confirmados }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Monto total acordado</span>
@@ -157,36 +129,26 @@ import { MonedaPipe } from '../../shared/pipes';
             <div class="rejilla rejilla--4 mt-2">
               <div class="estadistica">
                 <span class="estadistica__texto">Total</span>
-                <span class="estadistica__valor">{{
-                  r.devoluciones.total
-                }}</span>
+                <span class="estadistica__valor">{{ r.devoluciones.total }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Monto total</span>
-                <span class="estadistica__valor">{{
-                  r.devoluciones.monto_total | moneda
-                }}</span>
+                <span class="estadistica__valor">{{ r.devoluciones.monto_total | moneda }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Pendientes</span>
-                <span class="estadistica__valor">{{
-                  r.devoluciones.pendientes
-                }}</span>
+                <span class="estadistica__valor">{{ r.devoluciones.pendientes }}</span>
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Completadas</span>
-                <span class="estadistica__valor">{{
-                  r.devoluciones.completadas
-                }}</span>
+                <span class="estadistica__valor">{{ r.devoluciones.completadas }}</span>
               </div>
             </div>
             <div class="mt-2 small muted">
               Por estado:
               @for (estado of estadosDevolucion(); track estado) {
                 @if (r.devoluciones.por_estado[estado] !== undefined) {
-                  <span class="chip"
-                    >{{ estado }}: {{ r.devoluciones.por_estado[estado] }}</span
-                  >
+                  <span class="chip">{{ estado }}: {{ r.devoluciones.por_estado[estado] }}</span>
                 }
               }
             </div>
@@ -205,18 +167,14 @@ import { MonedaPipe } from '../../shared/pipes';
               </div>
               <div class="estadistica">
                 <span class="estadistica__texto">Vencidos SLA</span>
-                <span class="estadistica__valor">{{
-                  r.reclamos.vencidos_sla
-                }}</span>
+                <span class="estadistica__valor">{{ r.reclamos.vencidos_sla }}</span>
               </div>
             </div>
             <div class="mt-2 small muted">
               Por estado:
               @for (estado of estadosReclamo(); track estado) {
                 @if (r.reclamos.por_estado[estado] !== undefined) {
-                  <span class="chip"
-                    >{{ estado }}: {{ r.reclamos.por_estado[estado] }}</span
-                  >
+                  <span class="chip">{{ estado }}: {{ r.reclamos.por_estado[estado] }}</span>
                 }
               }
             </div>

@@ -2,10 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import type {
-  PerfilTrabajadorPropio,
-  Zona,
-} from '../../core/models';
+import type { PerfilTrabajadorPropio, Zona } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { TrabajadoresService } from '../../core/trabajadores.service';
 import { UploadsService } from '../../core/uploads.service';
@@ -40,6 +37,15 @@ const PERFIL: PerfilTrabajadorPropio = {
   antecedentes_vencidos: false,
   puede_ofertar: true,
   motivo_bloqueo: null,
+  pausa: {
+    pausado: false,
+    estado: null,
+    inicio: null,
+    vence_en: null,
+    dias_restantes: null,
+    aviso: false,
+    baja_en: null,
+  },
 };
 
 describe('PerfilTrabajador', () => {

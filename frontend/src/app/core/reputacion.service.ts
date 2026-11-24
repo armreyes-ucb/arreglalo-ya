@@ -50,10 +50,7 @@ export interface ResolverReclamoPayload {
 export class ReputacionService {
   private readonly http = inject(HttpClient);
 
-  calificar(
-    solicitudId: string,
-    payload: CrearCalificacionPayload,
-  ): Promise<CalificacionPublica> {
+  calificar(solicitudId: string, payload: CrearCalificacionPayload): Promise<CalificacionPublica> {
     return firstValueFrom(
       this.http.post<CalificacionPublica>(
         `${API_URL}/solicitudes/${solicitudId}/calificar`,
@@ -62,10 +59,7 @@ export class ReputacionService {
     );
   }
 
-  comentar(
-    solicitudId: string,
-    payload: ComentarSolicitudPayload,
-  ): Promise<CalificacionPublica> {
+  comentar(solicitudId: string, payload: ComentarSolicitudPayload): Promise<CalificacionPublica> {
     return firstValueFrom(
       this.http.post<CalificacionPublica>(
         `${API_URL}/solicitudes/${solicitudId}/comentarios`,
@@ -74,15 +68,9 @@ export class ReputacionService {
     );
   }
 
-  reclamar(
-    solicitudId: string,
-    payload: CrearReclamoPayload,
-  ): Promise<ReclamoPublico> {
+  reclamar(solicitudId: string, payload: CrearReclamoPayload): Promise<ReclamoPublico> {
     return firstValueFrom(
-      this.http.post<ReclamoPublico>(
-        `${API_URL}/solicitudes/${solicitudId}/reclamos`,
-        payload,
-      ),
+      this.http.post<ReclamoPublico>(`${API_URL}/solicitudes/${solicitudId}/reclamos`, payload),
     );
   }
 
@@ -98,77 +86,47 @@ export class ReputacionService {
     );
   }
 
-  responderReclamo(
-    reclamoId: string,
-    payload: ResponderReclamoPayload,
-  ): Promise<ReclamoPublico> {
+  responderReclamo(reclamoId: string, payload: ResponderReclamoPayload): Promise<ReclamoPublico> {
     return firstValueFrom(
-      this.http.patch<ReclamoPublico>(
-        `${API_URL}/reclamos/${reclamoId}/responder`,
-        payload,
-      ),
+      this.http.patch<ReclamoPublico>(`${API_URL}/reclamos/${reclamoId}/responder`, payload),
     );
   }
 
-  resolverReclamo(
-    reclamoId: string,
-    payload: ResolverReclamoPayload,
-  ): Promise<ResolucionReclamo> {
+  resolverReclamo(reclamoId: string, payload: ResolverReclamoPayload): Promise<ResolucionReclamo> {
     return firstValueFrom(
-      this.http.patch<ResolucionReclamo>(
-        `${API_URL}/reclamos/${reclamoId}/resolver`,
-        payload,
-      ),
+      this.http.patch<ResolucionReclamo>(`${API_URL}/reclamos/${reclamoId}/resolver`, payload),
     );
   }
 
   misCalificaciones(): Promise<CalificacionPublica[]> {
-    return firstValueFrom(
-      this.http.get<CalificacionPublica[]>(`${API_URL}/calificaciones/mias`),
-    );
+    return firstValueFrom(this.http.get<CalificacionPublica[]>(`${API_URL}/calificaciones/mias`));
   }
 
   calificacionesRecibidas(): Promise<CalificacionPublica[]> {
     return firstValueFrom(
-      this.http.get<CalificacionPublica[]>(
-        `${API_URL}/calificaciones/recibidas`,
-      ),
+      this.http.get<CalificacionPublica[]>(`${API_URL}/calificaciones/recibidas`),
     );
   }
 
   reclamosMios(): Promise<ReclamoPublico[]> {
-    return firstValueFrom(
-      this.http.get<ReclamoPublico[]>(`${API_URL}/reclamos/mios`),
-    );
+    return firstValueFrom(this.http.get<ReclamoPublico[]>(`${API_URL}/reclamos/mios`));
   }
 
   reclamosAsignados(): Promise<ReclamoPublico[]> {
-    return firstValueFrom(
-      this.http.get<ReclamoPublico[]>(`${API_URL}/reclamos/asignados`),
-    );
+    return firstValueFrom(this.http.get<ReclamoPublico[]>(`${API_URL}/reclamos/asignados`));
   }
 
   bandejaReclamos(): Promise<ReclamoPublico[]> {
-    return firstValueFrom(
-      this.http.get<ReclamoPublico[]>(`${API_URL}/reclamos/bandeja`),
-    );
+    return firstValueFrom(this.http.get<ReclamoPublico[]>(`${API_URL}/reclamos/bandeja`));
   }
 
-  reputacionTrabajador(
-    trabajadorId: string,
-  ): Promise<ResumenReputacion> {
+  reputacionTrabajador(trabajadorId: string): Promise<ResumenReputacion> {
     return firstValueFrom(
-      this.http.get<ResumenReputacion>(
-        `${API_URL}/calificaciones/trabajador/${trabajadorId}`,
-      ),
+      this.http.get<ResumenReputacion>(`${API_URL}/calificaciones/trabajador/${trabajadorId}`),
     );
   }
 
   misSuspensiones(): Promise<SuspensionRegistrada[]> {
-    return firstValueFrom(
-      this.http.get<SuspensionRegistrada[]>(
-        `${API_URL}/suspensiones/mias`,
-      ),
-    );
+    return firstValueFrom(this.http.get<SuspensionRegistrada[]>(`${API_URL}/suspensiones/mias`));
   }
 }

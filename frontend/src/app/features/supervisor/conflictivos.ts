@@ -1,9 +1,4 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { mensajeDeError } from '../../core/errores';
@@ -23,14 +18,11 @@ import { FechaPipe } from '../../shared/pipes';
             <span class="migaja">Supervisor</span>
             <h1>Clientes conflictivos</h1>
             <p>
-              Registro de clientes con reportes repetidos (no pagan 75%,
-              maltratan, cancelan reiteradamente). A partir de 3 reportes se
-              advierte al técnico.
+              Registro de clientes con reportes repetidos (no pagan 75%, maltratan, cancelan
+              reiteradamente). A partir de 3 reportes se advierte al técnico.
             </p>
           </div>
-          <a routerLink="/supervisor" class="btn btn--contorno"
-            >Volver al panel</a
-          >
+          <a routerLink="/supervisor" class="btn btn--contorno">Volver al panel</a>
         </div>
 
         @if (cargando()) {
@@ -46,8 +38,7 @@ import { FechaPipe } from '../../shared/pipes';
           <div class="tarjeta mb-2">
             <h2>Registrar cliente conflictivo</h2>
             <p class="small muted mt-1">
-              Ingresa el ID del cliente y el motivo. Se sumará al contador de
-              reportes.
+              Ingresa el ID del cliente y el motivo. Se sumará al contador de reportes.
             </p>
             <div class="formulario--rejilla mt-2">
               <div class="campo">
@@ -74,7 +65,11 @@ import { FechaPipe } from '../../shared/pipes';
             <button
               type="button"
               class="btn btn--primario mt-2"
-              [disabled]="registrando() || !nuevoConflictivo.cliente_id.trim() || !nuevoConflictivo.motivo.trim()"
+              [disabled]="
+                registrando() ||
+                !nuevoConflictivo.cliente_id.trim() ||
+                !nuevoConflictivo.motivo.trim()
+              "
               (click)="registrar()"
             >
               {{ registrando() ? 'Registrando…' : 'Registrar cliente conflictivo' }}
@@ -109,9 +104,7 @@ import { FechaPipe } from '../../shared/pipes';
                           <span
                             class="insignia"
                             [class]="
-                              c.reportes_acumulados >= 3
-                                ? 'insignia--rojo'
-                                : 'insignia--ambar'
+                              c.reportes_acumulados >= 3 ? 'insignia--rojo' : 'insignia--ambar'
                             "
                           >
                             {{ c.reportes_acumulados }}
@@ -122,9 +115,7 @@ import { FechaPipe } from '../../shared/pipes';
                         <td>
                           <span
                             class="insignia"
-                            [class]="
-                              c.advertir ? 'insignia--rojo' : 'insignia--neutro'
-                            "
+                            [class]="c.advertir ? 'insignia--rojo' : 'insignia--neutro'"
                           >
                             {{ c.advertir ? 'Sí' : 'No' }}
                           </span>

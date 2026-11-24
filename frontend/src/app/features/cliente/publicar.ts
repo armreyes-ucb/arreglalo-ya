@@ -1,25 +1,9 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import {
-  ESPECIALIDADES,
-  etiquetaEspecialidad,
-} from '../../core/catalogos';
+import { ESPECIALIDADES, etiquetaEspecialidad } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
-import {
-  fechaMinimaLocal,
-  formatearFechaHora,
-} from '../../core/formato';
+import { fechaMinimaLocal, formatearFechaHora } from '../../core/formato';
 import type { Solicitud, Zona } from '../../core/models';
 import { SolicitudesService } from '../../core/solicitudes.service';
 import { ToastService } from '../../core/toast.service';
@@ -37,34 +21,19 @@ import { ImagenUrlPipe } from '../../shared/pipes';
           <div>
             <span class="migaja">Cliente · Nueva solicitud</span>
             <h1>Publica tu solicitud</h1>
-            <p>
-              Mientras más claro sea el detalle, mejores ofertas
-              recibirás.
-            </p>
+            <p>Mientras más claro sea el detalle, mejores ofertas recibirás.</p>
           </div>
         </div>
 
         @if (paso() < 4) {
           <div class="pasos">
-            <span
-              class="paso"
-              [class.paso--activo]="paso() === 1"
-              [class.paso--hecho]="paso() > 1"
-            >
+            <span class="paso" [class.paso--activo]="paso() === 1" [class.paso--hecho]="paso() > 1">
               <span class="paso__numero">1</span> Problema
             </span>
-            <span
-              class="paso"
-              [class.paso--activo]="paso() === 2"
-              [class.paso--hecho]="paso() > 2"
-            >
-              <span class="paso__numero">2</span> Ubicación y
-              fotos
+            <span class="paso" [class.paso--activo]="paso() === 2" [class.paso--hecho]="paso() > 2">
+              <span class="paso__numero">2</span> Ubicación y fotos
             </span>
-            <span
-              class="paso"
-              [class.paso--activo]="paso() === 3"
-            >
+            <span class="paso" [class.paso--activo]="paso() === 3">
               <span class="paso__numero">3</span> Confirmar
             </span>
           </div>
@@ -79,23 +48,15 @@ import { ImagenUrlPipe } from '../../shared/pipes';
         @if (paso() === 1) {
           <div class="tarjeta">
             <h2>¿Qué necesitas arreglar?</h2>
-            <form
-              class="formulario mt-2"
-              [formGroup]="formulario"
-              (ngSubmit)="siguiente()"
-            >
+            <form class="formulario mt-2" [formGroup]="formulario" (ngSubmit)="siguiente()">
               <div class="campo">
                 <span class="etiqueta">Especialidad</span>
                 <div class="rejilla rejilla--2">
-                  @for (
-                    especialidad of especialidades;
-                    track especialidad.valor
-                  ) {
+                  @for (especialidad of especialidades; track especialidad.valor) {
                     <label
                       class="opcion"
                       [class.opcion--activa]="
-                        formulario.controls.especialidad.value ===
-                        especialidad.valor
+                        formulario.controls.especialidad.value === especialidad.valor
                       "
                     >
                       <input
@@ -104,9 +65,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                         [value]="especialidad.valor"
                       />
                       <span>
-                        <strong>{{
-                          especialidad.etiqueta
-                        }}</strong>
+                        <strong>{{ especialidad.etiqueta }}</strong>
                         <span class="small muted" style="display:block">
                           {{ especialidad.descripcion }}
                         </span>
@@ -117,9 +76,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
               </div>
 
               <div class="campo">
-                <label class="etiqueta" for="tipo"
-                  >Título corto del problema</label
-                >
+                <label class="etiqueta" for="tipo">Título corto del problema</label>
                 <input
                   id="tipo"
                   type="text"
@@ -132,16 +89,12 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                   formulario.controls.tipo_problema.touched &&
                   formulario.controls.tipo_problema.invalid
                 ) {
-                  <span class="error-campo">
-                    Escribe un título de al menos 3 caracteres.
-                  </span>
+                  <span class="error-campo"> Escribe un título de al menos 3 caracteres. </span>
                 }
               </div>
 
               <div class="campo">
-                <label class="etiqueta" for="descripcion"
-                  >Describe el problema</label
-                >
+                <label class="etiqueta" for="descripcion">Describe el problema</label>
                 <textarea
                   id="descripcion"
                   class="textarea"
@@ -150,34 +103,23 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                   placeholder="Cuéntanos qué pasa, desde cuándo y qué intentaste hacer. Mínimo 30 caracteres."
                 ></textarea>
                 @if (
-                  formulario.controls.descripcion.touched &&
-                  formulario.controls.descripcion.invalid
+                  formulario.controls.descripcion.touched && formulario.controls.descripcion.invalid
                 ) {
                   <span class="error-campo">
-                    La descripción debe tener entre 30 y 2000
-                    caracteres.
+                    La descripción debe tener entre 30 y 2000 caracteres.
                   </span>
                 }
               </div>
 
               <label class="check">
-                <input
-                  type="checkbox"
-                  formControlName="urgente"
-                />
+                <input type="checkbox" formControlName="urgente" />
                 <span>
-                  <strong>Es urgente.</strong> Se mostrará con
-                  prioridad. El recargo del 10% se aplicará sobre
-                  el precio final que acuerdes con el técnico.
+                  <strong>Es urgente.</strong> Se mostrará con prioridad. El recargo del 10% se
+                  aplicará sobre el precio final que acuerdes con el técnico.
                 </span>
               </label>
 
-              <button
-                type="submit"
-                class="btn btn--primario"
-              >
-                Continuar
-              </button>
+              <button type="submit" class="btn btn--primario">Continuar</button>
             </form>
           </div>
         }
@@ -186,46 +128,25 @@ import { ImagenUrlPipe } from '../../shared/pipes';
           <div class="tarjeta">
             <h2>Ubicación y fotos</h2>
             <p class="small muted">
-              Tu dirección exacta es privada. Solo se comparte con
-              el técnico cuando confirmes el trabajo.
+              Tu dirección exacta es privada. Solo se comparte con el técnico cuando confirmes el
+              trabajo.
             </p>
-            <form
-              class="formulario mt-2"
-              [formGroup]="formulario"
-              (ngSubmit)="siguiente()"
-            >
+            <form class="formulario mt-2" [formGroup]="formulario" (ngSubmit)="siguiente()">
               <div class="campo">
-                <label class="etiqueta" for="zona"
-                  >Zona del trabajo</label
-                >
-                <select
-                  id="zona"
-                  class="select"
-                  formControlName="zona_id"
-                >
-                  <option [value]="0">
-                    Selecciona tu zona
-                  </option>
+                <label class="etiqueta" for="zona">Zona del trabajo</label>
+                <select id="zona" class="select" formControlName="zona_id">
+                  <option [value]="0">Selecciona tu zona</option>
                   @for (zona of zonas(); track zona.id) {
-                    <option [value]="zona.id">
-                      {{ zona.nombre }} · {{ zona.municipio }}
-                    </option>
+                    <option [value]="zona.id">{{ zona.nombre }} · {{ zona.municipio }}</option>
                   }
                 </select>
-                @if (
-                  formulario.controls.zona_id.touched &&
-                  formulario.controls.zona_id.invalid
-                ) {
-                  <span class="error-campo">
-                    Selecciona una zona.
-                  </span>
+                @if (formulario.controls.zona_id.touched && formulario.controls.zona_id.invalid) {
+                  <span class="error-campo"> Selecciona una zona. </span>
                 }
               </div>
 
               <div class="campo">
-                <label class="etiqueta" for="direccion"
-                  >Dirección (se mantiene oculta)</label
-                >
+                <label class="etiqueta" for="direccion">Dirección (se mantiene oculta)</label>
                 <input
                   id="direccion"
                   type="text"
@@ -238,17 +159,12 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                   formulario.controls.direccion_oculta.touched &&
                   formulario.controls.direccion_oculta.invalid
                 ) {
-                  <span class="error-campo">
-                    La dirección debe tener al menos 5
-                    caracteres.
-                  </span>
+                  <span class="error-campo"> La dirección debe tener al menos 5 caracteres. </span>
                 }
               </div>
 
               <div class="campo">
-                <label class="etiqueta" for="fecha"
-                  >Fecha y hora preferida</label
-                >
+                <label class="etiqueta" for="fecha">Fecha y hora preferida</label>
                 <input
                   id="fecha"
                   type="datetime-local"
@@ -257,21 +173,15 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                   [min]="fechaMinima"
                 />
                 @if (
-                  formulario.controls.fecha_cita_preferida
-                    .touched &&
+                  formulario.controls.fecha_cita_preferida.touched &&
                   formulario.controls.fecha_cita_preferida.invalid
                 ) {
-                  <span class="error-campo">
-                    Elige una fecha y hora.
-                  </span>
+                  <span class="error-campo"> Elige una fecha y hora. </span>
                 }
               </div>
 
               <div class="campo">
-                <span class="etiqueta"
-                  >Fotos del problema
-                  <small>(1 a 3 imágenes)</small></span
-                >
+                <span class="etiqueta">Fotos del problema <small>(1 a 3 imágenes)</small></span>
                 <input
                   type="file"
                   class="input"
@@ -280,9 +190,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                   [disabled]="subiendoFotos()"
                   (change)="subirFotos($event)"
                 />
-                <span class="ayuda">
-                  JPG, PNG o WebP de hasta 5 MB cada una.
-                </span>
+                <span class="ayuda"> JPG, PNG o WebP de hasta 5 MB cada una. </span>
                 @if (subiendoFotos()) {
                   <span class="ayuda">Subiendo fotos…</span>
                 }
@@ -291,11 +199,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
                     @for (foto of fotos(); track foto) {
                       <div>
                         <img [src]="foto | imagenUrl" alt="Foto del problema" />
-                        <button
-                          type="button"
-                          class="enlace-boton small"
-                          (click)="quitarFoto(foto)"
-                        >
+                        <button type="button" class="enlace-boton small" (click)="quitarFoto(foto)">
                           Quitar
                         </button>
                       </div>
@@ -305,18 +209,8 @@ import { ImagenUrlPipe } from '../../shared/pipes';
               </div>
 
               <div class="fila">
-                <button
-                  type="button"
-                  class="btn btn--contorno"
-                  (click)="paso.set(1)"
-                >
-                  Atrás
-                </button>
-                <button
-                  type="submit"
-                  class="btn btn--primario"
-                  [disabled]="subiendoFotos()"
-                >
+                <button type="button" class="btn btn--contorno" (click)="paso.set(1)">Atrás</button>
+                <button type="submit" class="btn btn--primario" [disabled]="subiendoFotos()">
                   Revisar solicitud
                 </button>
               </div>
@@ -330,17 +224,11 @@ import { ImagenUrlPipe } from '../../shared/pipes';
             <div class="pila mt-2">
               <div class="fila fila--separada">
                 <span class="muted">Especialidad</span>
-                <strong>{{
-                  etiquetaEspecialidad(
-                    formulario.controls.especialidad.value
-                  )
-                }}</strong>
+                <strong>{{ etiquetaEspecialidad(formulario.controls.especialidad.value) }}</strong>
               </div>
               <div class="fila fila--separada">
                 <span class="muted">Problema</span>
-                <strong>{{
-                  formulario.controls.tipo_problema.value
-                }}</strong>
+                <strong>{{ formulario.controls.tipo_problema.value }}</strong>
               </div>
               <div>
                 <span class="muted">Descripción</span>
@@ -354,16 +242,12 @@ import { ImagenUrlPipe } from '../../shared/pipes';
               </div>
               <div class="fila fila--separada">
                 <span class="muted">Fecha preferida</span>
-                <strong>{{
-                  fechaFormateada()
-                }}</strong>
+                <strong>{{ fechaFormateada() }}</strong>
               </div>
               <div class="fila fila--separada">
                 <span class="muted">Urgente</span>
                 <strong>{{
-                  formulario.controls.urgente.value
-                    ? 'Sí, con prioridad'
-                    : 'No'
+                  formulario.controls.urgente.value ? 'Sí, con prioridad' : 'No'
                 }}</strong>
               </div>
               <div class="fila fila--separada">
@@ -374,42 +258,29 @@ import { ImagenUrlPipe } from '../../shared/pipes';
 
             <div class="alerta alerta--info mt-2">
               <span>
-                Al publicar, los técnicos de tu zona podrán enviarte
-                ofertas. El pago del 25% por QR se realiza recién
-                cuando elijas una oferta, en la siguiente etapa del
-                proyecto.
+                Al publicar, los técnicos de tu zona podrán enviarte ofertas. El pago del 25% por QR
+                se realiza recién cuando elijas una oferta, en la siguiente etapa del proyecto.
               </span>
             </div>
 
             @if (formulario.controls.urgente.value) {
               <div class="alerta alerta--aviso">
                 <span>
-                  Tu solicitud es urgente: aparecerá al tope de la
-                  lista. El recargo del 10% se aplicará sobre el
-                  precio final que acuerdes.
+                  Tu solicitud es urgente: aparecerá al tope de la lista. El recargo del 10% se
+                  aplicará sobre el precio final que acuerdes.
                 </span>
               </div>
             }
 
             <div class="fila mt-2">
-              <button
-                type="button"
-                class="btn btn--contorno"
-                (click)="paso.set(2)"
-              >
-                Atrás
-              </button>
+              <button type="button" class="btn btn--contorno" (click)="paso.set(2)">Atrás</button>
               <button
                 type="button"
                 class="btn btn--primario"
                 [disabled]="publicando()"
                 (click)="publicar()"
               >
-                {{
-                  publicando()
-                    ? 'Publicando…'
-                    : 'Publicar solicitud'
-                }}
+                {{ publicando() ? 'Publicando…' : 'Publicar solicitud' }}
               </button>
             </div>
           </div>
@@ -420,8 +291,8 @@ import { ImagenUrlPipe } from '../../shared/pipes';
             <div class="vacio__icono">✓</div>
             <h1>¡Solicitud publicada!</h1>
             <p class="muted">
-              Los técnicos verificados de tu zona ya pueden verla y
-              enviarte ofertas. Te avisaremos cuando lleguen.
+              Los técnicos verificados de tu zona ya pueden verla y enviarte ofertas. Te avisaremos
+              cuando lleguen.
             </p>
             <div class="alerta alerta--info" style="text-align:left">
               <span>
@@ -433,18 +304,12 @@ import { ImagenUrlPipe } from '../../shared/pipes';
             </div>
             <div class="fila" style="justify-content: center">
               <a
-                [routerLink]="[
-                  '/cliente/mis-solicitudes',
-                  creada()?.id,
-                ]"
+                [routerLink]="['/cliente/mis-solicitudes', creada()?.id]"
                 class="btn btn--primario"
               >
                 Ver mi solicitud
               </a>
-              <a
-                routerLink="/cliente/mis-solicitudes"
-                class="btn btn--contorno"
-              >
+              <a routerLink="/cliente/mis-solicitudes" class="btn btn--contorno">
                 Ir a mis solicitudes
               </a>
             </div>
@@ -457,9 +322,7 @@ import { ImagenUrlPipe } from '../../shared/pipes';
 export class PublicarSolicitud implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly zonasService = inject(ZonasService);
-  private readonly solicitudesService = inject(
-    SolicitudesService,
-  );
+  private readonly solicitudesService = inject(SolicitudesService);
   private readonly uploads = inject(UploadsService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -477,20 +340,11 @@ export class PublicarSolicitud implements OnInit {
 
   protected readonly formulario = this.fb.group({
     especialidad: ['', [Validators.required]],
-    tipo_problema: [
-      '',
-      [Validators.required, Validators.minLength(3)],
-    ],
-    descripcion: [
-      '',
-      [Validators.required, Validators.minLength(30)],
-    ],
+    tipo_problema: ['', [Validators.required, Validators.minLength(3)]],
+    descripcion: ['', [Validators.required, Validators.minLength(30)]],
     urgente: [false],
     zona_id: [0, [Validators.required, Validators.min(1)]],
-    direccion_oculta: [
-      '',
-      [Validators.required, Validators.minLength(5)],
-    ],
+    direccion_oculta: ['', [Validators.required, Validators.minLength(5)]],
     fecha_cita_preferida: ['', [Validators.required]],
   });
 
@@ -501,9 +355,7 @@ export class PublicarSolicitud implements OnInit {
   });
 
   protected readonly fechaFormateada = computed(() =>
-    formatearFechaHora(
-      this.formulario.controls.fecha_cita_preferida.value,
-    ),
+    formatearFechaHora(this.formulario.controls.fecha_cita_preferida.value),
   );
 
   ngOnInit(): void {
@@ -526,9 +378,7 @@ export class PublicarSolicitud implements OnInit {
         controles.tipo_problema.invalid ||
         controles.descripcion.invalid
       ) {
-        this.error.set(
-          'Completa la especialidad, el título y la descripción.',
-        );
+        this.error.set('Completa la especialidad, el título y la descripción.');
         return;
       }
       this.paso.set(2);
@@ -548,15 +398,11 @@ export class PublicarSolicitud implements OnInit {
         controles.direccion_oculta.invalid ||
         controles.fecha_cita_preferida.invalid
       ) {
-        this.error.set(
-          'Completa la zona, la dirección y la fecha preferida.',
-        );
+        this.error.set('Completa la zona, la dirección y la fecha preferida.');
         return;
       }
       if (this.fotos().length === 0) {
-        this.error.set(
-          'Adjunta al menos una foto del problema.',
-        );
+        this.error.set('Adjunta al menos una foto del problema.');
         return;
       }
       this.paso.set(3);
@@ -579,9 +425,7 @@ export class PublicarSolicitud implements OnInit {
     try {
       for (const archivo of archivos.slice(0, espacio)) {
         if (archivo.size > 5 * 1024 * 1024) {
-          this.toast.error(
-            `${archivo.name} supera el límite de 5 MB.`,
-          );
+          this.toast.error(`${archivo.name} supera el límite de 5 MB.`);
           continue;
         }
         const url = await this.uploads.subirImagen(archivo);
@@ -595,9 +439,7 @@ export class PublicarSolicitud implements OnInit {
   }
 
   protected quitarFoto(url: string): void {
-    this.fotos.update((fotos) =>
-      fotos.filter((foto) => foto !== url),
-    );
+    this.fotos.update((fotos) => fotos.filter((foto) => foto !== url));
   }
 
   protected async publicar(): Promise<void> {
@@ -612,9 +454,7 @@ export class PublicarSolicitud implements OnInit {
         descripcion: valores.descripcion.trim(),
         fotos_urls: this.fotos(),
         direccion_oculta: valores.direccion_oculta.trim(),
-        fecha_cita_preferida: new Date(
-          valores.fecha_cita_preferida,
-        ).toISOString(),
+        fecha_cita_preferida: new Date(valores.fecha_cita_preferida).toISOString(),
         urgente: valores.urgente,
       });
       this.creada.set(solicitud);

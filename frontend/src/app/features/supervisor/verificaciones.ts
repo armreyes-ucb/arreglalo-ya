@@ -1,14 +1,6 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  claseTonoTrabajador,
-  etiquetaEstadoTrabajador,
-} from '../../core/catalogos';
+import { claseTonoTrabajador, etiquetaEstadoTrabajador } from '../../core/catalogos';
 import { mensajeDeError } from '../../core/errores';
 import type { ExpedienteVerificacion } from '../../core/models';
 import { VerificacionService } from '../../core/verificacion.service';
@@ -24,8 +16,8 @@ import { VerificacionService } from '../../core/verificacion.service';
             <span class="migaja">Supervisor</span>
             <h1>Bandeja de verificaciones</h1>
             <p>
-              Expedientes ordenados por antigüedad. Los casos con
-              más de 48 horas se marcan como prioritarios.
+              Expedientes ordenados por antigüedad. Los casos con más de 48 horas se marcan como
+              prioritarios.
             </p>
           </div>
           <button
@@ -59,45 +51,26 @@ import { VerificacionService } from '../../core/verificacion.service';
           </div>
         } @else {
           <div class="pila">
-            @for (
-              expediente of expedientes();
-              track expediente.trabajador_id
-            ) {
+            @for (expediente of expedientes(); track expediente.trabajador_id) {
               <div class="tarjeta">
                 <div class="fila fila--arriba fila--separada">
                   <div>
                     <div class="fila">
-                      <strong>{{
-                        expediente.nombre_completo
-                      }}</strong>
+                      <strong>{{ expediente.nombre_completo }}</strong>
                       @if (expediente.mas_de_48_horas) {
-                        <span class="insignia insignia--rojo"
-                          >+48 h</span
-                        >
+                        <span class="insignia insignia--rojo">+48 h</span>
                       }
-                      <span
-                        class="insignia"
-                        [class]="
-                          'insignia ' +
-                          claseTono(expediente.estado)
-                        "
-                      >
-                        {{
-                          etiquetaEstado(expediente.estado)
-                        }}
+                      <span class="insignia" [class]="'insignia ' + claseTono(expediente.estado)">
+                        {{ etiquetaEstado(expediente.estado) }}
                       </span>
                     </div>
                     <div class="small muted mt-1">
-                      {{ expediente.telefono }} · Nivel
-                      {{ expediente.nivel_verificacion }} ·
+                      {{ expediente.telefono }} · Nivel {{ expediente.nivel_verificacion }} ·
                       {{ expediente.horas_en_espera }} h en espera
                     </div>
                   </div>
                   <a
-                    [routerLink]="[
-                      '/supervisor/verificaciones',
-                      expediente.trabajador_id,
-                    ]"
+                    [routerLink]="['/supervisor/verificaciones', expediente.trabajador_id]"
                     class="btn btn--primario btn--sm"
                   >
                     Revisar
@@ -115,9 +88,7 @@ import { VerificacionService } from '../../core/verificacion.service';
                       {{ expediente.cuenta_bancaria.titular }}
                     </span>
                   } @else {
-                    <span class="insignia insignia--ambar"
-                      >Sin cuenta bancaria</span
-                    >
+                    <span class="insignia insignia--ambar">Sin cuenta bancaria</span>
                   }
                   @if (expediente.vence_antecedentes) {
                     <span class="etiqueta-suave">
@@ -135,12 +106,9 @@ import { VerificacionService } from '../../core/verificacion.service';
   `,
 })
 export class BandejaVerificaciones implements OnInit {
-  private readonly verificacionService = inject(
-    VerificacionService,
-  );
+  private readonly verificacionService = inject(VerificacionService);
 
-  protected readonly expedientes =
-    signal<ExpedienteVerificacion[]>([]);
+  protected readonly expedientes = signal<ExpedienteVerificacion[]>([]);
   protected readonly cargando = signal(true);
   protected readonly error = signal('');
   protected readonly etiquetaEstado = etiquetaEstadoTrabajador;
@@ -154,9 +122,7 @@ export class BandejaVerificaciones implements OnInit {
     this.cargando.set(true);
     this.error.set('');
     try {
-      this.expedientes.set(
-        await this.verificacionService.bandeja(),
-      );
+      this.expedientes.set(await this.verificacionService.bandeja());
     } catch (error) {
       this.error.set(mensajeDeError(error));
     } finally {

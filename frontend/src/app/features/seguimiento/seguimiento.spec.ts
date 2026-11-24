@@ -2,13 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type {
-  Pago,
-  Precio,
-  ReportePublico,
-  SolicitudDetalle,
-  Zona,
-} from '../../core/models';
+import type { Pago, Precio, ReportePublico, SolicitudDetalle, Zona } from '../../core/models';
 import { AuthService } from '../../core/auth.service';
 import { PagosService } from '../../core/pagos.service';
 import { SolicitudesService } from '../../core/solicitudes.service';
@@ -90,13 +84,15 @@ describe('Seguimiento', () => {
     vi.useRealTimers();
   });
 
-  async function crearComponente(opciones: {
-    rol?: 'CLIENTE' | 'TRABAJADOR';
-    estado?: SolicitudDetalle['estado'];
-    precios?: Precio[];
-    pago?: Pago | null;
-    reporte?: ReportePublico | null;
-  } = {}) {
+  async function crearComponente(
+    opciones: {
+      rol?: 'CLIENTE' | 'TRABAJADOR';
+      estado?: SolicitudDetalle['estado'];
+      precios?: Precio[];
+      pago?: Pago | null;
+      reporte?: ReportePublico | null;
+    } = {},
+  ) {
     const {
       rol = 'TRABAJADOR',
       estado = 'CONFIRMADA',
@@ -106,9 +102,7 @@ describe('Seguimiento', () => {
     } = opciones;
 
     const solicitudes = {
-      detalle: vi
-        .fn()
-        .mockResolvedValue({ ...DETALLE, estado }),
+      detalle: vi.fn().mockResolvedValue({ ...DETALLE, estado }),
       pago: vi.fn().mockResolvedValue({
         pago: pago ? { ...pago } : null,
         reporte_abierto: reporte,
@@ -187,46 +181,37 @@ describe('Seguimiento', () => {
   }
 
   it('precarga el precio final con el monto acordado para el técnico', async () => {
-    const { componente, solicitudes, fixture } =
-      await crearComponente({ rol: 'TRABAJADOR' });
+    const { componente, solicitudes, fixture } = await crearComponente({ rol: 'TRABAJADOR' });
 
     expect(componente.puedeRegistrarPrecioFinal()).toBe(true);
     expect(componente.formPrecioFinal.value.monto).toBe(400);
 
     await componente.registrarPrecioFinal();
 
-    expect(solicitudes.registrarPrecioFinal).toHaveBeenCalledWith(
-      'solicitud-1',
-      { monto: 400 },
-    );
+    expect(solicitudes.registrarPrecioFinal).toHaveBeenCalledWith('solicitud-1', { monto: 400 });
     fixture.destroy();
   });
 
   it('permite al cliente aprobar el precio final pendiente', async () => {
-    const { componente, solicitudes, fixture } =
-      await crearComponente({
-        rol: 'CLIENTE',
-        precios: [{ ...PRECIO_FINAL }],
-      });
+    const { componente, solicitudes, fixture } = await crearComponente({
+      rol: 'CLIENTE',
+      precios: [{ ...PRECIO_FINAL }],
+    });
 
     expect(componente.puedeResponderPrecioFinal()).toBe(true);
     expect(componente.precioFinal().monto).toBe(420);
 
     await componente.responderPrecioFinal(true);
 
-    expect(solicitudes.responderPrecioFinal).toHaveBeenCalledWith(
-      'solicitud-1',
-      true,
-    );
+    expect(solicitudes.responderPrecioFinal).toHaveBeenCalledWith('solicitud-1', true);
     fixture.destroy();
   });
 
   it('reporta el impago como reclamo en revisión y bloquea la transferencia', async () => {
-    const { componente, pagos, toast, fixture } =
-      await crearComponente({
-        rol: 'TRABAJADOR',
-        estado: 'TERMINADA_TRABAJADOR',
-      });
+    const { componente, pagos, toast, fixture } = await crearComponente({
+      rol: 'TRABAJADOR',
+      estado: 'TERMINADA_TRABAJADOR',
+    });
 
     expect(componente.puedeConfirmarCobro()).toBe(true);
 
@@ -240,9 +225,7 @@ describe('Seguimiento', () => {
       false,
       'El cliente no pagó el saldo',
     );
-    expect(toast.info).toHaveBeenCalledWith(
-      'Reclamo abierto. En revisión por supervisor.',
-    );
+    expect(toast.info).toHaveBeenCalledWith('Reclamo abierto. En revisión por supervisor.');
     fixture.destroy();
   });
 

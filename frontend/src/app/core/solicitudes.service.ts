@@ -43,47 +43,29 @@ export class SolicitudesService {
   private readonly http = inject(HttpClient);
 
   crear(payload: CrearSolicitudPayload): Promise<Solicitud> {
-    return firstValueFrom(
-      this.http.post<Solicitud>(`${API_URL}/solicitudes`, payload),
-    );
+    return firstValueFrom(this.http.post<Solicitud>(`${API_URL}/solicitudes`, payload));
   }
 
   mias(): Promise<Solicitud[]> {
-    return firstValueFrom(
-      this.http.get<Solicitud[]>(`${API_URL}/solicitudes/mias`),
-    );
+    return firstValueFrom(this.http.get<Solicitud[]>(`${API_URL}/solicitudes/mias`));
   }
 
   detalle(id: string): Promise<SolicitudDetalle> {
-    return firstValueFrom(
-      this.http.get<SolicitudDetalle>(
-        `${API_URL}/solicitudes/${id}`,
-      ),
-    );
+    return firstValueFrom(this.http.get<SolicitudDetalle>(`${API_URL}/solicitudes/${id}`));
   }
 
   ofertas(id: string): Promise<OfertaConTrabajador[]> {
     return firstValueFrom(
-      this.http.get<OfertaConTrabajador[]>(
-        `${API_URL}/solicitudes/${id}/ofertas`,
-      ),
+      this.http.get<OfertaConTrabajador[]>(`${API_URL}/solicitudes/${id}/ofertas`),
     );
   }
 
   pago(id: string): Promise<PagoSolicitud> {
-    return firstValueFrom(
-      this.http.get<PagoSolicitud>(
-        `${API_URL}/solicitudes/${id}/pago`,
-      ),
-    );
+    return firstValueFrom(this.http.get<PagoSolicitud>(`${API_URL}/solicitudes/${id}/pago`));
   }
 
   precios(id: string): Promise<Precio[]> {
-    return firstValueFrom(
-      this.http.get<Precio[]>(
-        `${API_URL}/solicitudes/${id}/precios`,
-      ),
-    );
+    return firstValueFrom(this.http.get<Precio[]>(`${API_URL}/solicitudes/${id}/precios`));
   }
 
   disponibles(filtros: {
@@ -98,61 +80,37 @@ export class SolicitudesService {
       params = params.set('especialidad', filtros.especialidad);
     }
     return firstValueFrom(
-      this.http.get<SolicitudDisponible[]>(
-        `${API_URL}/solicitudes/disponibles`,
-        { params },
-      ),
+      this.http.get<SolicitudDisponible[]>(`${API_URL}/solicitudes/disponibles`, { params }),
     );
   }
 
-  ofertar(
-    solicitudId: string,
-    oferta: NuevaOferta,
-  ): Promise<Oferta> {
+  ofertar(solicitudId: string, oferta: NuevaOferta): Promise<Oferta> {
     return firstValueFrom(
-      this.http.post<Oferta>(
-        `${API_URL}/solicitudes/${solicitudId}/ofertas`,
-        oferta,
-      ),
+      this.http.post<Oferta>(`${API_URL}/solicitudes/${solicitudId}/ofertas`, oferta),
     );
   }
 
   misOfertas(): Promise<OfertaConSolicitud[]> {
     return firstValueFrom(
-      this.http.get<OfertaConSolicitud[]>(
-        `${API_URL}/solicitudes/mis-ofertas`,
-      ),
+      this.http.get<OfertaConSolicitud[]>(`${API_URL}/solicitudes/mis-ofertas`),
     );
   }
 
-  elegirOferta(
-    solicitudId: string,
-    ofertaId: string,
-  ): Promise<Pago> {
+  elegirOferta(solicitudId: string, ofertaId: string): Promise<Pago> {
     return firstValueFrom(
-      this.http.post<Pago>(
-        `${API_URL}/solicitudes/${solicitudId}/elegir-oferta`,
-        { oferta_id: ofertaId },
-      ),
+      this.http.post<Pago>(`${API_URL}/solicitudes/${solicitudId}/elegir-oferta`, {
+        oferta_id: ofertaId,
+      }),
     );
   }
 
-  registrarPrecioFinal(
-    solicitudId: string,
-    payload: RegistrarPrecioFinalPayload,
-  ): Promise<Precio> {
+  registrarPrecioFinal(solicitudId: string, payload: RegistrarPrecioFinalPayload): Promise<Precio> {
     return firstValueFrom(
-      this.http.post<Precio>(
-        `${API_URL}/solicitudes/${solicitudId}/precio-final`,
-        payload,
-      ),
+      this.http.post<Precio>(`${API_URL}/solicitudes/${solicitudId}/precio-final`, payload),
     );
   }
 
-  responderPrecioFinal(
-    solicitudId: string,
-    aprobado: boolean,
-  ): Promise<ResolucionPrecio> {
+  responderPrecioFinal(solicitudId: string, aprobado: boolean): Promise<ResolucionPrecio> {
     return firstValueFrom(
       this.http.post<ResolucionPrecio>(
         `${API_URL}/solicitudes/${solicitudId}/precio-final/responder`,
@@ -161,15 +119,9 @@ export class SolicitudesService {
     );
   }
 
-  registrarIncremento(
-    solicitudId: string,
-    payload: RegistrarIncrementoPayload,
-  ): Promise<Precio> {
+  registrarIncremento(solicitudId: string, payload: RegistrarIncrementoPayload): Promise<Precio> {
     return firstValueFrom(
-      this.http.post<Precio>(
-        `${API_URL}/solicitudes/${solicitudId}/incremento`,
-        payload,
-      ),
+      this.http.post<Precio>(`${API_URL}/solicitudes/${solicitudId}/incremento`, payload),
     );
   }
 
@@ -188,22 +140,15 @@ export class SolicitudesService {
 
   terminar(solicitudId: string): Promise<Solicitud> {
     return firstValueFrom(
-      this.http.patch<Solicitud>(
-        `${API_URL}/solicitudes/${solicitudId}/terminar`,
-        {},
-      ),
+      this.http.patch<Solicitud>(`${API_URL}/solicitudes/${solicitudId}/terminar`, {}),
     );
   }
 
-  cancelar(
-    solicitudId: string,
-    motivo: string,
-  ): Promise<ResolucionCancelacion> {
+  cancelar(solicitudId: string, motivo: string): Promise<ResolucionCancelacion> {
     return firstValueFrom(
-      this.http.post<ResolucionCancelacion>(
-        `${API_URL}/solicitudes/${solicitudId}/cancelar`,
-        { motivo },
-      ),
+      this.http.post<ResolucionCancelacion>(`${API_URL}/solicitudes/${solicitudId}/cancelar`, {
+        motivo,
+      }),
     );
   }
 }

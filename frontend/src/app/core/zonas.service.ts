@@ -13,9 +13,7 @@ export class ZonasService {
     if (this.cache && !forzar) {
       return this.cache;
     }
-    const zonas = await firstValueFrom(
-      this.http.get<Zona[]>(`${API_URL}/zonas`),
-    );
+    const zonas = await firstValueFrom(this.http.get<Zona[]>(`${API_URL}/zonas`));
     this.cache = zonas;
     return zonas;
   }
