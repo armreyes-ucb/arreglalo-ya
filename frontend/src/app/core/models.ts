@@ -183,6 +183,8 @@ export interface TrabajadorMatch extends TrabajadorPublico {
   distancia: number;
 }
 
+export type DecisionRevisionDocumento = 'APROBAR' | 'REQUIERE_DATOS';
+
 export interface DocumentoRevision {
   id: string;
   tipo: TipoDocumento | string;

@@ -21,11 +21,7 @@ import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { TipoDocumento } from '../common/enums/tipo-documento.enum.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
-import {
-  hoyISO,
-  sumarAniosISO,
-  sumarDias,
-} from '../common/utils/fechas.js';
+import { hoyISO, sumarAniosISO, sumarDias } from '../common/utils/fechas.js';
 import { cifrarNumeroCuenta } from '../common/utils/cifrar-cuenta.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { CuentaBancaria } from '../entities/cuenta-bancaria.entity.js';
@@ -95,9 +91,7 @@ export class VerificacionService {
     for (const tipo of TIPOS_VERIFICACION) {
       const lista = archivos[tipo] ?? [];
       if (lista.length === 0) {
-        throw new BadRequestException(
-          `Falta el documento obligatorio ${tipo}`,
-        );
+        throw new BadRequestException(`Falta el documento obligatorio ${tipo}`);
       }
       if (lista.length > 1) {
         throw new BadRequestException(
@@ -147,6 +141,97 @@ export class VerificacionService {
     );
   }
 
+  async reemplazarDocumento(
+    usuarioId: string,
+    tipoRecibido: string,
+    archivos: Record<string, ArchivoSubido[]>,
+  ): Promise<RespuestaCargaDocumentos> {
+    if (!TIPOS_VERIFICACION.includes(tipoRecibido as TipoDocumento)) {
+      throw new BadRequestException('Tipo de documento no permitido');
+    }
+    const tipo = tipoRecibido as TipoDocumento;
+    const lista = archivos[tipo] ?? [];
+    if (lista.length !== 1) {
+      throw new BadRequestException(`Se requiere un archivo para ${tipo}`);
+    }
+    validarArchivoDocumento(tipo, lista[0]);
+
+    const perfil = await this.perfilRepository.findOne({
+      where: { usuarioId },
+    });
+    if (!perfil) {
+      throw new NotFoundException(
+        'No existe un perfil de trabajador para este usuario',
+      );
+    }
+
+    const venceAntecedentes =
+      tipo === TipoDocumento.REJAP
+        ? sumarAniosISO(new Date(), 1)
+        : perfil.venceAntecedentes;
+    await this.dataSource.transaction(async (manager) => {
+      const existente = await manager.findOne(Documento, {
+        where: { trabajadorId: perfil.id, tipo },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!existente)
+        throw new NotFoundException('No existe un documento para reemplazar');
+      const rejapVencido =
+        tipo === TipoDocumento.REJAP &&
+        Boolean(existente.venceEn && existente.venceEn < hoyISO());
+      if (
+        existente.estadoRevision !== EstadoRevision.REQUIERE_DATOS &&
+        existente.estadoRevision !== EstadoRevision.RECHAZADO &&
+        !rejapVencido
+      ) {
+        throw new BadRequestException(
+          'Solo se pueden reemplazar documentos rechazados, observados o con REJAP vencido',
+        );
+      }
+      const url = await this.documentStorage.guardar(lista[0]);
+      await manager.delete(Documento, { trabajadorId: perfil.id, tipo });
+      const documento = manager.create(Documento, {
+        trabajadorId: perfil.id,
+        tipo,
+        archivoPrivadoUrl: url,
+        estadoRevision: EstadoRevision.PENDIENTE,
+        motivoRechazo: null,
+        revisadoPorId: null,
+        venceEn: tipo === TipoDocumento.REJAP ? venceAntecedentes : null,
+      });
+      await manager.save(Documento, documento);
+      perfil.venceAntecedentes = venceAntecedentes;
+      perfil.nivelVerificacion =
+        tipo === TipoDocumento.REJAP
+          ? Math.min(perfil.nivelVerificacion, 1)
+          : tipo === TipoDocumento.CERTIFICADO
+            ? perfil.nivelVerificacion
+            : 0;
+      if (perfil.estado === EstadoTrabajador.ACTIVO)
+        perfil.estado = EstadoTrabajador.PENDIENTE;
+      await manager.save(PerfilTrabajador, perfil);
+    });
+
+    const [perfilActual, documentos, cuenta] = await Promise.all([
+      this.perfilRepository.findOne({ where: { id: perfil.id } }),
+      this.documentoRepository.find({
+        where: { trabajadorId: perfil.id, tipo: In(TIPOS_VERIFICACION) },
+        order: { fechaCarga: 'ASC' },
+      }),
+      this.cuentaRepository.findOne({ where: { usuarioId } }),
+    ]);
+    if (!perfilActual)
+      throw new NotFoundException(
+        'No se pudo recuperar la verificación registrada',
+      );
+    return toRespuestaCargaDocumentos(
+      perfilActual,
+      documentos,
+      cuenta,
+      venceAntecedentes,
+    );
+  }
+
   async obtenerBandeja(): Promise<ExpedienteVerificacion[]> {
     const pendientes = await this.documentoRepository.find({
       where: { estadoRevision: EstadoRevision.PENDIENTE },
@@ -183,8 +268,7 @@ export class VerificacionService {
 
     const documentosPorPerfil = new Map<string, Documento[]>();
     for (const documento of documentos) {
-      const actuales =
-        documentosPorPerfil.get(documento.trabajadorId) ?? [];
+      const actuales = documentosPorPerfil.get(documento.trabajadorId) ?? [];
       actuales.push(documento);
       documentosPorPerfil.set(documento.trabajadorId, actuales);
     }
@@ -197,9 +281,7 @@ export class VerificacionService {
         fechasPorPerfil.get(perfil.id) ?? new Date(),
       ),
     );
-    return expedientes.sort(
-      (a, b) => b.horas_en_espera - a.horas_en_espera,
-    );
+    return expedientes.sort((a, b) => b.horas_en_espera - a.horas_en_espera);
   }
 
   async obtenerEstado(
@@ -238,11 +320,8 @@ export class VerificacionService {
    * de ofertas y la pérdida de la insignia se derivan de la fecha, así que
    * aquí solo se registra el aviso operativo.
    */
-  async avisarAntecedentesPorVencer(
-    ahora: Date = new Date(),
-  ): Promise<number> {
-    const diasAviso =
-      this.configuracion.get().dias_aviso_antecedentes;
+  async avisarAntecedentesPorVencer(ahora: Date = new Date()): Promise<number> {
+    const diasAviso = this.configuracion.get().dias_aviso_antecedentes;
     const hoy = hoyISO(ahora);
     const limite = hoyISO(sumarDias(ahora, diasAviso));
 
@@ -267,9 +346,7 @@ export class VerificacionService {
     try {
       const avisados = await this.avisarAntecedentesPorVencer();
       if (avisados > 0) {
-        this.logger.log(
-          `Avisos de vencimiento de antecedentes: ${avisados}`,
-        );
+        this.logger.log(`Avisos de vencimiento de antecedentes: ${avisados}`);
       }
     } catch (error) {
       this.logger.error(
@@ -306,138 +383,99 @@ export class VerificacionService {
     return { ...archivo, tipo: documento.tipo };
   }
 
-  async revisar(
+  async revisarDocumento(
     trabajadorId: string,
+    documentoId: string,
     supervisorId: string,
     dto: RevisarVerificacionDto,
   ): Promise<ResultadoRevisionVerificacion> {
     const motivo = dto.motivo_rechazo?.trim() ?? '';
-    if (
-      dto.decision !== DecisionRevision.APROBAR &&
-      motivo.length === 0
-    ) {
+    if (dto.decision !== DecisionRevision.APROBAR && !motivo) {
       throw new BadRequestException(
         'Debe indicar un motivo para rechazar o solicitar nuevos datos',
       );
     }
 
-    const resultado = await this.dataSource.transaction(
-      async (manager) => {
-        const perfil = await manager.findOne(PerfilTrabajador, {
-          where: { id: trabajadorId },
-          relations: {
-            usuario: {
-              cuentaBancaria: true,
-            },
-          },
-        });
-        if (!perfil) {
-          throw new NotFoundException('Trabajador no encontrado');
-        }
+    return this.dataSource.transaction(async (manager) => {
+      const perfil = await manager.findOne(PerfilTrabajador, {
+        where: { id: trabajadorId },
+        relations: { usuario: { cuentaBancaria: true } },
+      });
+      if (!perfil) throw new NotFoundException('Trabajador no encontrado');
 
-        const pendientes = await manager.count(Documento, {
-          where: {
-            trabajadorId,
-            estadoRevision: EstadoRevision.PENDIENTE,
-          },
-        });
-        if (pendientes === 0) {
-          throw new BadRequestException(
-            'El trabajador no tiene documentos pendientes de revisión',
-          );
-        }
-
-        const nuevoEstado =
-          dto.decision === DecisionRevision.APROBAR
-            ? EstadoRevision.APROBADO
-            : dto.decision === DecisionRevision.RECHAZAR
-              ? EstadoRevision.RECHAZADO
-              : EstadoRevision.REQUIERE_DATOS;
-
-        await manager.update(
-          Documento,
-          {
-            trabajadorId,
-            estadoRevision: EstadoRevision.PENDIENTE,
-          },
-          {
-            estadoRevision: nuevoEstado,
-            motivoRechazo:
-              dto.decision === DecisionRevision.APROBAR
-                ? null
-                : motivo,
-            revisadoPorId: supervisorId,
-          },
+      const documento = await manager.findOne(Documento, {
+        where: { id: documentoId, trabajadorId },
+      });
+      if (!documento) throw new NotFoundException('Documento no encontrado');
+      if (documento.estadoRevision !== EstadoRevision.PENDIENTE) {
+        throw new BadRequestException(
+          'El documento no está pendiente de revisión',
         );
+      }
 
-        if (dto.decision === DecisionRevision.APROBAR) {
-          const rejap = await manager.findOne(Documento, {
-            where: {
-              trabajadorId,
-              tipo: TipoDocumento.REJAP,
-            },
-            order: { fechaCarga: 'DESC' },
-          });
-          const nivel =
-            dto.nivel_verificacion ??
-            Math.max(perfil.nivelVerificacion, 2);
-          perfil.nivelVerificacion = nivel;
-          perfil.venceAntecedentes =
-            dto.vence_antecedentes ??
-            rejap?.venceEn ??
-            this.resolverVenceAntecedentes(perfil);
-          if (
-            perfil.estado === EstadoTrabajador.PENDIENTE ||
-            perfil.estado === EstadoTrabajador.ACTIVO
-          ) {
-            perfil.estado =
-              nivel >= 2
-                ? EstadoTrabajador.ACTIVO
-                : EstadoTrabajador.PENDIENTE;
-          }
-          await manager.update(
-            Documento,
-            {
-              trabajadorId,
-              tipo: TipoDocumento.REJAP,
-            },
-            { venceEn: perfil.venceAntecedentes },
-          );
-        }
-        await manager.save(PerfilTrabajador, perfil);
+      documento.estadoRevision =
+        dto.decision === DecisionRevision.APROBAR
+          ? EstadoRevision.APROBADO
+          : dto.decision === DecisionRevision.RECHAZAR
+            ? EstadoRevision.RECHAZADO
+            : EstadoRevision.REQUIERE_DATOS;
+      documento.motivoRechazo =
+        dto.decision === DecisionRevision.APROBAR ? null : motivo;
+      documento.revisadoPorId = supervisorId;
+      await manager.save(Documento, documento);
 
-        const documentos = await manager.find(Documento, {
-          where: {
-            trabajadorId,
-            tipo: In(TIPOS_VERIFICACION),
-          },
-          order: { fechaCarga: 'ASC' },
-        });
-        return {
-          perfil,
-          documentos,
-          cuenta: perfil.usuario?.cuentaBancaria ?? null,
-        };
-      },
-    );
+      const documentos = await manager.find(Documento, {
+        where: { trabajadorId, tipo: In(TIPOS_VERIFICACION) },
+        order: { fechaCarga: 'ASC' },
+      });
+      const tiposNivel1 = [
+        TipoDocumento.CARNET_ANVERSO,
+        TipoDocumento.CARNET_REVERSO,
+        TipoDocumento.SELFIE,
+      ];
+      const aprobados = new Set(
+        documentos
+          .filter((item) => item.estadoRevision === EstadoRevision.APROBADO)
+          .map((item) => item.tipo),
+      );
+      const nivel1Completo = tiposNivel1.every((tipo) => aprobados.has(tipo));
+      const rejap = documentos.find(
+        (item) => item.tipo === TipoDocumento.REJAP,
+      );
+      const antecedentesVigentes = Boolean(
+        rejap?.venceEn && rejap.venceEn >= hoyISO(),
+      );
+      const nivel2Completo =
+        nivel1Completo &&
+        aprobados.has(TipoDocumento.REJAP) &&
+        antecedentesVigentes &&
+        Boolean(perfil.usuario?.cuentaBancaria);
+      perfil.nivelVerificacion = nivel2Completo ? 2 : nivel1Completo ? 1 : 0;
+      perfil.venceAntecedentes = rejap?.venceEn ?? perfil.venceAntecedentes;
+      if (
+        perfil.estado === EstadoTrabajador.PENDIENTE ||
+        perfil.estado === EstadoTrabajador.ACTIVO
+      ) {
+        perfil.estado = nivel2Completo
+          ? EstadoTrabajador.ACTIVO
+          : EstadoTrabajador.PENDIENTE;
+      }
+      await manager.save(PerfilTrabajador, perfil);
 
-    const mensaje =
-      dto.decision === DecisionRevision.APROBAR
-        ? 'Verificación aprobada'
-        : dto.decision === DecisionRevision.RECHAZAR
-          ? 'Verificación rechazada'
-          : 'Se solicitaron nuevos datos al trabajador';
-
-    return {
-      mensaje,
-      perfil_id: resultado.perfil.id,
-      estado: resultado.perfil.estado,
-      nivel_verificacion: resultado.perfil.nivelVerificacion,
-      decide: dto.decision,
-      documentos: resultado.documentos.map((documento) =>
-        toDocumentoRevision(documento, true),
-      ),
-    };
+      return {
+        mensaje:
+          dto.decision === DecisionRevision.APROBAR
+            ? 'Documento aprobado'
+            : dto.decision === DecisionRevision.RECHAZAR
+              ? 'Documento rechazado'
+              : 'Se solicitaron nuevos datos al trabajador',
+        perfil_id: perfil.id,
+        estado: perfil.estado,
+        nivel_verificacion: perfil.nivelVerificacion,
+        decide: dto.decision,
+        documentos: documentos.map((item) => toDocumentoRevision(item, true)),
+      };
+    });
   }
 
   private resolverVenceAntecedentes(
@@ -447,10 +485,7 @@ export class VerificacionService {
     if (fechaIndicada) {
       return fechaIndicada;
     }
-    if (
-      perfil.venceAntecedentes &&
-      perfil.venceAntecedentes > hoyISO()
-    ) {
+    if (perfil.venceAntecedentes && perfil.venceAntecedentes > hoyISO()) {
       return perfil.venceAntecedentes;
     }
     return sumarAniosISO(new Date(), 1);
@@ -475,8 +510,7 @@ export class VerificacionService {
         estadoRevision: EstadoRevision.PENDIENTE,
         motivoRechazo: null,
         revisadoPorId: null,
-        venceEn:
-          tipo === TipoDocumento.REJAP ? venceAntecedentes : null,
+        venceEn: tipo === TipoDocumento.REJAP ? venceAntecedentes : null,
       });
       await manager.save(Documento, documento);
     }

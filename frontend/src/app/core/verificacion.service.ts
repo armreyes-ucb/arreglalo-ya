@@ -4,10 +4,12 @@ import { firstValueFrom } from 'rxjs';
 import { API_URL } from './api';
 import type {
   DecisionRevision,
+  DecisionRevisionDocumento,
   EstadoVerificacion,
   ExpedienteVerificacion,
   RespuestaCargaDocumentos,
   ResultadoRevision,
+  TipoDocumento,
 } from './models';
 
 export interface CargaDocumentosPayload {
@@ -16,6 +18,11 @@ export interface CargaDocumentosPayload {
   titular: string;
   vence_antecedentes?: string;
   archivos: Partial<Record<string, File>>;
+}
+
+export interface RevisionDocumentoPayload {
+  decision: DecisionRevisionDocumento;
+  motivo_rechazo?: string;
 }
 
 export interface RevisionPayload {
@@ -51,9 +58,30 @@ export class VerificacionService {
     );
   }
 
+  cargarDocumento(tipo: TipoDocumento, archivo: File): Promise<RespuestaCargaDocumentos> {
+    const datos = new FormData();
+    datos.append(tipo, archivo);
+    return firstValueFrom(
+      this.http.post<RespuestaCargaDocumentos>(`${API_URL}/verificacion/documentos/${tipo}`, datos),
+    );
+  }
+
   bandeja(): Promise<ExpedienteVerificacion[]> {
     return firstValueFrom(
       this.http.get<ExpedienteVerificacion[]>(`${API_URL}/verificacion/bandeja`),
+    );
+  }
+
+  revisarDocumento(
+    trabajadorId: string,
+    documentoId: string,
+    payload: RevisionDocumentoPayload,
+  ): Promise<ResultadoRevision> {
+    return firstValueFrom(
+      this.http.patch<ResultadoRevision>(
+        `${API_URL}/verificacion/${trabajadorId}/documentos/${documentoId}/revisar`,
+        payload,
+      ),
     );
   }
 

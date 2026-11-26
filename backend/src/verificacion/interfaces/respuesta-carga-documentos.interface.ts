@@ -9,6 +9,6 @@ export interface RespuestaCargaDocumentos {
   cuenta_bancaria: {
     banco: string;
     titular: string;
-  };
+  } | null;
   documentos: DocumentoRevision[];
 }

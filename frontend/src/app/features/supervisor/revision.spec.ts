@@ -25,6 +25,9 @@ describe('RevisionVerificacion', () => {
   async function crearComponente() {
     const verificacion = {
       bandeja: vi.fn().mockResolvedValue([EXPEDIENTE]),
+      revisarDocumento: vi.fn().mockResolvedValue({
+        mensaje: 'Documento aprobado',
+      }),
       revisar: vi.fn().mockResolvedValue({
         mensaje: 'Verificación aprobada',
       }),
@@ -61,37 +64,31 @@ describe('RevisionVerificacion', () => {
     return { componente, verificacion, router, toast };
   }
 
-  it('exige motivo para rechazar o pedir datos', async () => {
+  it('exige comentario al solicitar corrección individual', async () => {
     const { componente, verificacion } = await crearComponente();
-    componente.formulario.patchValue({
-      decision: 'RECHAZAR',
-      motivo_rechazo: '   ',
-    });
+    const documento = { id: 'doc-1' };
+    const comentario = { value: '   ', focus: vi.fn() } as any;
 
-    await componente.revisar();
+    await componente.revisarDocumento(documento, 'REQUIERE_DATOS', comentario);
 
-    expect(componente.errorRevision()).toContain('motivo');
-    expect(verificacion.revisar).not.toHaveBeenCalled();
+    expect(componente.errorRevision()).toContain('obligatorio');
+    expect(comentario.focus).toHaveBeenCalled();
+    expect(verificacion.revisarDocumento).not.toHaveBeenCalled();
   });
 
-  it('aprueba con nivel y vuelve a la bandeja', async () => {
-    const { componente, verificacion, router, toast } = await crearComponente();
-    componente.formulario.patchValue({
+  it('envía decisión individual y actualiza el expediente', async () => {
+    const { componente, verificacion, toast } = await crearComponente();
+    verificacion.revisarDocumento = vi.fn().mockResolvedValue({ mensaje: 'Documento aprobado' });
+    const documento = { id: 'doc-1' };
+    const comentario = { value: 'Documento legible' } as any;
+
+    await componente.revisarDocumento(documento, 'APROBAR', comentario);
+
+    expect(verificacion.revisarDocumento).toHaveBeenCalledWith('perfil-1', 'doc-1', {
       decision: 'APROBAR',
-      nivel_verificacion: 3,
-      vence_antecedentes: '',
+      motivo_rechazo: 'Documento legible',
     });
-
-    await componente.revisar();
-
-    expect(verificacion.revisar).toHaveBeenCalledWith(
-      'perfil-1',
-      expect.objectContaining({
-        decision: 'APROBAR',
-        nivel_verificacion: 3,
-      }),
-    );
-    expect(router.navigate).toHaveBeenCalledWith(['/supervisor/verificaciones']);
-    expect(toast.exito).toHaveBeenCalledWith('Verificación aprobada');
+    expect(verificacion.bandeja).toHaveBeenCalledTimes(2);
+    expect(toast.exito).toHaveBeenCalledWith('Documento aprobado');
   });
 });
