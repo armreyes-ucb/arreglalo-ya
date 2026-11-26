@@ -2,7 +2,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { mensajeDeError } from '../../core/errores';
-import type { ConfiguracionPlataforma, CambioConfiguracion } from '../../core/models';
+import type {
+  ConfiguracionAlertaSinOfertas,
+  ConfiguracionPlataforma,
+  CambioConfiguracion,
+} from '../../core/models';
 import { AdminService } from '../../core/admin.service';
 import { ToastService } from '../../core/toast.service';
 import { FechaPipe } from '../../shared/pipes';
@@ -35,6 +39,55 @@ import { FechaPipe } from '../../shared/pipes';
             <span>{{ error() }}</span>
           </div>
         } @else if (config(); as cfg) {
+          @if (configAlerta(); as alertaCfg) {
+            <div class="tarjeta mb-2">
+              <h2>Alertas de solicitudes sin ofertas</h2>
+              <p class="small muted">
+                Una solicitud abierta y sin propuestas genera una alerta cuando pasa este periodo.
+                El valor se guarda en la base de datos y se aplica a todas las solicitudes.
+              </p>
+              <div class="formulario--rejilla mt-2">
+                <div class="campo">
+                  <label class="etiqueta" for="minutos_sin_ofertas"
+                    >Periodo sin ofertas (minutos) *</label
+                  >
+                  <input
+                    id="minutos_sin_ofertas"
+                    type="number"
+                    class="input"
+                    step="1"
+                    min="1"
+                    max="43200"
+                    [(ngModel)]="minutos_sin_ofertas"
+                  />
+                  <p class="small muted">
+                    Equivale a {{ horasAlerta() }} horas. Para pruebas usa valores bajos (1-5
+                    minutos).
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn--primario mt-2"
+                [disabled]="guardandoAlerta()"
+                (click)="guardarAlerta()"
+              >
+                {{ guardandoAlerta() ? 'Guardando…' : 'Guardar periodo de alerta' }}
+              </button>
+              @if (errorAlerta()) {
+                <div class="alerta alerta--error mt-2">
+                  <span>{{ errorAlerta() }}</span>
+                </div>
+              }
+              <p class="small muted mt-2">
+                Última actualización:
+                {{
+                  alertaCfg.actualizada_en ? (alertaCfg.actualizada_en | fecha) : 'sin cambios'
+                }}
+              </p>
+            </div>
+          }
+
           <div class="tarjeta mb-2">
             <h2>Parámetros actuales</h2>
             <div class="formulario--rejilla mt-2">
@@ -278,11 +331,16 @@ export class ConfiguracionAdmin implements OnInit {
   private readonly toast = inject(ToastService);
 
   protected readonly config = signal<ConfiguracionPlataforma | null>(null);
+  protected readonly configAlerta = signal<ConfiguracionAlertaSinOfertas | null>(null);
   protected readonly historial = signal<CambioConfiguracion[]>([]);
   protected readonly cargando = signal(true);
   protected readonly error = signal('');
   protected readonly guardando = signal(false);
   protected readonly errorGuardado = signal('');
+  protected readonly guardandoAlerta = signal(false);
+  protected readonly errorAlerta = signal('');
+
+  protected minutos_sin_ofertas = 1440;
 
   protected comision_pct = 5;
   protected pago_inicial_pct = 25;
@@ -308,12 +366,15 @@ export class ConfiguracionAdmin implements OnInit {
     this.cargando.set(true);
     this.error.set('');
     try {
-      const [cfg, hist] = await Promise.all([
+      const [cfg, hist, alertaCfg] = await Promise.all([
         this.adminService.obtenerConfiguracion(),
         this.adminService.historialConfiguracion(),
+        this.adminService.obtenerConfiguracionAlertas(),
       ]);
       this.config.set(cfg);
       this.historial.set(hist);
+      this.configAlerta.set(alertaCfg);
+      this.minutos_sin_ofertas = alertaCfg.minutos_sin_ofertas;
       this.comision_pct = cfg.comision_pct;
       this.pago_inicial_pct = cfg.pago_inicial_pct;
       this.factor_urgente = cfg.factor_urgente;
@@ -333,6 +394,33 @@ export class ConfiguracionAdmin implements OnInit {
       this.error.set(mensajeDeError(error));
     } finally {
       this.cargando.set(false);
+    }
+  }
+
+  protected horasAlerta(): number {
+    return Math.round((Number(this.minutos_sin_ofertas) / 60) * 100) / 100;
+  }
+
+  protected async guardarAlerta(): Promise<void> {
+    this.errorAlerta.set('');
+    const minutos = Number(this.minutos_sin_ofertas);
+    if (!Number.isInteger(minutos) || minutos <= 0) {
+      this.errorAlerta.set('El periodo debe ser un número entero mayor a cero.');
+      return;
+    }
+
+    this.guardandoAlerta.set(true);
+    try {
+      const actualizada = await this.adminService.actualizarConfiguracionAlertas({
+        minutos_sin_ofertas: minutos,
+      });
+      this.configAlerta.set(actualizada);
+      this.minutos_sin_ofertas = actualizada.minutos_sin_ofertas;
+      this.toast.exito('Periodo de alerta actualizado correctamente.');
+    } catch (error) {
+      this.errorAlerta.set(mensajeDeError(error));
+    } finally {
+      this.guardandoAlerta.set(false);
     }
   }
 

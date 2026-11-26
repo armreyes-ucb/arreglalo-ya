@@ -154,6 +154,10 @@ export class Navbar {
           { etiqueta: 'Sanciones', ruta: '/supervisor/sanciones' },
           { etiqueta: 'Conflictivos', ruta: '/supervisor/conflictivos' },
           { etiqueta: 'Devoluciones', ruta: '/supervisor/devoluciones' },
+          {
+            etiqueta: 'Sin ofertas',
+            ruta: '/supervisor/alertas-sin-ofertas',
+          },
         ];
       case 'SUPERADMIN':
         return [

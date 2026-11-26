@@ -10,7 +10,7 @@ import { ESPECIALIDADES, panelDeRol } from '../../core/catalogos';
     <section class="hero">
       <div class="contenedor hero__inner">
         <div>
-          <span class="insignia insignia--ambar"> Técnicos verificados en La Paz </span>
+          <span class="insignia insignia--ambar"> Técnicos verificados en Cochabamba </span>
           <h1 class="mt-2">
             Tu problema del hogar,
             <span>resuelto hoy</span>.

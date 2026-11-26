@@ -561,3 +561,42 @@ export interface EliminacionCuentaResponse {
   anonimizado: boolean;
   ya_anonimizado: boolean;
 }
+
+export type EstadoAlerta = 'ACTIVA' | 'RESUELTA';
+
+export interface ConfiguracionAlertaSinOfertas {
+  minutos_sin_ofertas: number;
+  horas_equivalentes: number;
+  actualizada_en: string | null;
+  actualizado_por: string | null;
+}
+
+export interface AlertaSinOfertas {
+  id: string;
+  solicitud_id: string;
+  estado: EstadoAlerta;
+  minutos_configurados: number;
+  creada_en: string;
+  vence_en_original: string;
+  vence_en_actual: string;
+  estado_solicitud: EstadoSolicitud;
+  especialidad: Especialidad;
+  tipo_problema: string;
+  descripcion: string;
+  zona: Zona | null;
+  cliente_id: string;
+  minutos_en_espera: number;
+}
+
+export interface ListadoAlertasSinOfertas {
+  minutos_sin_ofertas: number;
+  total: number;
+  alertas: AlertaSinOfertas[];
+}
+
+export interface ResultadoAmpliacionPlazo {
+  solicitud: Solicitud;
+  alertas_resueltas: number;
+  vence_en_anterior: string;
+  vence_en_nueva: string;
+}

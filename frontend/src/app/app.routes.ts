@@ -182,6 +182,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/supervisor/devoluciones').then((m) => m.DevolucionesSupervisor),
       },
+      {
+        path: 'alertas-sin-ofertas',
+        title: 'Solicitudes sin ofertas | Arréglalo Ya',
+        loadComponent: () =>
+          import('./features/supervisor/alertas-sin-ofertas').then(
+            (m) => m.AlertasSinOfertasSupervisor,
+          ),
+      },
     ],
   },
   {
