@@ -13,6 +13,7 @@ import type {
   ReporteDevoluciones,
   ReporteReclamos,
   SupervisorCreado,
+  ConfiguracionAlertaSinOfertas,
 } from './models';
 
 export interface CrearSupervisorPayload {
@@ -108,6 +109,23 @@ export class AdminService {
   ): Promise<ConfiguracionPlataforma> {
     return firstValueFrom(
       this.http.put<ConfiguracionPlataforma>(`${API_URL}/admin/configuracion`, payload),
+    );
+  }
+
+  obtenerConfiguracionAlertas(): Promise<ConfiguracionAlertaSinOfertas> {
+    return firstValueFrom(
+      this.http.get<ConfiguracionAlertaSinOfertas>(`${API_URL}/admin/alertas-sin-ofertas`),
+    );
+  }
+
+  actualizarConfiguracionAlertas(payload: {
+    minutos_sin_ofertas: number;
+  }): Promise<ConfiguracionAlertaSinOfertas> {
+    return firstValueFrom(
+      this.http.put<ConfiguracionAlertaSinOfertas>(
+        `${API_URL}/admin/alertas-sin-ofertas`,
+        payload,
+      ),
     );
   }
 

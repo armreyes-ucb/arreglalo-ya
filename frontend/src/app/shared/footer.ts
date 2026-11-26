@@ -22,7 +22,7 @@ import { RouterLink } from '@angular/router';
           <a routerLink="/registro">Crear cuenta</a>
         </nav>
         <p class="small muted pie__legal">
-          Proyecto académico de Sistemas de Información. La Paz, Bolivia.
+          Proyecto académico de Sistemas de Información. Cochabamba, Bolivia.
         </p>
       </div>
     </footer>

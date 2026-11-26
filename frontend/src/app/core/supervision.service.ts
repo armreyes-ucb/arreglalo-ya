@@ -2,7 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_URL } from './api';
-import type { SuspensionRegistrada, ClienteConflictivoPublico, DevolucionPublica } from './models';
+import type {
+  ClienteConflictivoPublico,
+  DevolucionPublica,
+  ListadoAlertasSinOfertas,
+  ResultadoAmpliacionPlazo,
+  SuspensionRegistrada,
+} from './models';
 
 export interface AplicarSuspensionPayload {
   trabajador_id: string;
@@ -60,6 +66,21 @@ export class SupervisionService {
   listarDevoluciones(): Promise<DevolucionPublica[]> {
     return firstValueFrom(
       this.http.get<DevolucionPublica[]>(`${API_URL}/supervision/devoluciones`),
+    );
+  }
+
+  listarAlertasSinOfertas(): Promise<ListadoAlertasSinOfertas> {
+    return firstValueFrom(
+      this.http.get<ListadoAlertasSinOfertas>(`${API_URL}/supervision/alertas-sin-ofertas`),
+    );
+  }
+
+  ampliarPlazo(solicitudId: string, nuevaFecha: string): Promise<ResultadoAmpliacionPlazo> {
+    return firstValueFrom(
+      this.http.post<ResultadoAmpliacionPlazo>(
+        `${API_URL}/supervision/alertas-sin-ofertas/${solicitudId}/ampliar-plazo`,
+        { nueva_fecha: nuevaFecha },
+      ),
     );
   }
 }
