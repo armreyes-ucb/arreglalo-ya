@@ -4,6 +4,7 @@ import { createObserveModule } from '@nestjs/observe';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminModule } from './admin/admin.module.js';
+import { AlertasModule } from './alertas/alertas.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -61,6 +62,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ReputacionModule,
     UploadsModule,
     AdminModule,
+    AlertasModule,
   ],
   controllers: [AppController],
   providers: [AppService],

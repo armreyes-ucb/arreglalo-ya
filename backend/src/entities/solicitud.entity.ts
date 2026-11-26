@@ -85,6 +85,18 @@ export class Solicitud {
   })
   entroAlTope: Date | null;
 
+  /**
+   * Marca la última vez que se amplió el plazo de recepción de propuestas.
+   * La detección de alertas usa esta fecha como base para no volver a alertar
+   * inmediatamente después de una ampliación.
+   */
+  @Column({
+    name: 'ultima_ampliacion_en',
+    type: 'timestamp',
+    nullable: true,
+  })
+  ultimaAmpliacionEn?: Date | null;
+
   @Column({
     name: 'cerrada_en',
     type: 'timestamp',
