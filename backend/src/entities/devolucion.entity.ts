@@ -2,7 +2,7 @@ import {
   Column,
   Entity,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
   PrimaryGeneratedColumn,
   type Relation,
 } from 'typeorm';
@@ -19,7 +19,12 @@ export class Devolucion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'pago_id', type: 'uuid', unique: true })
+  /**
+   * Varias devoluciones (parciales) pueden pertenecer al mismo pago, por eso
+   * la columna ya no es única. La suma de los montos nunca debe superar el
+   * pago inicial del 25%; esa validación vive en la capa de servicio.
+   */
+  @Column({ name: 'pago_id', type: 'uuid' })
   pagoId: string;
 
   @Column({ name: 'motivo', type: 'text' })
@@ -45,7 +50,7 @@ export class Devolucion {
   })
   estado: EstadoDevolucion;
 
-  @OneToOne(() => Pago)
+  @ManyToOne(() => Pago)
   @JoinColumn({ name: 'pago_id' })
   pago?: Relation<Pago>;
 }

@@ -2,7 +2,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_URL } from './api';
-import type { SuspensionRegistrada, ClienteConflictivoPublico, DevolucionPublica } from './models';
+import type {
+  SuspensionRegistrada,
+  ClienteConflictivoPublico,
+  DevolucionConSaldo,
+  PagoConSaldo,
+} from './models';
 
 export interface AplicarSuspensionPayload {
   trabajador_id: string;
@@ -11,6 +16,12 @@ export interface AplicarSuspensionPayload {
 
 export interface RegistrarConflictivoPayload {
   cliente_id: string;
+  motivo: string;
+}
+
+export interface RegistrarDevolucionPayload {
+  pago_id: string;
+  monto: number;
   motivo: string;
 }
 
@@ -57,9 +68,23 @@ export class SupervisionService {
     );
   }
 
-  listarDevoluciones(): Promise<DevolucionPublica[]> {
+  listarDevoluciones(): Promise<DevolucionConSaldo[]> {
     return firstValueFrom(
-      this.http.get<DevolucionPublica[]>(`${API_URL}/supervision/devoluciones`),
+      this.http.get<DevolucionConSaldo[]>(`${API_URL}/supervision/devoluciones`),
+    );
+  }
+
+  /** Pagos confirmados con importe original, acumulado y saldo reembolsable. */
+  listarPagosConSaldo(): Promise<PagoConSaldo[]> {
+    return firstValueFrom(
+      this.http.get<PagoConSaldo[]>(`${API_URL}/supervision/devoluciones/pagos`),
+    );
+  }
+
+  /** Registra una devolución parcial validando el saldo acumulado del pago. */
+  registrarDevolucion(payload: RegistrarDevolucionPayload): Promise<DevolucionConSaldo> {
+    return firstValueFrom(
+      this.http.post<DevolucionConSaldo>(`${API_URL}/supervision/devoluciones`, payload),
     );
   }
 }

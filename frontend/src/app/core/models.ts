@@ -361,6 +361,23 @@ export interface DevolucionPublica {
   estado: EstadoDevolucion;
 }
 
+export interface DevolucionConSaldo extends DevolucionPublica {
+  monto_original: number;
+  total_devuelto: number;
+  saldo_disponible: number;
+}
+
+export interface PagoConSaldo {
+  pago_id: string;
+  solicitud_id: string;
+  cliente_id: string;
+  estado_qr: EstadoQr;
+  monto_original: number;
+  total_devuelto: number;
+  saldo_disponible: number;
+  creada_en: string | null;
+}
+
 export interface ResolucionPrecio {
   precio: Precio;
   pago: Pago | null;

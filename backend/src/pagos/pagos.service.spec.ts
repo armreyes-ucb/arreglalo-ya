@@ -11,6 +11,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import { EstadoDevolucion } from '../common/enums/estado-devolucion.enum.js';
 import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoQr } from '../common/enums/estado-qr.enum.js';
 import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
@@ -117,6 +118,7 @@ function crearPerfil(): PerfilTrabajador {
 describe('PagosService', () => {
   let manager: {
     findOne: ReturnType<typeof vi.fn>;
+    find: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
@@ -133,6 +135,7 @@ describe('PagosService', () => {
     configuracion = { ...CONFIGURACION_POR_DEFECTO };
     manager = {
       findOne: vi.fn(),
+      find: vi.fn().mockResolvedValue([]),
       create: vi.fn((_entidad, datos) => ({ ...datos })),
       save: vi.fn(async (_entidad, datos) => {
         if (!datos.id) {
@@ -343,7 +346,6 @@ describe('PagosService', () => {
   it('registra una devolución por el 25% con 3 días hábiles', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 0, 9, 10, 0, 0));
-    manager.findOne.mockResolvedValue(null);
 
     const devolucion = await service.registrarDevolucion(
       manager,
@@ -359,6 +361,50 @@ describe('PagosService', () => {
         pagoId: PAGO_ID,
       }),
     );
+  });
+
+  it('devuelve solo el saldo restante si ya existen devoluciones parciales', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 9, 10, 0, 0));
+    manager.find.mockResolvedValue([
+      {
+        id: 'dev-parcial',
+        pagoId: PAGO_ID,
+        motivo: 'Parcial',
+        monto: 40,
+        fechaLimite: '2026-01-12',
+        estado: EstadoDevolucion.PENDIENTE,
+      },
+    ]);
+
+    const devolucion = await service.registrarDevolucion(
+      manager,
+      crearPago(),
+      'Cancelación con devolución parcial previa',
+    );
+
+    expect(devolucion.monto).toBe(60);
+  });
+
+  it('no crea otra devolución si el pago ya fue devuelto por completo', async () => {
+    const existente = {
+      id: 'dev-total',
+      pagoId: PAGO_ID,
+      motivo: 'Total',
+      monto: 100,
+      fechaLimite: '2026-01-12',
+      estado: EstadoDevolucion.COMPLETADA,
+    };
+    manager.find.mockResolvedValue([existente]);
+
+    const devolucion = await service.registrarDevolucion(
+      manager,
+      crearPago(),
+      'Cancelación posterior',
+    );
+
+    expect(devolucion).toBe(existente);
+    expect(manager.save).not.toHaveBeenCalled();
   });
 
   it('CP30: confirma el 75%, finaliza y transfiere Bs 80 con comisión de Bs 20', async () => {

@@ -14,6 +14,10 @@ import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { toPagoPublico } from '../common/mappers/pago-publico.mapper.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
+import {
+  calcularSaldoDevoluciones,
+  redondearMonto,
+} from '../common/utils/devoluciones.js';
 import { hoyISO } from '../common/utils/fechas.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
@@ -571,16 +575,32 @@ export class PagosService {
     }
   }
 
+  /**
+   * Registra la devolución automática por cancelación. Si el pago ya tiene
+   * devoluciones parciales, solo devuelve el saldo restante; si ya fue
+   * devuelto por completo, retorna la última devolución sin crear otra.
+   */
   async registrarDevolucion(
     manager: EntityManager,
     pago: Pago,
     motivo: string,
   ): Promise<Devolucion> {
-    const existente = await manager.findOne(Devolucion, {
+    const devoluciones = await manager.find(Devolucion, {
       where: { pagoId: pago.id },
+      order: { fechaLimite: 'ASC' },
     });
-    if (existente) {
-      return existente;
+    const { saldoDisponible } = calcularSaldoDevoluciones(
+      pago.pagoInicial25,
+      devoluciones.map((devolucion) => devolucion.monto),
+    );
+    if (saldoDisponible <= 0) {
+      const ultima = devoluciones[devoluciones.length - 1];
+      if (!ultima) {
+        throw new BadRequestException(
+          'El pago no tiene un importe reembolsable',
+        );
+      }
+      return ultima;
     }
 
     const fechaLimite =
@@ -591,7 +611,7 @@ export class PagosService {
     const devolucion = manager.create(Devolucion, {
       pagoId: pago.id,
       motivo,
-      monto: pago.pagoInicial25,
+      monto: redondearMonto(saldoDisponible),
       fechaLimite: hoyISO(fechaLimite),
       estado: EstadoDevolucion.PENDIENTE,
     });
