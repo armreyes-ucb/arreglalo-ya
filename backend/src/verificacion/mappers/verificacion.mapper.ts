@@ -102,7 +102,7 @@ export function toExpedienteVerificacion(
 export function toRespuestaCargaDocumentos(
   perfil: PerfilTrabajador,
   documentos: Documento[],
-  cuenta: CuentaBancaria,
+  cuenta: CuentaBancaria | null,
   venceAntecedentes: string | null = perfil.venceAntecedentes,
 ): RespuestaCargaDocumentos {
   return {
@@ -110,10 +110,12 @@ export function toRespuestaCargaDocumentos(
     perfil_id: perfil.id,
     estado: perfil.estado,
     vence_antecedentes: venceAntecedentes,
-    cuenta_bancaria: {
-      banco: cuenta.banco,
-      titular: cuenta.titular,
-    },
+    cuenta_bancaria: cuenta
+      ? {
+          banco: cuenta.banco,
+          titular: cuenta.titular,
+        }
+      : null,
     documentos: documentos.map((documento) =>
       toDocumentoRevision(documento),
     ),

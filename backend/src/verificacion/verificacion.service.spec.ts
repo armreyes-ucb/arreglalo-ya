@@ -4,13 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { DataSource, Repository } from 'typeorm';
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DecisionRevision } from '../common/enums/decision-revision.enum.js';
 import { EstadoRevision } from '../common/enums/estado-revision.enum.js';
 import { EstadoTrabajador } from '../common/enums/estado-trabajador.enum.js';
@@ -61,29 +55,11 @@ describe('VerificacionService - CP24', () => {
     );
   });
 
-  it('exige motivo al rechazar una verificación', async () => {
+  it('exige motivo al solicitar una corrección individual', async () => {
     await expect(
-      service.revisar(
-        'trabajador',
-        'supervisor',
-        {
-          decision: DecisionRevision.RECHAZAR,
-          motivo_rechazo: '   ',
-        } as RevisarVerificacionDto,
-      ),
-    ).rejects.toBeInstanceOf(BadRequestException);
-    expect(dataSource.transaction).not.toHaveBeenCalled();
-  });
-
-  it('exige motivo al solicitar nuevos datos', async () => {
-    await expect(
-      service.revisar(
-        'trabajador',
-        'supervisor',
-        {
-          decision: DecisionRevision.REQUIERE_DATOS,
-        } as RevisarVerificacionDto,
-      ),
+      service.revisarDocumento('trabajador', 'documento', 'supervisor', {
+        decision: DecisionRevision.REQUIERE_DATOS,
+      } as RevisarVerificacionDto),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(dataSource.transaction).not.toHaveBeenCalled();
   });

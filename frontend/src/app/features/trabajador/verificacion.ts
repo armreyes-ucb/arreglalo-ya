@@ -175,95 +175,100 @@ const TIPOS_ARCHIVO_PERMITIDOS = new Set(['image/jpeg', 'image/png', 'applicatio
             </div>
           }
 
-          <div class="tarjeta">
-            <h2>Cargar documentos</h2>
-            <p class="small muted">
-              Puedes reemplazar tus documentos cuando un supervisor los rechace o solicite datos
-              nuevos. Los cinco documentos son obligatorios en cada envío.
-            </p>
+          @if (puedeCargarDocumentos()) {
+            <div class="tarjeta">
+              <h2>Cargar documentos</h2>
+              <p class="small muted">
+                El envío inicial requiere los cinco documentos y los datos de cuenta bancaria.
+                Después, puedes reenviar únicamente los documentos observados.
+              </p>
 
-            <form class="formulario mt-2" [formGroup]="formulario" (ngSubmit)="enviar()">
-              <h3 class="mt-2">Cuenta bancaria</h3>
-              <div class="formulario--rejilla">
-                <div class="campo">
-                  <label class="etiqueta" for="banco">Banco</label>
-                  <input
-                    id="banco"
-                    type="text"
-                    class="input"
-                    formControlName="banco"
-                    placeholder="Ej. Banco Unión"
-                  />
-                </div>
-                <div class="campo">
-                  <label class="etiqueta" for="cuenta">Número de cuenta</label>
-                  <input
-                    id="cuenta"
-                    type="text"
-                    class="input"
-                    formControlName="numero_cuenta"
-                    placeholder="6 a 20 dígitos"
-                  />
-                </div>
-                <div class="campo">
-                  <label class="etiqueta" for="titular">Titular de la cuenta</label>
-                  <input
-                    id="titular"
-                    type="text"
-                    class="input"
-                    formControlName="titular"
-                    placeholder="Nombre completo"
-                  />
-                </div>
-                <div class="campo">
-                  <label class="etiqueta" for="vence"
-                    >Vencimiento del REJAP <small>(opcional)</small></label
-                  >
-                  <input
-                    id="vence"
-                    type="date"
-                    class="input"
-                    formControlName="vence_antecedentes"
-                  />
-                </div>
-              </div>
-
-              <h3 class="mt-3">Documentos obligatorios</h3>
-              <div class="rejilla rejilla--2 mt-2">
-                @for (tipo of tiposRequeridos; track tipo) {
-                  <div class="campo">
-                    <span class="etiqueta">{{ etiquetaDocumento(tipo) }}</span>
-                    <input
-                      type="file"
-                      class="input"
-                      accept="image/jpeg,image/png,application/pdf"
-                      (change)="seleccionarArchivo(tipo, $event)"
-                    />
-                    @if (archivos()[tipo]) {
-                      <div class="fila fila--separada">
-                        <span class="ayuda">
-                          {{ archivos()[tipo]?.name }}
-                        </span>
-                        <button
-                          type="button"
-                          class="enlace-boton small"
-                          (click)="quitarArchivo(tipo)"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    } @else {
-                      <span class="ayuda"> JPG, PNG o PDF de hasta 5 MB. </span>
-                    }
+              <form class="formulario mt-2" [formGroup]="formulario" (ngSubmit)="enviar()">
+                @if (!esCorreccion()) {
+                  <h3 class="mt-2">Cuenta bancaria</h3>
+                  <div class="formulario--rejilla">
+                    <div class="campo">
+                      <label class="etiqueta" for="banco">Banco</label>
+                      <input
+                        id="banco"
+                        type="text"
+                        class="input"
+                        formControlName="banco"
+                        placeholder="Ej. Banco Unión"
+                      />
+                    </div>
+                    <div class="campo">
+                      <label class="etiqueta" for="cuenta">Número de cuenta</label>
+                      <input
+                        id="cuenta"
+                        type="text"
+                        class="input"
+                        formControlName="numero_cuenta"
+                        placeholder="6 a 20 dígitos"
+                      />
+                    </div>
+                    <div class="campo">
+                      <label class="etiqueta" for="titular">Titular de la cuenta</label>
+                      <input
+                        id="titular"
+                        type="text"
+                        class="input"
+                        formControlName="titular"
+                        placeholder="Nombre completo"
+                      />
+                    </div>
+                    <div class="campo">
+                      <label class="etiqueta" for="vence"
+                        >Vencimiento del REJAP <small>(opcional)</small></label
+                      >
+                      <input
+                        id="vence"
+                        type="date"
+                        class="input"
+                        formControlName="vence_antecedentes"
+                      />
+                    </div>
                   </div>
                 }
-              </div>
+                <h3 class="mt-3">
+                  {{ esCorreccion() ? 'Documentos por corregir' : 'Documentos obligatorios' }}
+                </h3>
+                <div class="rejilla rejilla--2 mt-2">
+                  @for (tipo of tiposParaEnviar(); track tipo) {
+                    <div class="campo">
+                      <span class="etiqueta">{{ etiquetaDocumento(tipo) }}</span>
+                      <input
+                        type="file"
+                        class="input"
+                        accept="image/jpeg,image/png,application/pdf"
+                        (change)="seleccionarArchivo(tipo, $event)"
+                      />
+                      @if (archivos()[tipo]) {
+                        <div class="fila fila--separada">
+                          <span class="ayuda">
+                            {{ archivos()[tipo]?.name }}
+                          </span>
+                          <button
+                            type="button"
+                            class="enlace-boton small"
+                            (click)="quitarArchivo(tipo)"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      } @else {
+                        <span class="ayuda"> JPG, PNG o PDF de hasta 5 MB. </span>
+                      }
+                    </div>
+                  }
+                </div>
 
-              <button type="submit" class="btn btn--primario" [disabled]="enviando()">
-                {{ enviando() ? 'Enviando documentos…' : 'Enviar a revisión' }}
-              </button>
-            </form>
-          </div>
+                <button type="submit" class="btn btn--primario" [disabled]="enviando()">
+                  {{ enviando() ? 'Enviando documentos…' : 'Enviar a revisión' }}
+                </button>
+              </form>
+            </div>
+          }
         }
       </div>
     </section>
@@ -284,13 +289,41 @@ export class VerificacionTrabajador implements OnInit {
 
   protected readonly estado = signal<EstadoVerificacion | null>(null);
   protected readonly archivos = signal<Partial<Record<TipoDocumento, File>>>({});
+  protected readonly tiposParaEnviar = computed(() => {
+    const observados =
+      this.estado()
+        ?.documentos.filter((d) => d.estado === 'REQUIERE_DATOS' || d.estado === 'RECHAZADO')
+        .map((d) => d.tipo as TipoDocumento) ?? [];
+    return observados.length
+      ? this.tiposRequeridos.filter((tipo) => observados.includes(tipo))
+      : this.tiposRequeridos;
+  });
+  protected readonly esCorreccion = computed(
+    () =>
+      this.estado()?.documentos.some(
+        (d) => d.estado === 'REQUIERE_DATOS' || d.estado === 'RECHAZADO',
+      ) === true,
+  );
+  protected readonly puedeCargarDocumentos = computed(() => {
+    const documentos = this.estado()?.documentos ?? [];
+    if (documentos.length === 0) return true;
+    const observados = documentos.filter(
+      (documento) => documento.estado === 'REQUIERE_DATOS' || documento.estado === 'RECHAZADO',
+    );
+    return (
+      observados.length > 0 &&
+      observados.every((documento) =>
+        this.tiposRequeridos.includes(documento.tipo as TipoDocumento),
+      )
+    );
+  });
   protected readonly cargando = signal(true);
   protected readonly enviando = signal(false);
   protected readonly error = signal('');
   protected readonly exito = signal('');
 
   protected readonly faltantes = computed(() =>
-    this.tiposRequeridos.filter((tipo) => !this.archivos()[tipo]),
+    this.tiposParaEnviar().filter((tipo) => !this.archivos()[tipo]),
   );
 
   protected readonly formulario = this.fb.group({
@@ -338,15 +371,15 @@ export class VerificacionTrabajador implements OnInit {
     this.error.set('');
     this.exito.set('');
     const valores = this.formulario.getRawValue();
-    if (!valores.banco.trim()) {
+    if (!this.esCorreccion() && !valores.banco.trim()) {
       this.error.set('Indica el banco.');
       return;
     }
-    if (!/^\d{6,20}$/.test(valores.numero_cuenta.trim())) {
+    if (!this.esCorreccion() && !/^\d{6,20}$/.test(valores.numero_cuenta.trim())) {
       this.error.set('El número de cuenta debe tener entre 6 y 20 dígitos.');
       return;
     }
-    if (!valores.titular.trim()) {
+    if (!this.esCorreccion() && !valores.titular.trim()) {
       this.error.set('Indica el titular de la cuenta.');
       return;
     }
@@ -360,13 +393,15 @@ export class VerificacionTrabajador implements OnInit {
     }
     this.enviando.set(true);
     try {
-      const respuesta = await this.verificacionService.cargarDocumentos({
-        banco: valores.banco.trim(),
-        numero_cuenta: valores.numero_cuenta.trim(),
-        titular: valores.titular.trim(),
-        vence_antecedentes: valores.vence_antecedentes || undefined,
-        archivos: this.archivos(),
-      });
+      const respuesta = this.esCorreccion()
+        ? await this.enviarCorrecciones()
+        : await this.verificacionService.cargarDocumentos({
+            banco: valores.banco.trim(),
+            numero_cuenta: valores.numero_cuenta.trim(),
+            titular: valores.titular.trim(),
+            vence_antecedentes: valores.vence_antecedentes || undefined,
+            archivos: this.archivos(),
+          });
       this.exito.set(respuesta.mensaje);
       this.archivos.set({});
       this.toast.exito('Documentos enviados a revisión.');
@@ -376,6 +411,15 @@ export class VerificacionTrabajador implements OnInit {
     } finally {
       this.enviando.set(false);
     }
+  }
+
+  private async enviarCorrecciones(): Promise<{ mensaje: string }> {
+    const archivos = this.archivos();
+    const cargados = this.tiposParaEnviar().filter((tipo) => archivos[tipo]);
+    const respuestas = await Promise.all(
+      cargados.map((tipo) => this.verificacionService.cargarDocumento(tipo, archivos[tipo]!)),
+    );
+    return { mensaje: respuestas.map((respuesta) => respuesta.mensaje).join(' ') };
   }
 
   protected async verDocumento(documento: DocumentoRevision): Promise<void> {
