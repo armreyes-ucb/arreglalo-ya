@@ -13,6 +13,7 @@ import type {
   ReporteDevoluciones,
   ReporteReclamos,
   SupervisorCreado,
+  ClienteConflictivoConfiguracion,
 } from './models';
 
 export interface CrearSupervisorPayload {
@@ -108,6 +109,25 @@ export class AdminService {
   ): Promise<ConfiguracionPlataforma> {
     return firstValueFrom(
       this.http.put<ConfiguracionPlataforma>(`${API_URL}/admin/configuracion`, payload),
+    );
+  }
+
+  obtenerConfiguracionConflictivos(): Promise<ClienteConflictivoConfiguracion> {
+    return firstValueFrom(
+      this.http.get<ClienteConflictivoConfiguracion>(
+        `${API_URL}/admin/configuracion/clientes-conflictivos`,
+      ),
+    );
+  }
+
+  actualizarConfiguracionConflictivos(
+    payload: Partial<ClienteConflictivoConfiguracion>,
+  ): Promise<ClienteConflictivoConfiguracion> {
+    return firstValueFrom(
+      this.http.put<ClienteConflictivoConfiguracion>(
+        `${API_URL}/admin/configuracion/clientes-conflictivos`,
+        payload,
+      ),
     );
   }
 

@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
 import { SancionesService } from '../common/services/sanciones.service.js';
 import { Calificacion } from '../entities/calificacion.entity.js';
+import { ClienteConflictivoResolucion } from '../entities/cliente-conflictivo-resolucion.entity.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
@@ -31,6 +32,7 @@ import { SuspensionesService } from './suspensiones.service.js';
       Reclamo,
       Suspension,
       ClienteConflictivo,
+      ClienteConflictivoResolucion,
       Devolucion,
       Solicitud,
       PerfilTrabajador,
@@ -56,5 +58,6 @@ import { SuspensionesService } from './suspensiones.service.js';
     BusinessRulesService,
     SancionesService,
   ],
+  exports: [ConflictivosService],
 })
 export class ReputacionModule {}

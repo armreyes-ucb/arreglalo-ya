@@ -10,6 +10,7 @@ import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
+import { ReputacionModule } from '../reputacion/reputacion.module.js';
 import { PagosController } from './pagos.controller.js';
 import { PagosService } from './pagos.service.js';
 
@@ -26,6 +27,7 @@ import { PagosService } from './pagos.service.js';
       PerfilTrabajador,
     ]),
     AuthModule,
+    ReputacionModule,
   ],
   controllers: [PagosController],
   providers: [PagosService, BusinessRulesService],

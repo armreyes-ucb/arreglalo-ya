@@ -40,8 +40,10 @@ import { SancionesService } from '../common/services/sanciones.service.js';
 import { sumarDias } from '../common/utils/fechas.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { generarEnlaceWhatsApp } from '../common/utils/whatsapp.js';
+import { ConfiguracionConflictivosService } from '../configuracion/configuracion-conflictivos.service.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
-import { REPORTES_PARA_ADVERTIR } from '../reputacion/reputacion.constants.js';
+import { construirClientesAdvertidos, debeAdvertirCliente } from '../reputacion/utils/advertencia-conflictivo.js';
+import { ConflictivosService } from '../reputacion/conflictivos.service.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
@@ -142,6 +144,8 @@ export class SolicitudesService {
     private readonly sanciones: SancionesService,
     private readonly dataSource: DataSource,
     private readonly configuracion: ConfiguracionService,
+    private readonly configuracionConflictivos: ConfiguracionConflictivosService,
+    private readonly conflictivos: ConflictivosService,
   ) {}
 
   async crearSolicitud(
@@ -408,13 +412,9 @@ export class SolicitudesService {
       }),
     ]);
     const zonasPorId = new Map(zonas.map((zona) => [zona.id, zona]));
-    const clientesConflictivos = new Set(
-      conflictivos
-        .filter(
-          (conflictivo) =>
-            conflictivo.reportesAcumulados >= REPORTES_PARA_ADVERTIR,
-        )
-        .map((conflictivo) => conflictivo.clienteId),
+    const clientesConflictivos = construirClientesAdvertidos(
+      conflictivos,
+      this.configuracionConflictivos.get().min_reportes,
     );
 
     return solicitudes.map((solicitud) =>
@@ -503,9 +503,15 @@ export class SolicitudesService {
       {
         direccionOculta,
         whatsappUrl,
-        advertirClienteConflictivo:
-          (conflictivo?.reportesAcumulados ?? 0) >=
-          REPORTES_PARA_ADVERTIR,
+        advertirClienteConflictivo: conflictivo
+          ? debeAdvertirCliente(
+              {
+                estado: conflictivo.estado,
+                reportesComprobados: conflictivo.reportesComprobados,
+              },
+              this.configuracionConflictivos.get().min_reportes,
+            )
+          : false,
       },
     );
   }
@@ -637,13 +643,9 @@ export class SolicitudesService {
         ]),
       },
     });
-    const clientesAdvertidos = new Set(
-      conflictivos
-        .filter(
-          (conflictivo) =>
-            conflictivo.reportesAcumulados >= REPORTES_PARA_ADVERTIR,
-        )
-        .map((conflictivo) => conflictivo.clienteId),
+    const clientesAdvertidos = construirClientesAdvertidos(
+      conflictivos,
+      this.configuracionConflictivos.get().min_reportes,
     );
     const solicitudesPorId = new Map(
       solicitudes.map((solicitud) => [solicitud.id, solicitud]),
@@ -1249,17 +1251,24 @@ export class SolicitudesService {
     solicitudId: string,
     dto: CancelarSolicitudDto,
   ): Promise<ResolucionCancelacion> {
-    return this.dataSource.transaction(async (manager) => {
-      const solicitud = await manager.findOne(Solicitud, {
-        where: { id: solicitudId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!solicitud) {
-        throw new NotFoundException('Solicitud no encontrada');
-      }
+    const seguimiento: { clienteId: string | null } = {
+      clienteId: null,
+    };
+    const resultado = await this.dataSource.transaction(
+      async (manager) => {
+        const solicitud = await manager.findOne(Solicitud, {
+          where: { id: solicitudId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!solicitud) {
+          throw new NotFoundException('Solicitud no encontrada');
+        }
 
-      const esCliente = solicitud.clienteId === usuarioId;
-      let perfilTrabajador: PerfilTrabajador | null = null;
+        const esCliente = solicitud.clienteId === usuarioId;
+        if (esCliente) {
+          seguimiento.clienteId = solicitud.clienteId;
+        }
+        let perfilTrabajador: PerfilTrabajador | null = null;
       if (!esCliente) {
         if (
           rolActivo !== Rol.TRABAJADOR ||
@@ -1387,7 +1396,13 @@ export class SolicitudesService {
           : null,
         transferencia,
       };
-    });
+      },
+    );
+
+    if (seguimiento.clienteId) {
+      await this.conflictivos.refrescarCliente(seguimiento.clienteId);
+    }
+    return resultado;
   }
 
   private async cargarSolicitudConAcceso(

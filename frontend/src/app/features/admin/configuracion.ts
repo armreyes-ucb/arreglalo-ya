@@ -1,15 +1,20 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { mensajeDeError } from '../../core/errores';
-import type { ConfiguracionPlataforma, CambioConfiguracion } from '../../core/models';
+import type {
+  ConfiguracionPlataforma,
+  CambioConfiguracion,
+  ClienteConflictivoConfiguracion,
+} from '../../core/models';
 import { AdminService } from '../../core/admin.service';
 import { ToastService } from '../../core/toast.service';
 import { FechaPipe } from '../../shared/pipes';
 
 @Component({
   selector: 'app-configuracion-admin',
-  imports: [CommonModule, FormsModule, FechaPipe],
+  imports: [CommonModule, FormsModule, RouterLink, FechaPipe],
   template: `
     <section class="pagina">
       <div class="contenedor">
@@ -234,6 +239,100 @@ import { FechaPipe } from '../../shared/pipes';
             }
           </div>
 
+          <div class="tarjeta mb-2">
+            <h2>Criterios de clientes conflictivos</h2>
+            <p class="small muted mt-1">
+              Detección automática por reclamos rechazados, cancelaciones o reportes acumulados.
+              Un umbral en 0 desactiva ese criterio. Los contadores no se suman entre sí.
+            </p>
+            <div class="campo mt-2">
+              <label class="etiqueta">
+                <input type="checkbox" [(ngModel)]="criteriosForm.deteccion_activa" />
+                Detección automática activa
+              </label>
+            </div>
+            <div class="formulario--rejilla mt-2">
+              <div class="campo">
+                <label class="etiqueta" for="periodo_dias_conflictivos"
+                  >Periodo de evaluación (días) *</label
+                >
+                <input
+                  id="periodo_dias_conflictivos"
+                  type="number"
+                  class="input"
+                  min="1"
+                  max="365"
+                  [(ngModel)]="criteriosForm.periodo_dias"
+                />
+              </div>
+              <div class="campo">
+                <label class="etiqueta" for="min_reclamos_rechazados"
+                  >Mínimo de reclamos rechazados *</label
+                >
+                <input
+                  id="min_reclamos_rechazados"
+                  type="number"
+                  class="input"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="criteriosForm.min_reclamos_rechazados"
+                />
+              </div>
+              <div class="campo">
+                <label class="etiqueta" for="min_cancelaciones"
+                  >Mínimo de cancelaciones del cliente *</label
+                >
+                <input
+                  id="min_cancelaciones"
+                  type="number"
+                  class="input"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="criteriosForm.min_cancelaciones"
+                />
+              </div>
+              <div class="campo">
+                <label class="etiqueta" for="min_reportes"
+                  >Mínimo de reportes acumulados *</label
+                >
+                <input
+                  id="min_reportes"
+                  type="number"
+                  class="input"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="criteriosForm.min_reportes"
+                />
+              </div>
+              <div class="campo">
+                <label class="etiqueta" for="min_reclamos_totales"
+                  >Mínimo de reclamos totales *</label
+                >
+                <input
+                  id="min_reclamos_totales"
+                  type="number"
+                  class="input"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="criteriosForm.min_reclamos_totales"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn--primario mt-2"
+              [disabled]="guardandoCriterios()"
+              (click)="guardarCriterios()"
+            >
+              {{ guardandoCriterios() ? 'Guardando…' : 'Guardar criterios' }}
+            </button>
+            @if (errorCriterios()) {
+              <div class="alerta alerta--error mt-2">
+                <span>{{ errorCriterios() }}</span>
+              </div>
+            }
+          </div>
+
           <div class="tarjeta">
             <h2>Historial de cambios</h2>
             @if (historial().length === 0) {
@@ -284,6 +383,18 @@ export class ConfiguracionAdmin implements OnInit {
   protected readonly guardando = signal(false);
   protected readonly errorGuardado = signal('');
 
+  protected readonly criterios = signal<ClienteConflictivoConfiguracion | null>(null);
+  protected readonly guardandoCriterios = signal(false);
+  protected readonly errorCriterios = signal('');
+  protected criteriosForm = {
+    deteccion_activa: true,
+    periodo_dias: 90,
+    min_reclamos_rechazados: 2,
+    min_cancelaciones: 3,
+    min_reportes: 3,
+    min_reclamos_totales: 0,
+  };
+
   protected comision_pct = 5;
   protected pago_inicial_pct = 25;
   protected factor_urgente = 1.1;
@@ -308,12 +419,22 @@ export class ConfiguracionAdmin implements OnInit {
     this.cargando.set(true);
     this.error.set('');
     try {
-      const [cfg, hist] = await Promise.all([
+      const [cfg, hist, criterios] = await Promise.all([
         this.adminService.obtenerConfiguracion(),
         this.adminService.historialConfiguracion(),
+        this.adminService.obtenerConfiguracionConflictivos(),
       ]);
       this.config.set(cfg);
       this.historial.set(hist);
+      this.criterios.set(criterios);
+      this.criteriosForm = {
+        deteccion_activa: criterios.deteccion_activa,
+        periodo_dias: criterios.periodo_dias,
+        min_reclamos_rechazados: criterios.min_reclamos_rechazados,
+        min_cancelaciones: criterios.min_cancelaciones,
+        min_reportes: criterios.min_reportes,
+        min_reclamos_totales: criterios.min_reclamos_totales,
+      };
       this.comision_pct = cfg.comision_pct;
       this.pago_inicial_pct = cfg.pago_inicial_pct;
       this.factor_urgente = cfg.factor_urgente;
@@ -378,6 +499,30 @@ export class ConfiguracionAdmin implements OnInit {
       this.errorGuardado.set(mensajeDeError(error));
     } finally {
       this.guardando.set(false);
+    }
+  }
+
+  protected async guardarCriterios(): Promise<void> {
+    this.guardandoCriterios.set(true);
+    this.errorCriterios.set('');
+    try {
+      const nuevo = await this.adminService.actualizarConfiguracionConflictivos({
+        ...this.criteriosForm,
+      });
+      this.criterios.set(nuevo);
+      this.criteriosForm = {
+        deteccion_activa: nuevo.deteccion_activa,
+        periodo_dias: nuevo.periodo_dias,
+        min_reclamos_rechazados: nuevo.min_reclamos_rechazados,
+        min_cancelaciones: nuevo.min_cancelaciones,
+        min_reportes: nuevo.min_reportes,
+        min_reclamos_totales: nuevo.min_reclamos_totales,
+      };
+      this.toast.exito('Criterios de clientes conflictivos actualizados.');
+    } catch (error) {
+      this.errorCriterios.set(mensajeDeError(error));
+    } finally {
+      this.guardandoCriterios.set(false);
     }
   }
 }

@@ -23,7 +23,11 @@ import { TipoPrecio } from '../common/enums/tipo-precio.enum.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
 import { SancionesService } from '../common/services/sanciones.service.js';
 import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.constants.js';
+import { CONFIGURACION_CONFLICTIVOS_POR_DEFECTO } from '../configuracion/interfaces/configuracion-conflictivos.interface.js';
+import type { ConfiguracionConflictivosService } from '../configuracion/configuracion-conflictivos.service.js';
 import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
+import { EstadoClienteConflictivo } from '../common/enums/estado-cliente-conflictivo.enum.js';
+import type { ConflictivosService } from '../reputacion/conflictivos.service.js';
 import type { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Oferta } from '../entities/oferta.entity.js';
 import { Pago } from '../entities/pago.entity.js';
@@ -274,6 +278,16 @@ describe('SolicitudesService', () => {
       {
         get: () => ({ ...CONFIGURACION_POR_DEFECTO }),
       } as unknown as ConfiguracionService,
+      {
+        get: () => ({
+          ...CONFIGURACION_CONFLICTIVOS_POR_DEFECTO,
+          actualizado_en: new Date('2026-01-01T00:00:00.000Z'),
+          actualizado_por: null,
+        }),
+      } as unknown as ConfiguracionConflictivosService,
+      {
+        refrescarCliente: vi.fn(async () => undefined),
+      } as unknown as ConflictivosService,
     );
   });
 
@@ -288,6 +302,8 @@ describe('SolicitudesService', () => {
       {
         clienteId: CLIENTE_ID,
         reportesAcumulados: 3,
+        reportesComprobados: 3,
+        estado: EstadoClienteConflictivo.POTENCIAL,
       } as ClienteConflictivo,
     ]);
 
@@ -408,6 +424,8 @@ describe('SolicitudesService', () => {
     conflictivoRepository.findOne.mockResolvedValue({
       clienteId: CLIENTE_ID,
       reportesAcumulados: 3,
+      reportesComprobados: 3,
+      estado: EstadoClienteConflictivo.POTENCIAL,
       motivo: 'Incumplió un pago',
     });
 
@@ -432,6 +450,8 @@ describe('SolicitudesService', () => {
     conflictivoRepository.findOne.mockResolvedValue({
       clienteId: CLIENTE_ID,
       reportesAcumulados: 2,
+      reportesComprobados: 2,
+      estado: EstadoClienteConflictivo.POTENCIAL,
     });
 
     const resultado = await service.obtenerDetalle(
@@ -1040,6 +1060,8 @@ describe('SolicitudesService', () => {
       {
         clienteId: CLIENTE_ID,
         reportesAcumulados: 2,
+        reportesComprobados: 2,
+        estado: EstadoClienteConflictivo.POTENCIAL,
       } as ClienteConflictivo,
     ]);
 

@@ -436,6 +436,10 @@ export interface SuspensionRegistrada extends SuspensionPublica {
   activa: boolean;
 }
 
+export type EstadoClienteConflictivo = 'POTENCIAL' | 'CONFIRMADO' | 'DESESTIMADO';
+
+export type DecisionConflicto = 'CONFIRMAR' | 'DESESTIMAR';
+
 export interface ClienteConflictivoPublico {
   id: string;
   cliente_id: string;
@@ -443,6 +447,76 @@ export interface ClienteConflictivoPublico {
   motivo: string;
   fecha_registro: string;
   advertir: boolean;
+  estado: EstadoClienteConflictivo;
+  reportes_comprobados: number;
+  reportes_pendientes: number;
+  reclamos_totales: number;
+  reclamos_rechazados: number;
+  cancelaciones: number;
+  periodo_dias: number;
+  actualizado_en: string;
+}
+
+export interface IndicadoresConflictoPublicos {
+  reclamos_totales: number;
+  reclamos_rechazados: number;
+  cancelaciones: number;
+  reportes_comprobados: number;
+  reportes_pendientes: number;
+  periodo_dias: number;
+}
+
+export interface ReclamoEvidencia {
+  id: string;
+  solicitud_id: string;
+  fecha: string;
+  estado: EstadoReclamo;
+  motivo: string;
+}
+
+export interface CancelacionEvidencia {
+  solicitud_id: string;
+  fecha: string;
+}
+
+export interface ResolucionConflictoPublica {
+  id: string;
+  conflictivo_id: string;
+  cliente_id: string;
+  supervisor_id: string;
+  decision: DecisionConflicto;
+  justificacion: string;
+  indicadores: Record<string, unknown>;
+  fecha: string;
+}
+
+export interface DetalleConflictoPublico {
+  cliente_id: string;
+  estado: EstadoClienteConflictivo;
+  indicadores: IndicadoresConflictoPublicos;
+  motivos: string[];
+  reclamos: ReclamoEvidencia[];
+  cancelaciones: CancelacionEvidencia[];
+  resoluciones: ResolucionConflictoPublica[];
+}
+
+export interface ResumenDeteccion {
+  omitido: boolean;
+  evaluados: number;
+  potenciales: number;
+  actualizados: number;
+  reabiertos: number;
+}
+
+export interface ClienteConflictivoConfiguracion {
+  deteccion_activa: boolean;
+  periodo_dias: number;
+  min_reclamos_rechazados: number;
+  min_cancelaciones: number;
+  min_reportes: number;
+  min_reclamos_totales: number;
+  actualizado_en: string;
+  actualizado_por: string | null;
 }
 
 export interface ResolucionReclamo {
