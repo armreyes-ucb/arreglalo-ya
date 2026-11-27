@@ -56,5 +56,6 @@ import { SuspensionesService } from './suspensiones.service.js';
     BusinessRulesService,
     SancionesService,
   ],
+  exports: [ConflictivosService],
 })
 export class ReputacionModule {}

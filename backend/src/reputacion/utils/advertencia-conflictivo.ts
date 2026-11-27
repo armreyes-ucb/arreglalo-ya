@@ -30,13 +30,12 @@ export function debeAdvertirCliente(
 }
 
 /** Construye el conjunto de clientes que deben advertirse. */
-export function construirClientesAdvertidos(
-  casos: readonly CasoAdvertencia[],
-  umbralReportes: number,
-): Set<string> {
+export function construirClientesAdvertidos<
+  T extends CasoAdvertencia & { clienteId: string },
+>(casos: readonly T[], umbralReportes: number): Set<string> {
   return new Set(
     casos
       .filter((caso) => debeAdvertirCliente(caso, umbralReportes))
-      .map((caso) => (caso as CasoAdvertencia & { clienteId: string }).clienteId),
+      .map((caso) => caso.clienteId),
   );
 }

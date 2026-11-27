@@ -15,6 +15,7 @@ import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.consta
 import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
+import type { ConflictivosService } from './conflictivos.service.js';
 import { ReclamosService } from './reclamos.service.js';
 import type { SuspensionesService } from './suspensiones.service.js';
 
@@ -127,6 +128,9 @@ function crearServicio(
     {
       get: () => ({ ...CONFIGURACION_POR_DEFECTO }),
     } as unknown as ConfiguracionService,
+    {
+      refrescarCliente: vi.fn(async () => undefined),
+    } as unknown as ConflictivosService,
   );
 }
 

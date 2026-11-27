@@ -1,6 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { DataSource, Repository } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
+import { DecisionConflicto } from '../common/enums/decision-conflicto.enum.js';
 import { EstadoClienteConflictivo } from '../common/enums/estado-cliente-conflictivo.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { EstadoUsuario } from '../common/enums/estado-usuario.enum.js';
@@ -8,6 +9,7 @@ import { CONFIGURACION_CONFLICTIVOS_POR_DEFECTO } from '../configuracion/interfa
 import type { ConfiguracionConflictivosService } from '../configuracion/configuracion-conflictivos.service.js';
 import type { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { ClienteConflictivo as ClienteConflictivoEntidad } from '../entities/cliente-conflictivo.entity.js';
+import { ClienteConflictivoResolucion } from '../entities/cliente-conflictivo-resolucion.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
 import { Usuario } from '../entities/usuario.entity.js';
@@ -69,6 +71,7 @@ function crearManager(
     create: vi.fn((_entidad: unknown, datos: object) => ({
       id: 'conflictivo-nuevo',
       fechaRegistro: new Date('2026-05-01T00:00:00.000Z'),
+      fecha: new Date('2026-05-01T00:00:00.000Z'),
       ...datos,
     })),
     save: vi.fn(async (_entidad: unknown, valor: unknown) => valor),
@@ -466,5 +469,167 @@ describe('ConflictivosService', () => {
 
     expect(resumen.omitido).toBe(true);
     expect(repositorio.save).not.toHaveBeenCalled();
+  });
+
+  it('confirma un caso POTENCIAL y guarda el snapshot de indicadores', async () => {
+    const caso = crearConflictivo({
+      reclamosTotales: 4,
+      reclamosRechazados: 2,
+      cancelaciones: 3,
+    });
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Usuario) {
+        return crearUsuario();
+      }
+      if (entidad === ClienteConflictivoEntidad) {
+        return caso;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+
+    const resultado = await servicio.resolver(
+      CLIENTE_ID,
+      {
+        decision: DecisionConflicto.CONFIRMAR,
+        justificacion:
+          '  Reincidencia comprobada en varios servicios  ',
+      },
+      SUPERVISOR_ID,
+    );
+
+    expect(resultado.decision).toBe(DecisionConflicto.CONFIRMAR);
+    expect(caso.estado).toBe(EstadoClienteConflictivo.CONFIRMADO);
+    expect(caso.evidenciaCorte).toBeInstanceOf(Date);
+    expect(manager.save).toHaveBeenCalledWith(
+      ClienteConflictivoResolucion,
+      expect.objectContaining({
+        clienteId: CLIENTE_ID,
+        supervisorId: SUPERVISOR_ID,
+        justificacion: 'Reincidencia comprobada en varios servicios',
+        indicadores: expect.objectContaining({
+          reclamos_rechazados: 2,
+          cancelaciones: 3,
+        }),
+      }),
+    );
+    expect(manager.save).toHaveBeenCalledWith(
+      ClienteConflictivoEntidad,
+      caso,
+    );
+  });
+
+  it('desestima un caso POTENCIAL sin advertir al trabajador', async () => {
+    const caso = crearConflictivo({
+      reportesComprobados: 4,
+      reportesAcumulados: 4,
+    });
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Usuario) {
+        return crearUsuario();
+      }
+      if (entidad === ClienteConflictivoEntidad) {
+        return caso;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+
+    await servicio.resolver(
+      CLIENTE_ID,
+      {
+        decision: DecisionConflicto.DESESTIMAR,
+        justificacion: 'Los reclamos eran legítimos y hubo acuerdo',
+      },
+      SUPERVISOR_ID,
+    );
+
+    expect(caso.estado).toBe(EstadoClienteConflictivo.DESESTIMADO);
+    expect(manager.save).toHaveBeenCalledWith(
+      ClienteConflictivoResolucion,
+      expect.objectContaining({
+        decision: DecisionConflicto.DESESTIMAR,
+      }),
+    );
+  });
+
+  it('rechaza resolver un caso ya resuelto', async () => {
+    const caso = crearConflictivo({
+      estado: EstadoClienteConflictivo.CONFIRMADO,
+    });
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Usuario) {
+        return crearUsuario();
+      }
+      if (entidad === ClienteConflictivoEntidad) {
+        return caso;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+
+    await expect(
+      servicio.resolver(
+        CLIENTE_ID,
+        {
+          decision: DecisionConflicto.DESESTIMAR,
+          justificacion: 'Justificación suficientemente larga',
+        },
+        SUPERVISOR_ID,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rechaza una justificación demasiado corta', async () => {
+    const caso = crearConflictivo();
+    const { manager } = crearManager((entidad) => {
+      if (entidad === Usuario) {
+        return crearUsuario();
+      }
+      if (entidad === ClienteConflictivoEntidad) {
+        return caso;
+      }
+      return null;
+    });
+    const servicio = crearServicio(manager);
+
+    await expect(
+      servicio.resolver(
+        CLIENTE_ID,
+        {
+          decision: DecisionConflicto.CONFIRMAR,
+          justificacion: '   corta   ',
+        },
+        SUPERVISOR_ID,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('devuelve el historial de resoluciones del cliente', async () => {
+    const resolucion = {
+      id: 'resolucion-1',
+      conflictivoId: 'conflictivo-1',
+      clienteId: CLIENTE_ID,
+      supervisorId: SUPERVISOR_ID,
+      decision: DecisionConflicto.CONFIRMAR,
+      justificacion: 'Decisión registrada previamente',
+      indicadores: {},
+      fecha: new Date('2026-05-02T00:00:00.000Z'),
+    } as unknown as ClienteConflictivoResolucion;
+    const servicio = crearServicio(
+      crearManager(() => null).manager,
+      { findOne: vi.fn(async () => crearConflictivo()) },
+      crearConfiguracion(),
+      {
+        getRepository: (() => ({
+          find: vi.fn(async () => [resolucion]),
+        })) as unknown as DataSource['getRepository'],
+      },
+    );
+
+    const resultado = await servicio.resoluciones(CLIENTE_ID);
+
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].decision).toBe(DecisionConflicto.CONFIRMAR);
   });
 });

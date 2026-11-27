@@ -18,6 +18,7 @@ import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { toReclamoPublico } from '../common/mappers/reclamo-publico.mapper.js';
 import { toSuspensionRegistrada } from '../common/mappers/suspension-registrada.mapper.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
+import { ConflictivosService } from './conflictivos.service.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
@@ -44,6 +45,7 @@ export class ReclamosService {
     private readonly dataSource: DataSource,
     private readonly suspensionesService: SuspensionesService,
     private readonly configuracion: ConfiguracionService,
+    private readonly conflictivos: ConflictivosService,
   ) {}
 
   /** RF30: el cliente reclama dentro de los 7 días desde el cierre (RN07). */
@@ -223,51 +225,62 @@ export class ReclamosService {
     reclamoId: string,
     dto: ResolverReclamoDto,
   ): Promise<ResolucionReclamo> {
-    return this.dataSource.transaction(async (manager) => {
-      const reclamo = await manager.findOne(Reclamo, {
-        where: { id: reclamoId },
-      });
-      if (!reclamo) {
-        throw new NotFoundException('Reclamo no encontrado');
-      }
-      if (!ESTADOS_RECLAMO_ABIERTO.includes(reclamo.estado)) {
-        throw new BadRequestException(
-          'El reclamo ya fue resuelto',
-        );
-      }
-
-      const solicitud = await manager.findOne(Solicitud, {
-        where: { id: reclamo.solicitudId },
-      });
-
-      let suspension: Suspension | null = null;
-      if (dto.decision === DecisionReclamo.FALTA_TRABAJADOR) {
-        if (!solicitud?.trabajadorConfirmadoId) {
+    const seguimiento: { clienteId: string | null } = {
+      clienteId: null,
+    };
+    const resultado = await this.dataSource.transaction(
+      async (manager) => {
+        const reclamo = await manager.findOne(Reclamo, {
+          where: { id: reclamoId },
+        });
+        if (!reclamo) {
+          throw new NotFoundException('Reclamo no encontrado');
+        }
+        if (!ESTADOS_RECLAMO_ABIERTO.includes(reclamo.estado)) {
           throw new BadRequestException(
-            'La solicitud no tiene un trabajador confirmado',
+            'El reclamo ya fue resuelto',
           );
         }
-        suspension = await this.suspensionesService.aplicarFalta(
-          manager,
-          solicitud.trabajadorConfirmadoId,
-          `Reclamo: ${reclamo.motivo}`,
-          supervisorId,
-        );
-        reclamo.estado = EstadoReclamo.FALTA_TRABAJADOR;
-      } else {
-        reclamo.estado = EstadoReclamo.RECHAZADO;
-      }
 
-      reclamo.resolucionSupervisor = dto.resolucion.trim();
-      await manager.save(Reclamo, reclamo);
+        const solicitud = await manager.findOne(Solicitud, {
+          where: { id: reclamo.solicitudId },
+        });
+        seguimiento.clienteId = solicitud?.clienteId ?? null;
 
-      return {
-        reclamo: this.mapear(reclamo),
-        suspension: suspension
-          ? toSuspensionRegistrada(suspension)
-          : null,
-      };
-    });
+        let suspension: Suspension | null = null;
+        if (dto.decision === DecisionReclamo.FALTA_TRABAJADOR) {
+          if (!solicitud?.trabajadorConfirmadoId) {
+            throw new BadRequestException(
+              'La solicitud no tiene un trabajador confirmado',
+            );
+          }
+          suspension = await this.suspensionesService.aplicarFalta(
+            manager,
+            solicitud.trabajadorConfirmadoId,
+            `Reclamo: ${reclamo.motivo}`,
+            supervisorId,
+          );
+          reclamo.estado = EstadoReclamo.FALTA_TRABAJADOR;
+        } else {
+          reclamo.estado = EstadoReclamo.RECHAZADO;
+        }
+
+        reclamo.resolucionSupervisor = dto.resolucion.trim();
+        await manager.save(Reclamo, reclamo);
+
+        return {
+          reclamo: this.mapear(reclamo),
+          suspension: suspension
+            ? toSuspensionRegistrada(suspension)
+            : null,
+        };
+      },
+    );
+
+    if (seguimiento.clienteId) {
+      await this.conflictivos.refrescarCliente(seguimiento.clienteId);
+    }
+    return resultado;
   }
 
   /** RF30: reclamos abiertos por el cliente autenticado. */

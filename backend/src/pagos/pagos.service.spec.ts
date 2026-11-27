@@ -28,6 +28,7 @@ import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
+import type { ConflictivosService } from '../reputacion/conflictivos.service.js';
 import { PagosService } from './pagos.service.js';
 
 const PAGO_ID = '77777777-7777-4777-8777-777777777777';
@@ -153,6 +154,9 @@ describe('PagosService', () => {
       {
         get: () => ({ ...configuracion }),
       } as unknown as ConfiguracionService,
+      {
+        refrescarCliente: vi.fn(async () => undefined),
+      } as unknown as ConflictivosService,
     );
   });
 
@@ -605,6 +609,8 @@ describe('PagosService', () => {
       id: '99999999-9999-4999-8999-999999999999',
       clienteId: CLIENTE_ID,
       reportesAcumulados: 2,
+      reportesComprobados: 2,
+      reportesPendientes: 0,
       motivo: 'Reporte previo',
       registradoPorId: null,
     } as ClienteConflictivo;

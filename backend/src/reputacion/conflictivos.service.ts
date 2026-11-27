@@ -1,17 +1,21 @@
 import {
+  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
+import { DecisionConflicto } from '../common/enums/decision-conflicto.enum.js';
 import { EstadoClienteConflictivo } from '../common/enums/estado-cliente-conflictivo.enum.js';
 import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
 import { OrigenReclamo } from '../common/enums/origen-reclamo.enum.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import { toClienteConflictivoPublico } from '../common/mappers/cliente-conflictivo-publico.mapper.js';
+import { toResolucionConflictoPublica } from '../common/mappers/resolucion-conflicto-publica.mapper.js';
 import { ConfiguracionConflictivosService } from '../configuracion/configuracion-conflictivos.service.js';
+import { ClienteConflictivoResolucion } from '../entities/cliente-conflictivo-resolucion.entity.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { HistorialEstado } from '../entities/historial-estado.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
@@ -19,7 +23,14 @@ import { Solicitud } from '../entities/solicitud.entity.js';
 import { Usuario } from '../entities/usuario.entity.js';
 import type { ListarConflictivosQueryDto } from './dto/listar-conflictivos-query.dto.js';
 import type { RegistrarConflictivoDto } from './dto/registrar-conflictivo.dto.js';
+import type { ResolverConflictoDto } from './dto/resolver-conflicto.dto.js';
 import type { ClienteConflictivoPublico } from './interfaces/cliente-conflictivo-publico.interface.js';
+import type {
+  CancelacionEvidencia,
+  DetalleConflictoPublico,
+  ReclamoEvidencia,
+} from './interfaces/detalle-conflicto.interface.js';
+import type { ResolucionConflictoPublica } from './interfaces/resolucion-conflicto.interface.js';
 import type { ResumenDeteccion } from './interfaces/resumen-deteccion.interface.js';
 import {
   evaluarCriteriosConflictivo,
@@ -152,6 +163,201 @@ export class ConflictivosService {
       },
     );
     return toClienteConflictivoPublico(resultado, umbral);
+  }
+
+  /**
+   * RF32: evidencia usada por la detección para un caso concreto. Solo se
+   * expone a supervisión; el trabajador únicamente recibe el booleano.
+   */
+  async detalle(clienteId: string): Promise<DetalleConflictoPublico> {
+    const caso = await this.conflictivoRepository.findOne({
+      where: { clienteId },
+    });
+    if (!caso) {
+      throw new NotFoundException(
+        'El cliente no tiene un caso registrado',
+      );
+    }
+
+    const desde = new Date(
+      Date.now() - caso.periodoDias * MS_POR_DIA,
+    );
+    const [reclamos, cancelaciones, resoluciones] = await Promise.all([
+      this.evidenciasDeReclamos(clienteId, desde),
+      this.evidenciasDeCancelaciones(clienteId, desde),
+      this.historialDeResoluciones(clienteId),
+    ]);
+
+    return {
+      cliente_id: caso.clienteId,
+      estado: caso.estado,
+      indicadores: {
+        reclamos_totales: caso.reclamosTotales,
+        reclamos_rechazados: caso.reclamosRechazados,
+        cancelaciones: caso.cancelaciones,
+        reportes_comprobados: caso.reportesComprobados,
+        reportes_pendientes: caso.reportesPendientes,
+        periodo_dias: caso.periodoDias,
+      },
+      motivos: caso.motivo
+        .split('; ')
+        .map((motivo) => motivo.trim())
+        .filter((motivo) => motivo.length > 0),
+      reclamos,
+      cancelaciones,
+      resoluciones,
+    };
+  }
+
+  /**
+   * RF32: el supervisor confirma o desestima un caso POTENCIAL. El cambio
+   * de estado y el registro histórico se guardan en la misma transacción y
+   * con bloqueo para impedir resoluciones simultáneas.
+   */
+  async resolver(
+    clienteId: string,
+    dto: ResolverConflictoDto,
+    supervisorId: string,
+  ): Promise<ResolucionConflictoPublica> {
+    return this.dataSource.transaction(async (manager) => {
+      const cliente = await manager.findOne(Usuario, {
+        where: { id: clienteId },
+      });
+      if (!cliente || !cliente.roles.includes(Rol.CLIENTE)) {
+        throw new NotFoundException('Cliente no encontrado');
+      }
+
+      const caso = await manager.findOne(ClienteConflictivo, {
+        where: { clienteId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!caso) {
+        throw new NotFoundException(
+          'El cliente no tiene un caso registrado',
+        );
+      }
+      if (caso.estado !== EstadoClienteConflictivo.POTENCIAL) {
+        throw new BadRequestException('El caso ya fue resuelto');
+      }
+
+      const justificacion = dto.justificacion.trim();
+      if (justificacion.length < 10 || justificacion.length > 1000) {
+        throw new BadRequestException(
+          'La justificación debe tener entre 10 y 1000 caracteres',
+        );
+      }
+
+      const criterios = this.configuracion.get();
+      const resolucion = manager.create(ClienteConflictivoResolucion, {
+        conflictivoId: caso.id,
+        clienteId,
+        supervisorId,
+        decision: dto.decision,
+        justificacion,
+        indicadores: {
+          reclamos_totales: caso.reclamosTotales,
+          reclamos_rechazados: caso.reclamosRechazados,
+          cancelaciones: caso.cancelaciones,
+          reportes_comprobados: caso.reportesComprobados,
+          reportes_pendientes: caso.reportesPendientes,
+          periodo_dias: caso.periodoDias,
+          criterios: {
+            deteccion_activa: criterios.deteccion_activa,
+            min_reclamos_rechazados:
+              criterios.min_reclamos_rechazados,
+            min_cancelaciones: criterios.min_cancelaciones,
+            min_reportes: criterios.min_reportes,
+            min_reclamos_totales: criterios.min_reclamos_totales,
+          },
+        },
+      });
+      await manager.save(ClienteConflictivoResolucion, resolucion);
+
+      caso.estado =
+        dto.decision === DecisionConflicto.CONFIRMAR
+          ? EstadoClienteConflictivo.CONFIRMADO
+          : EstadoClienteConflictivo.DESESTIMADO;
+      // Solo reabre si aparece evidencia posterior a este corte.
+      caso.evidenciaCorte = new Date();
+      await manager.save(ClienteConflictivo, caso);
+
+      return toResolucionConflictoPublica(resolucion);
+    });
+  }
+
+  /** RF32: historial append-only de resoluciones del cliente. */
+  async resoluciones(
+    clienteId: string,
+  ): Promise<ResolucionConflictoPublica[]> {
+    const caso = await this.conflictivoRepository.findOne({
+      where: { clienteId },
+    });
+    if (!caso) {
+      throw new NotFoundException(
+        'El cliente no tiene un caso registrado',
+      );
+    }
+    return this.historialDeResoluciones(clienteId);
+  }
+
+  private async historialDeResoluciones(
+    clienteId: string,
+  ): Promise<ResolucionConflictoPublica[]> {
+    const resoluciones = await this.dataSource
+      .getRepository(ClienteConflictivoResolucion)
+      .find({
+        where: { clienteId },
+        order: { fecha: 'DESC' },
+      });
+    return resoluciones.map(toResolucionConflictoPublica);
+  }
+
+  private evidenciasDeReclamos(
+    clienteId: string,
+    desde: Date,
+  ): Promise<ReclamoEvidencia[]> {
+    return this.dataSource
+      .getRepository(Reclamo)
+      .createQueryBuilder('r')
+      .innerJoin(Solicitud, 's', 's.id = r.solicitudId')
+      .select('r.id', 'id')
+      .addSelect('r.solicitudId', 'solicitud_id')
+      .addSelect('r.fechaApertura', 'fecha')
+      .addSelect('r.estado', 'estado')
+      .addSelect('r.motivo', 'motivo')
+      .where('s.clienteId = :clienteId', { clienteId })
+      .andWhere('r.origen = :origen', {
+        origen: OrigenReclamo.CLIENTE,
+      })
+      .andWhere('r.fechaApertura >= :desde', { desde })
+      .orderBy('r.fechaApertura', 'DESC')
+      .limit(50)
+      .getRawMany<ReclamoEvidencia>();
+  }
+
+  private evidenciasDeCancelaciones(
+    clienteId: string,
+    desde: Date,
+  ): Promise<CancelacionEvidencia[]> {
+    return this.dataSource
+      .getRepository(HistorialEstado)
+      .createQueryBuilder('h')
+      .innerJoin(Solicitud, 's', 's.id = h.solicitudId')
+      .select('h.solicitudId', 'solicitud_id')
+      .addSelect('MAX(h.fechaHora)', 'fecha')
+      .where('h.estado = :cancelada', {
+        cancelada: EstadoSolicitud.CANCELADA,
+      })
+      .andWhere('h.usuarioId = s.clienteId')
+      .andWhere('s.estado = :cancelada', {
+        cancelada: EstadoSolicitud.CANCELADA,
+      })
+      .andWhere('s.clienteId = :clienteId', { clienteId })
+      .andWhere('h.fechaHora >= :desde', { desde })
+      .groupBy('h.solicitudId')
+      .orderBy('MAX(h.fechaHora)', 'DESC')
+      .limit(50)
+      .getRawMany<CancelacionEvidencia>();
   }
 
   /**

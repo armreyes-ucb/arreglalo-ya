@@ -17,7 +17,10 @@ import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.
 import { ConflictivosService } from './conflictivos.service.js';
 import { ListarConflictivosQueryDto } from './dto/listar-conflictivos-query.dto.js';
 import { RegistrarConflictivoDto } from './dto/registrar-conflictivo.dto.js';
+import { ResolverConflictoDto } from './dto/resolver-conflicto.dto.js';
 import type { ClienteConflictivoPublico } from './interfaces/cliente-conflictivo-publico.interface.js';
+import type { DetalleConflictoPublico } from './interfaces/detalle-conflicto.interface.js';
+import type { ResolucionConflictoPublica } from './interfaces/resolucion-conflicto.interface.js';
 import type { ResumenDeteccion } from './interfaces/resumen-deteccion.interface.js';
 
 /**
@@ -52,6 +55,32 @@ export class SupervisionConflictivosController {
     @Param('clienteId', new ParseUUIDPipe()) clienteId: string,
   ): Promise<ClienteConflictivoPublico> {
     return this.conflictivosService.obtener(clienteId);
+  }
+
+  @Get(':clienteId/detalle')
+  @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
+  detalle(
+    @Param('clienteId', new ParseUUIDPipe()) clienteId: string,
+  ): Promise<DetalleConflictoPublico> {
+    return this.conflictivosService.detalle(clienteId);
+  }
+
+  @Get(':clienteId/resoluciones')
+  @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
+  resoluciones(
+    @Param('clienteId', new ParseUUIDPipe()) clienteId: string,
+  ): Promise<ResolucionConflictoPublica[]> {
+    return this.conflictivosService.resoluciones(clienteId);
+  }
+
+  @Post(':clienteId/resolver')
+  @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
+  resolver(
+    @Param('clienteId', new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Body() dto: ResolverConflictoDto,
+  ): Promise<ResolucionConflictoPublica> {
+    return this.conflictivosService.resolver(clienteId, dto, usuario.id);
   }
 
   @Post()

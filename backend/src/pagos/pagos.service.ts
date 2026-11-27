@@ -26,6 +26,7 @@ import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
+import { ConflictivosService } from '../reputacion/conflictivos.service.js';
 import type { ConfirmarPago75Dto } from './dto/confirmar-pago-75.dto.js';
 import type { PagoPublico } from './interfaces/pago-publico.interface.js';
 import type {
@@ -49,6 +50,7 @@ export class PagosService {
     private readonly dataSource: DataSource,
     private readonly reglas: BusinessRulesService,
     private readonly configuracion: ConfiguracionService,
+    private readonly conflictivos: ConflictivosService,
   ) {}
 
   private get horasCierreAutomatico(): number {
@@ -343,10 +345,14 @@ export class PagosService {
     pagoId: string,
     dto: ConfirmarPago75Dto,
   ): Promise<ResolucionPagoFinal> {
-    return this.dataSource.transaction(async (manager) => {
-      const perfil = await manager.findOne(PerfilTrabajador, {
-        where: { usuarioId },
-      });
+    const seguimiento: { clienteId: string | null } = {
+      clienteId: null,
+    };
+    const resultado = await this.dataSource.transaction(
+      async (manager) => {
+        const perfil = await manager.findOne(PerfilTrabajador, {
+          where: { usuarioId },
+        });
       if (!perfil) {
         throw new NotFoundException(
           'No existe un perfil de trabajador para este usuario',
@@ -410,6 +416,7 @@ export class PagosService {
           usuarioId,
           motivo,
         );
+        seguimiento.clienteId = solicitud.clienteId;
         return this.construirResolucion(
           pago,
           solicitud,
@@ -475,7 +482,13 @@ export class PagosService {
       }
 
       return this.construirResolucion(pago, solicitud);
-    });
+      },
+    );
+
+    if (seguimiento.clienteId) {
+      await this.conflictivos.refrescarCliente(seguimiento.clienteId);
+    }
+    return resultado;
   }
 
   /**

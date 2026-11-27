@@ -15,6 +15,7 @@ import { Suspension } from '../entities/suspension.entity.js';
 import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
 import { Zona } from '../entities/zona.entity.js';
 import { PagosModule } from '../pagos/pagos.module.js';
+import { ReputacionModule } from '../reputacion/reputacion.module.js';
 import { TrabajadoresModule } from '../trabajadores/trabajadores.module.js';
 import { SolicitudesController } from './solicitudes.controller.js';
 import { SolicitudesService } from './solicitudes.service.js';
@@ -36,6 +37,7 @@ import { SolicitudesService } from './solicitudes.service.js';
     ]),
     AuthModule,
     PagosModule,
+    ReputacionModule,
     TrabajadoresModule,
   ],
   controllers: [SolicitudesController],
