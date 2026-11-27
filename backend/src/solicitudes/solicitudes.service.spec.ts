@@ -33,9 +33,9 @@ import { Solicitud } from '../entities/solicitud.entity.js';
 import type { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
 import { Zona } from '../entities/zona.entity.js';
 import type { PagosService } from '../pagos/pagos.service.js';
-import type { TrabajadoresService } from '../trabajadores/trabajadores.service.js';
 import type { CancelarSolicitudDto } from './dto/cancelar-solicitud.dto.js';
 import type { CrearOfertaDto } from './dto/crear-oferta.dto.js';
+import type { CrearSolicitudDto } from './dto/crear-solicitud.dto.js';
 import type { ElegirOfertaDto } from './dto/elegir-oferta.dto.js';
 import type { ListarDisponiblesQueryDto } from './dto/listar-disponibles-query.dto.js';
 import type { ResponderPrecioDto } from './dto/responder-precio.dto.js';
@@ -109,13 +109,15 @@ function crearSolicitud(
   return Object.assign(solicitud, overrides);
 }
 
-function crearZona(): Zona {
+function crearZona(overrides: Partial<Zona> = {}): Zona {
   return {
     id: 3,
     nombre: 'Centro',
     otb: 'OTB Centro',
     municipio: 'Cercado',
     zonasVecinas: ['Norte'],
+    activa: true,
+    ...overrides,
   };
 }
 
@@ -153,6 +155,9 @@ function crearOferta(
     fechaPropuesta: new Date('2026-11-10T10:00:00.000Z'),
     mensaje: null,
     estado: EstadoOferta.ENVIADA,
+    fueraDeZona: false,
+    distanciaZona: 0,
+    justificacionFueraZona: null,
     creadaEn: new Date('2026-11-09T10:00:00.000Z'),
     ...overrides,
   };
@@ -195,9 +200,6 @@ describe('SolicitudesService', () => {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
   };
-  let trabajadoresService: {
-    listarCandidatos: ReturnType<typeof vi.fn>;
-  };
   let pagosService: {
     crearPagoInicial: ReturnType<typeof vi.fn>;
     registrarDevolucion: ReturnType<typeof vi.fn>;
@@ -234,7 +236,6 @@ describe('SolicitudesService', () => {
     perfilRepository = { findOne: vi.fn() };
     trabajadorZonaRepository = { find: vi.fn() };
     zonaRepository = { find: vi.fn(), findOne: vi.fn() };
-    trabajadoresService = { listarCandidatos: vi.fn() };
     pagosService = {
       crearPagoInicial: vi.fn(),
       registrarDevolucion: vi.fn(),
@@ -266,7 +267,6 @@ describe('SolicitudesService', () => {
       perfilRepository as unknown as Repository<PerfilTrabajador>,
       trabajadorZonaRepository as unknown as Repository<TrabajadorZona>,
       zonaRepository as unknown as Repository<Zona>,
-      trabajadoresService as unknown as TrabajadoresService,
       pagosService as unknown as PagosService,
       reglas,
       new SancionesService(reglas),
@@ -1194,5 +1194,318 @@ describe('SolicitudesService', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(precioRepository.find).not.toHaveBeenCalled();
+  });
+
+  describe('cobertura geográfica', () => {
+    it('muestra la cobertura normal (distancias 0 y 2) aunque no sea la zona exacta', async () => {
+      const centro = crearZona({ id: 3, zonasVecinas: ['Norte'] });
+      const norte = crearZona({
+        id: 1,
+        nombre: 'Norte',
+        otb: 'OTB Norte',
+        zonasVecinas: ['Centro'],
+      });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+      ]);
+      solicitudRepository.find.mockResolvedValue([
+        crearSolicitud({ zonaId: 3 }),
+        crearSolicitud({
+          id: '55555555-5555-4555-8555-555555555555',
+          zonaId: 1,
+        }),
+      ]);
+      zonaRepository.find.mockResolvedValue([centro, norte]);
+      conflictivoRepository.find.mockResolvedValue([]);
+
+      const resultado = await service.listarDisponibles(
+        USUARIO_ID,
+        {} as ListarDisponiblesQueryDto,
+      );
+
+      expect(resultado.map((solicitud) => solicitud.distancia)).toEqual([
+        0, 2,
+      ]);
+      expect(
+        resultado.every((solicitud) => !solicitud.fuera_de_zona),
+      ).toBe(true);
+    });
+
+    it('oculta por defecto las solicitudes fuera de cobertura', async () => {
+      const centro = crearZona({ id: 3, zonasVecinas: [] });
+      const sur = crearZona({
+        id: 9,
+        nombre: 'Sur',
+        otb: 'OTB Sur',
+        zonasVecinas: [],
+      });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+      ]);
+      solicitudRepository.find.mockResolvedValue([
+        crearSolicitud({ zonaId: 9 }),
+      ]);
+      zonaRepository.find.mockResolvedValue([centro, sur]);
+      conflictivoRepository.find.mockResolvedValue([]);
+
+      const resultado = await service.listarDisponibles(
+        USUARIO_ID,
+        {} as ListarDisponiblesQueryDto,
+      );
+
+      expect(resultado).toEqual([]);
+    });
+
+    it('incluye solicitudes fuera de cobertura cuando se solicita explícitamente', async () => {
+      const centro = crearZona({ id: 3, zonasVecinas: [] });
+      const sur = crearZona({
+        id: 9,
+        nombre: 'Sur',
+        otb: 'OTB Sur',
+        zonasVecinas: [],
+      });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+      ]);
+      solicitudRepository.find.mockResolvedValue([
+        crearSolicitud({ zonaId: 9 }),
+      ]);
+      zonaRepository.find.mockResolvedValue([centro, sur]);
+      conflictivoRepository.find.mockResolvedValue([]);
+
+      const resultado = await service.listarDisponibles(USUARIO_ID, {
+        incluir_fuera_de_zona: true,
+      } as ListarDisponiblesQueryDto);
+
+      expect(resultado).toHaveLength(1);
+      expect(resultado[0].distancia).toBeNull();
+      expect(resultado[0].fuera_de_zona).toBe(true);
+    });
+
+    it('oculta solicitudes de zonas desactivadas', async () => {
+      const centro = crearZona({ id: 3, activa: false });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+      ]);
+      solicitudRepository.find.mockResolvedValue([
+        crearSolicitud({ zonaId: 3 }),
+      ]);
+      zonaRepository.find.mockResolvedValue([centro]);
+      conflictivoRepository.find.mockResolvedValue([]);
+
+      const resultado = await service.listarDisponibles(
+        USUARIO_ID,
+        {} as ListarDisponiblesQueryDto,
+      );
+
+      expect(resultado).toEqual([]);
+    });
+
+    it('no lista nada si el trabajador solo tiene zonas desactivadas', async () => {
+      const inactiva = crearZona({
+        id: 5,
+        nombre: 'Sur',
+        otb: 'OTB Sur',
+        activa: false,
+      });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 5 } as TrabajadorZona,
+      ]);
+      zonaRepository.find.mockResolvedValue([inactiva]);
+      solicitudRepository.find.mockResolvedValue([]);
+
+      const resultado = await service.listarDisponibles(
+        USUARIO_ID,
+        {} as ListarDisponiblesQueryDto,
+      );
+
+      expect(resultado).toEqual([]);
+    });
+
+    it('rechaza crear una solicitud en una zona desactivada', async () => {
+      zonaRepository.findOne.mockResolvedValue(
+        crearZona({ activa: false }),
+      );
+
+      await expect(
+        service.crearSolicitud(CLIENTE_ID, {
+          zona_id: 3,
+          especialidad: EspecialidadTipo.PLOMERIA,
+          tipo_problema: 'Fuga',
+          descripcion: 'Fuga de agua',
+          fotos_urls: [],
+          direccion_oculta: DIRECCION,
+          fecha_cita_preferida: '2027-01-01T10:00:00.000Z',
+        } as CrearSolicitudDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('exige justificación de 15 a 500 caracteres para ofertar fuera de cobertura', async () => {
+      const centro = crearZona({ id: 3, zonasVecinas: [] });
+      const sur = crearZona({
+        id: 9,
+        nombre: 'Sur',
+        otb: 'OTB Sur',
+        zonasVecinas: [],
+      });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      solicitudRepository.findOne.mockResolvedValue(
+        crearSolicitud({ zonaId: 9 }),
+      );
+      zonaRepository.findOne.mockResolvedValue(sur);
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+      ]);
+      zonaRepository.find.mockResolvedValue([centro]);
+
+      await expect(
+        service.crearOferta(USUARIO_ID, SOLICITUD_ID, {
+          precio_estimado: 100,
+          costo_transporte: 10,
+          fecha_propuesta: '2026-11-10T10:00:00.000Z',
+          justificacion_fuera_de_zona: 'muy lejos',
+        } as CrearOfertaDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(ofertaRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('persiste la oferta fuera de cobertura con la justificación recortada', async () => {
+      const centro = crearZona({ id: 3, zonasVecinas: [] });
+      const sur = crearZona({
+        id: 9,
+        nombre: 'Sur',
+        otb: 'OTB Sur',
+        zonasVecinas: [],
+      });
+      const solicitud = crearSolicitud({ zonaId: 9 });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      solicitudRepository.findOne.mockResolvedValue(solicitud);
+      zonaRepository.findOne.mockResolvedValue(sur);
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+      ]);
+      zonaRepository.find.mockResolvedValue([centro]);
+      ofertaRepository.findOne.mockResolvedValue(null);
+      ofertaRepository.create.mockImplementation(
+        (datos: object) => ({ ...datos }),
+      );
+      manager.findOne.mockImplementation((entidad: unknown) =>
+        Promise.resolve(entidad === Solicitud ? solicitud : sur),
+      );
+
+      const resultado = await service.crearOferta(
+        USUARIO_ID,
+        SOLICITUD_ID,
+        {
+          precio_estimado: 100,
+          costo_transporte: 10,
+          fecha_propuesta: '2026-11-10T10:00:00.000Z',
+          justificacion_fuera_de_zona:
+            '  El cliente queda a una zona vecina y necesita el servicio hoy  ',
+        } as CrearOfertaDto,
+      );
+
+      expect(ofertaRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fueraDeZona: true,
+          distanciaZona: null,
+          justificacionFueraZona:
+            'El cliente queda a una zona vecina y necesita el servicio hoy',
+        }),
+      );
+      expect(resultado.fuera_de_zona).toBe(true);
+      expect(resultado.distancia_zona).toBeNull();
+    });
+
+    it('no exige justificación cuando la oferta está dentro de cobertura', async () => {
+      const centro = crearZona({ id: 3, zonasVecinas: [] });
+      const solicitud = crearSolicitud({ zonaId: 3 });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      solicitudRepository.findOne.mockResolvedValue(solicitud);
+      zonaRepository.findOne.mockResolvedValue(centro);
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 3 } as TrabajadorZona,
+      ]);
+      zonaRepository.find.mockResolvedValue([centro]);
+      ofertaRepository.findOne.mockResolvedValue(null);
+      ofertaRepository.create.mockImplementation(
+        (datos: object) => ({ ...datos }),
+      );
+      manager.findOne.mockImplementation((entidad: unknown) =>
+        Promise.resolve(entidad === Solicitud ? solicitud : centro),
+      );
+
+      const resultado = await service.crearOferta(
+        USUARIO_ID,
+        SOLICITUD_ID,
+        {
+          precio_estimado: 100,
+          costo_transporte: 10,
+          fecha_propuesta: '2026-11-10T10:00:00.000Z',
+        } as CrearOfertaDto,
+      );
+
+      expect(ofertaRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fueraDeZona: false,
+          distanciaZona: 0,
+          justificacionFueraZona: null,
+        }),
+      );
+      expect(resultado.fuera_de_zona).toBe(false);
+    });
+
+    it('impide ofertar si el trabajador no tiene zonas activas', async () => {
+      const inactiva = crearZona({
+        id: 5,
+        nombre: 'Sur',
+        otb: 'OTB Sur',
+        activa: false,
+      });
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      solicitudRepository.findOne.mockResolvedValue(
+        crearSolicitud({ zonaId: 9 }),
+      );
+      zonaRepository.findOne.mockResolvedValue(
+        crearZona({ id: 9, nombre: 'Norte', otb: 'OTB Norte' }),
+      );
+      trabajadorZonaRepository.find.mockResolvedValue([
+        { trabajadorId: PERFIL_ID, zonaId: 5 } as TrabajadorZona,
+      ]);
+      zonaRepository.find.mockResolvedValue([inactiva]);
+
+      await expect(
+        service.crearOferta(USUARIO_ID, SOLICITUD_ID, {
+          precio_estimado: 100,
+          costo_transporte: 10,
+          fecha_propuesta: '2026-11-10T10:00:00.000Z',
+          justificacion_fuera_de_zona:
+            'Justificación válida para una oferta fuera de cobertura',
+        } as CrearOfertaDto),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('impide ofertar en una solicitud cuya zona fue desactivada', async () => {
+      perfilRepository.findOne.mockResolvedValue(crearPerfil());
+      solicitudRepository.findOne.mockResolvedValue(
+        crearSolicitud({ zonaId: 9 }),
+      );
+      zonaRepository.findOne.mockResolvedValue(
+        crearZona({ id: 9, nombre: 'Norte', otb: 'OTB Norte', activa: false }),
+      );
+
+      await expect(
+        service.crearOferta(USUARIO_ID, SOLICITUD_ID, {
+          precio_estimado: 100,
+          costo_transporte: 10,
+          fecha_propuesta: '2026-11-10T10:00:00.000Z',
+        } as CrearOfertaDto),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
   });
 });

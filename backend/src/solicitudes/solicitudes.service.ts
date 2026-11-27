@@ -38,6 +38,7 @@ import { toSuspensionPublica } from '../common/mappers/suspension-publica.mapper
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
 import { SancionesService } from '../common/services/sanciones.service.js';
 import { sumarDias } from '../common/utils/fechas.js';
+import { evaluarCobertura } from '../common/utils/cobertura.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { generarEnlaceWhatsApp } from '../common/utils/whatsapp.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
@@ -57,7 +58,6 @@ import { Zona } from '../entities/zona.entity.js';
 import type { PagoPublico } from '../pagos/interfaces/pago-publico.interface.js';
 import type { TransferenciaSimulada } from '../pagos/interfaces/transferencia-simulada.interface.js';
 import { PagosService } from '../pagos/pagos.service.js';
-import { TrabajadoresService } from '../trabajadores/trabajadores.service.js';
 import type { CancelarSolicitudDto } from './dto/cancelar-solicitud.dto.js';
 import type { CrearIncrementoDto } from './dto/crear-incremento.dto.js';
 import type { CrearOfertaDto } from './dto/crear-oferta.dto.js';
@@ -136,7 +136,6 @@ export class SolicitudesService {
     private readonly trabajadorZonaRepository: Repository<TrabajadorZona>,
     @InjectRepository(Zona)
     private readonly zonaRepository: Repository<Zona>,
-    private readonly trabajadoresService: TrabajadoresService,
     private readonly pagosService: PagosService,
     private readonly reglas: BusinessRulesService,
     private readonly sanciones: SancionesService,
@@ -153,6 +152,11 @@ export class SolicitudesService {
     });
     if (!zona) {
       throw new NotFoundException('Zona no encontrada');
+    }
+    if (!zona.activa) {
+      throw new BadRequestException(
+        'La zona seleccionada está desactivada y no admite nuevas solicitudes',
+      );
     }
 
     const fechaCita = new Date(dto.fecha_cita_preferida);
@@ -362,21 +366,18 @@ export class SolicitudesService {
       return [];
     }
 
-    let zonaIds = relaciones.map((relacion) => relacion.zonaId);
-    if (query.zona_id !== undefined) {
-      if (!zonaIds.includes(query.zona_id)) {
-        return [];
-      }
-      zonaIds = [query.zona_id];
-    }
-
+    const idsZonasTrabajador = relaciones.map(
+      (relacion) => relacion.zonaId,
+    );
     const especialidades = query.especialidad
       ? [query.especialidad]
       : perfil.especialidades;
 
     const solicitudes = await this.solicitudRepository.find({
       where: {
-        zonaId: In(zonaIds),
+        ...(query.zona_id !== undefined
+          ? { zonaId: query.zona_id }
+          : {}),
         especialidad: In(especialidades),
         estado: In([
           EstadoSolicitud.PUBLICADA,
@@ -393,11 +394,15 @@ export class SolicitudesService {
       return [];
     }
 
+    const idsZonas = [
+      ...new Set([
+        ...idsZonasTrabajador,
+        ...solicitudes.map((solicitud) => solicitud.zonaId),
+      ]),
+    ];
     const [zonas, conflictivos] = await Promise.all([
       this.zonaRepository.find({
-        where: {
-          id: In(solicitudes.map((solicitud) => solicitud.zonaId)),
-        },
+        where: { id: In(idsZonas) },
       }),
       this.conflictivoRepository.find({
         where: {
@@ -408,6 +413,13 @@ export class SolicitudesService {
       }),
     ]);
     const zonasPorId = new Map(zonas.map((zona) => [zona.id, zona]));
+    const zonasActivasTrabajador = idsZonasTrabajador
+      .map((zonaId) => zonasPorId.get(zonaId))
+      .filter((zona): zona is Zona => Boolean(zona?.activa));
+    if (zonasActivasTrabajador.length === 0) {
+      return [];
+    }
+
     const clientesConflictivos = new Set(
       conflictivos
         .filter(
@@ -417,13 +429,28 @@ export class SolicitudesService {
         .map((conflictivo) => conflictivo.clienteId),
     );
 
-    return solicitudes.map((solicitud) =>
-      toSolicitudDisponible(
-        solicitud,
-        zonasPorId.get(solicitud.zonaId) ?? null,
-        clientesConflictivos.has(solicitud.clienteId),
-      ),
-    );
+    return solicitudes.flatMap((solicitud) => {
+      const zona = zonasPorId.get(solicitud.zonaId);
+      if (!zona?.activa) {
+        return [];
+      }
+      const { distancia } = evaluarCobertura(
+        zona,
+        zonasActivasTrabajador,
+      );
+      const fueraDeZona = distancia === null;
+      if (fueraDeZona && query.incluir_fuera_de_zona !== true) {
+        return [];
+      }
+      return [
+        toSolicitudDisponible(
+          solicitud,
+          zona,
+          clientesConflictivos.has(solicitud.clienteId),
+          { distancia, fueraDeZona },
+        ),
+      ];
+    });
   }
 
   async listarMias(clienteId: string): Promise<SolicitudPublica[]> {
@@ -723,13 +750,47 @@ export class SolicitudesService {
       );
     }
 
-    const candidatos = await this.trabajadoresService.listarCandidatos(
-      solicitud.zonaId,
-      solicitud.especialidad,
+    const zona = await this.zonaRepository.findOne({
+      where: { id: solicitud.zonaId },
+    });
+    if (!zona) {
+      throw new NotFoundException('Zona de la solicitud no encontrada');
+    }
+    if (!zona.activa) {
+      throw new BadRequestException(
+        'La zona de esta solicitud está desactivada y no acepta nuevas ofertas',
+      );
+    }
+
+    const relaciones = await this.trabajadorZonaRepository.find({
+      where: { trabajadorId: perfil.id },
+    });
+    const zonasTrabajador =
+      relaciones.length === 0
+        ? []
+        : await this.zonaRepository.find({
+            where: {
+              id: In(relaciones.map((relacion) => relacion.zonaId)),
+            },
+          });
+    const zonasActivas = zonasTrabajador.filter(
+      (zonaTrabajador) => zonaTrabajador.activa,
     );
-    if (!candidatos.some((candidato) => candidato.id === perfil.id)) {
+    if (zonasActivas.length === 0) {
       throw new ForbiddenException(
-        'La solicitud no está disponible en tus zonas de trabajo',
+        'No tienes zonas de atención activas para ofertar',
+      );
+    }
+
+    const { distancia } = evaluarCobertura(zona, zonasActivas);
+    const fueraDeZona = distancia === null;
+    const justificacion = dto.justificacion_fuera_de_zona?.trim() ?? '';
+    if (
+      fueraDeZona &&
+      (justificacion.length < 15 || justificacion.length > 500)
+    ) {
+      throw new BadRequestException(
+        'Debes justificar la oferta fuera de tu cobertura (entre 15 y 500 caracteres)',
       );
     }
 
@@ -754,39 +815,70 @@ export class SolicitudesService {
       fechaPropuesta,
       mensaje: dto.mensaje ?? null,
       estado: EstadoOferta.ENVIADA,
+      fueraDeZona,
+      distanciaZona: distancia,
+      justificacionFueraZona: fueraDeZona ? justificacion : null,
     });
 
-    await this.dataSource.transaction(async (manager) => {
-      const solicitudActual = await manager.findOne(Solicitud, {
-        where: { id: solicitudId },
-        lock: { mode: 'pessimistic_write' },
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        const solicitudActual = await manager.findOne(Solicitud, {
+          where: { id: solicitudId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!solicitudActual) {
+          throw new NotFoundException('Solicitud no encontrada');
+        }
+        if (
+          solicitudActual.estado !== EstadoSolicitud.PUBLICADA &&
+          solicitudActual.estado !== EstadoSolicitud.CON_OFERTAS
+        ) {
+          throw new BadRequestException(
+            'La solicitud ya no acepta ofertas',
+          );
+        }
+
+        const zonaActual = await manager.findOne(Zona, {
+          where: { id: solicitudActual.zonaId },
+        });
+        if (!zonaActual?.activa) {
+          throw new BadRequestException(
+            'La zona de esta solicitud está desactivada y no acepta nuevas ofertas',
+          );
+        }
+
+        await manager.save(Oferta, oferta);
+        if (solicitudActual.estado === EstadoSolicitud.PUBLICADA) {
+          solicitudActual.estado = EstadoSolicitud.CON_OFERTAS;
+          await manager.save(Solicitud, solicitudActual);
+          await this.registrarHistorial(
+            manager,
+            solicitudActual.id,
+            EstadoSolicitud.CON_OFERTAS,
+            usuarioId,
+          );
+        }
       });
-      if (!solicitudActual) {
-        throw new NotFoundException('Solicitud no encontrada');
-      }
-      if (
-        solicitudActual.estado !== EstadoSolicitud.PUBLICADA &&
-        solicitudActual.estado !== EstadoSolicitud.CON_OFERTAS
-      ) {
+    } catch (error) {
+      if (this.esOfertaDuplicada(error)) {
         throw new BadRequestException(
-          'La solicitud ya no acepta ofertas',
+          'Ya enviaste una oferta para esta solicitud',
         );
       }
-
-      await manager.save(Oferta, oferta);
-      if (solicitudActual.estado === EstadoSolicitud.PUBLICADA) {
-        solicitudActual.estado = EstadoSolicitud.CON_OFERTAS;
-        await manager.save(Solicitud, solicitudActual);
-        await this.registrarHistorial(
-          manager,
-          solicitudActual.id,
-          EstadoSolicitud.CON_OFERTAS,
-          usuarioId,
-        );
-      }
-    });
+      throw error;
+    }
 
     return toOfertaPublica(oferta);
+  }
+
+  private esOfertaDuplicada(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+    const driverError = (
+      error as { driverError?: { code?: string } }
+    ).driverError;
+    return driverError?.code === '23505';
   }
 
   async elegirOferta(

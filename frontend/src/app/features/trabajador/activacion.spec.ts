@@ -16,6 +16,7 @@ const ZONAS: Zona[] = [
     otb: 'OTB Sopocachi',
     municipio: 'La Paz',
     zonas_vecinas: [],
+    activa: true,
   },
 ];
 

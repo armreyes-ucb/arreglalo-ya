@@ -3,10 +3,16 @@ import type { Zona } from '../../entities/zona.entity.js';
 import type { SolicitudDisponible } from '../../solicitudes/interfaces/solicitud-disponible.interface.js';
 import { toPublicZona } from './zona-publica.mapper.js';
 
+export interface CoberturaSolicitudDisponible {
+  distancia: number | null;
+  fueraDeZona: boolean;
+}
+
 export function toSolicitudDisponible(
   solicitud: Solicitud,
   zona: Zona | null,
   advertirClienteConflictivo: boolean,
+  cobertura: CoberturaSolicitudDisponible,
 ): SolicitudDisponible {
   return {
     id: solicitud.id,
@@ -22,5 +28,7 @@ export function toSolicitudDisponible(
     creada_en: solicitud.creadaEn,
     vence_en: solicitud.venceEn,
     advertir_cliente_conflictivo: advertirClienteConflictivo,
+    distancia: cobertura.distancia,
+    fuera_de_zona: cobertura.fueraDeZona,
   };
 }

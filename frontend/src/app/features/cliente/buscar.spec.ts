@@ -14,6 +14,7 @@ const ZONA: Zona = {
   otb: 'OTB Centro',
   municipio: 'Cercado',
   zonas_vecinas: [],
+  activa: true,
 };
 
 const TRABAJADOR: TrabajadorMatch = {

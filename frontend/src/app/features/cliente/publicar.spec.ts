@@ -9,15 +9,25 @@ import { UploadsService } from '../../core/uploads.service';
 import { ZonasService } from '../../core/zonas.service';
 import { PublicarSolicitud } from './publicar';
 
-const ZONAS: Zona[] = [
-  {
-    id: 1,
-    nombre: 'Centro',
-    otb: 'OTB Centro',
-    municipio: 'Cercado',
-    zonas_vecinas: [],
-  },
-];
+const ZONA_ACTIVA: Zona = {
+  id: 1,
+  nombre: 'Centro',
+  otb: 'OTB Centro',
+  municipio: 'Cercado',
+  zonas_vecinas: [],
+  activa: true,
+};
+
+const ZONA_INACTIVA: Zona = {
+  id: 2,
+  nombre: 'Sur',
+  otb: 'OTB Sur',
+  municipio: 'Cercado',
+  zonas_vecinas: [],
+  activa: false,
+};
+
+const ZONAS: Zona[] = [ZONA_ACTIVA, ZONA_INACTIVA];
 
 const DESCRIPCION = 'Hay una fuga de agua debajo del lavamanos de la cocina.';
 
@@ -63,7 +73,7 @@ describe('PublicarSolicitud', () => {
 
   function completarPasoDos(componente: any): void {
     componente.formulario.patchValue({
-      zona_id: 1,
+      zona_id: ZONA_ACTIVA.id,
       direccion_oculta: 'Calle Secreta 123',
       fecha_cita_preferida: '2030-01-01T10:00',
     });
@@ -95,7 +105,26 @@ describe('PublicarSolicitud', () => {
     expect(componente.paso()).toBe(3);
   });
 
-  it('envía la solicitud con urgencia, fotos y datos ocultos', async () => {
+  it('muestra solo las zonas activas en el selector', async () => {
+    const { componente, fixture } = await crearComponente();
+    completarPasoUno(componente);
+    componente.siguiente();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(componente.paso()).toBe(2);
+    expect(componente.zonas()).toEqual([ZONA_ACTIVA]);
+    const opciones = Array.from(
+      fixture.nativeElement.querySelectorAll('#zona option'),
+    ) as HTMLOptionElement[];
+    expect(opciones.map((opcion) => opcion.value)).toEqual(['0', '1']);
+    expect(opciones.map((opcion) => opcion.textContent?.trim())).toEqual([
+      'Selecciona tu zona',
+      'Centro · Cercado',
+    ]);
+  });
+
+  it('envía el zona_id de la zona activa seleccionada con urgencia, fotos y datos ocultos', async () => {
     const { componente, solicitudes } = await crearComponente();
     completarPasoUno(componente);
     completarPasoDos(componente);
@@ -104,13 +133,13 @@ describe('PublicarSolicitud', () => {
     solicitudes.crear.mockResolvedValue({
       id: 'solicitud-1',
       tipo_problema: 'Fuga de agua',
-      zona: ZONAS[0],
+      zona: ZONA_ACTIVA,
     });
 
     await componente.publicar();
 
     expect(solicitudes.crear).toHaveBeenCalledWith({
-      zona_id: 1,
+      zona_id: ZONA_ACTIVA.id,
       especialidad: 'PLOMERIA',
       tipo_problema: 'Fuga de agua',
       descripcion: DESCRIPCION,

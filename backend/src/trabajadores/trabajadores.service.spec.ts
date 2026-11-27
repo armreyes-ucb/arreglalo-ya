@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { DataSource, Repository } from 'typeorm';
 import {
   beforeEach,
@@ -14,8 +14,8 @@ import { CONFIGURACION_POR_DEFECTO } from '../configuracion/configuracion.consta
 import type { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import type { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import type { Suspension } from '../entities/suspension.entity.js';
-import type { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
-import type { Zona } from '../entities/zona.entity.js';
+import { TrabajadorZona } from '../entities/trabajador-zona.entity.js';
+import { Zona } from '../entities/zona.entity.js';
 import type { BuscarTrabajadoresQueryDto } from './dto/buscar-trabajadores-query.dto.js';
 import { TrabajadoresService } from './trabajadores.service.js';
 
@@ -24,6 +24,7 @@ function crearZona(
   nombre: string,
   otb: string,
   zonasVecinas: string[] = [],
+  activa = true,
 ): Zona {
   return {
     id,
@@ -31,6 +32,7 @@ function crearZona(
     otb,
     municipio: 'Cercado',
     zonasVecinas,
+    activa,
   };
 }
 
@@ -252,5 +254,102 @@ describe('TrabajadoresService - CP26 match', () => {
 
     expect(reactivados).toBe(0);
     expect(perfil.estado).toBe(EstadoTrabajador.SUSPENDIDO);
+  });
+
+  it('rechaza búsquedas en una zona desactivada', async () => {
+    zonaRepository.findOne.mockResolvedValue(
+      crearZona(3, 'Centro', 'OTB Centro', [], false),
+    );
+
+    await expect(
+      service.buscarTrabajadores({
+        zona_id: 3,
+        especialidad: EspecialidadTipo.PLOMERIA,
+      } as BuscarTrabajadoresQueryDto),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(perfilRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('excluye del match a trabajadores que solo tienen zonas desactivadas', async () => {
+    const centro = crearZona(3, 'Centro', 'OTB Centro');
+    const inactiva = crearZona(5, 'Sur', 'OTB Sur', [], false);
+    zonaRepository.findOne.mockResolvedValue(centro);
+    zonaRepository.find.mockResolvedValue([centro, inactiva]);
+    perfilRepository.find.mockResolvedValue([
+      crearPerfil('a', 'Solo zona inactiva', 5, 20),
+    ]);
+    trabajadorZonaRepository.find.mockResolvedValue([
+      { trabajadorId: 'a', zonaId: 5 } as TrabajadorZona,
+    ]);
+    documentoRepository.find.mockResolvedValue([]);
+
+    const resultado = await service.buscarTrabajadores({
+      zona_id: 3,
+      especialidad: EspecialidadTipo.PLOMERIA,
+    } as BuscarTrabajadoresQueryDto);
+
+    expect(resultado).toEqual([]);
+  });
+
+  describe('reemplazarZonas', () => {
+    type Reemplazador = (
+      manager: {
+        find: ReturnType<typeof vi.fn>;
+        delete: ReturnType<typeof vi.fn>;
+        create: ReturnType<typeof vi.fn>;
+        save: ReturnType<typeof vi.fn>;
+      },
+      perfilId: string,
+      zonaIds: number[],
+    ) => Promise<void>;
+
+    function managerFalso(
+      zonas: Zona[],
+      actuales: TrabajadorZona[],
+    ) {
+      return {
+        find: vi.fn(async (entidad: unknown) =>
+          entidad === Zona ? zonas : actuales,
+        ),
+        delete: vi.fn(async () => ({ affected: 1 })),
+        create: vi.fn((_entidad: unknown, datos: object) => ({
+          ...datos,
+        })),
+        save: vi.fn(async () => undefined),
+      };
+    }
+
+    it('rechaza asignar una zona desactivada nueva', async () => {
+      const inactiva = crearZona(5, 'Sur', 'OTB Sur', [], false);
+      const manager = managerFalso([inactiva], []);
+      const reemplazar = (
+        service as unknown as { reemplazarZonas: Reemplazador }
+      ).reemplazarZonas.bind(service);
+
+      await expect(
+        reemplazar(manager, 'a', [5]),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(manager.delete).not.toHaveBeenCalled();
+    });
+
+    it('permite conservar una zona desactivada ya asignada', async () => {
+      const inactiva = crearZona(5, 'Sur', 'OTB Sur', [], false);
+      const manager = managerFalso(
+        [inactiva],
+        [{ trabajadorId: 'a', zonaId: 5 } as TrabajadorZona],
+      );
+      const reemplazar = (
+        service as unknown as { reemplazarZonas: Reemplazador }
+      ).reemplazarZonas.bind(service);
+
+      await reemplazar(manager, 'a', [5]);
+
+      expect(manager.delete).toHaveBeenCalledWith(TrabajadorZona, {
+        trabajadorId: 'a',
+      });
+      expect(manager.save).toHaveBeenCalledWith(TrabajadorZona, [
+        { trabajadorId: 'a', zonaId: 5 },
+      ]);
+    });
   });
 });

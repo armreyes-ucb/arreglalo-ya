@@ -25,6 +25,7 @@ import { toPerfilTrabajadorPropio } from '../common/mappers/perfil-trabajador-pr
 import { toTrabajadorMatch } from '../common/mappers/trabajador-match.mapper.js';
 import { toTrabajadorPerfilPublico } from '../common/mappers/trabajador-perfil-publico.mapper.js';
 import { sumarDias } from '../common/utils/fechas.js';
+import { evaluarCobertura } from '../common/utils/cobertura.js';
 import { evaluarTrabajadorParaOferta } from '../common/utils/rn10.js';
 import { ConfiguracionService } from '../configuracion/configuracion.service.js';
 import { Documento } from '../entities/documento.entity.js';
@@ -457,6 +458,22 @@ export class TrabajadoresService {
     if (zonas.length !== new Set(zonaIds).size) {
       throw new BadRequestException('Una o más zonas no existen');
     }
+
+    const actuales = await manager.find(TrabajadorZona, {
+      where: { trabajadorId: perfilId },
+    });
+    const idsActuales = new Set(actuales.map((relacion) => relacion.zonaId));
+    const inactivasNuevas = zonas.filter(
+      (zona) => !zona.activa && !idsActuales.has(zona.id),
+    );
+    if (inactivasNuevas.length > 0) {
+      throw new BadRequestException(
+        `No puedes asignarte zonas desactivadas: ${inactivasNuevas
+          .map((zona) => zona.nombre)
+          .join(', ')}`,
+      );
+    }
+
     await manager.delete(TrabajadorZona, { trabajadorId: perfilId });
     const relaciones = zonaIds.map((zonaId) =>
       manager.create(TrabajadorZona, {
@@ -574,6 +591,11 @@ export class TrabajadoresService {
     if (!zona) {
       throw new NotFoundException('Zona no encontrada');
     }
+    if (!zona.activa) {
+      throw new BadRequestException(
+        'La zona está desactivada y no admite búsquedas de trabajadores',
+      );
+    }
 
     const perfiles = await this.perfilRepository.find({
       relations: {
@@ -615,8 +637,9 @@ export class TrabajadoresService {
           continue;
         }
       }
-      const zonas = zonasPorPerfil.get(perfil.id) ?? [];
-      const distancia = this.calcularDistancia(zona, zonas);
+      const zonasTodas = zonasPorPerfil.get(perfil.id) ?? [];
+      const zonas = zonasTodas.filter((item) => item.activa);
+      const { distancia } = evaluarCobertura(zona, zonas);
       if (distancia === null) {
         continue;
       }
@@ -644,36 +667,5 @@ export class TrabajadoresService {
         candidato.distancia,
       ),
     );
-  }
-
-  private calcularDistancia(
-    zonaBuscada: Zona,
-    zonasTrabajador: Zona[],
-  ): number | null {
-    if (zonasTrabajador.some((zona) => zona.id === zonaBuscada.id)) {
-      return 0;
-    }
-    if (
-      zonasTrabajador.some(
-        (zona) => zona.otb === zonaBuscada.otb,
-      )
-    ) {
-      return 0;
-    }
-    if (
-      zonasTrabajador.some(
-        (zona) => zona.nombre === zonaBuscada.nombre,
-      )
-    ) {
-      return 1;
-    }
-    if (
-      zonasTrabajador.some((zona) =>
-        zonaBuscada.zonasVecinas.includes(zona.nombre),
-      )
-    ) {
-      return 2;
-    }
-    return null;
   }
 }

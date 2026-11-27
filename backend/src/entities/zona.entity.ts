@@ -24,6 +24,9 @@ export class Zona {
   @Column({ name: 'zonas_vecinas', type: 'text', array: true })
   zonasVecinas: string[];
 
+  @Column({ name: 'activa', type: 'boolean', default: true })
+  activa: boolean;
+
   @OneToMany(() => TrabajadorZona, (trabajadorZona) => trabajadorZona.zona)
   trabajadorZonas?: Relation<TrabajadorZona[]>;
 }

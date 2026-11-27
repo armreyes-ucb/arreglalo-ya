@@ -16,4 +16,6 @@ export interface SolicitudDisponible {
   creada_en: Date;
   vence_en: Date;
   advertir_cliente_conflictivo: boolean;
+  distancia: number | null;
+  fuera_de_zona: boolean;
 }

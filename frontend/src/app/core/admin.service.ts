@@ -5,6 +5,8 @@ import { API_URL } from './api';
 import type {
   UsuarioPublico,
   Zona,
+  ZonaAdmin,
+  CoberturaZona,
   ConfiguracionPlataforma,
   CambioConfiguracion,
   ReporteAdministrativo,
@@ -77,8 +79,8 @@ export class AdminService {
     );
   }
 
-  listarZonas(): Promise<Zona[]> {
-    return firstValueFrom(this.http.get<Zona[]>(`${API_URL}/admin/zonas`));
+  listarZonas(): Promise<ZonaAdmin[]> {
+    return firstValueFrom(this.http.get<ZonaAdmin[]>(`${API_URL}/admin/zonas`));
   }
 
   crearZona(payload: CrearZonaPayload): Promise<Zona> {
@@ -87,6 +89,16 @@ export class AdminService {
 
   actualizarZona(id: number, payload: ActualizarZonaPayload): Promise<Zona> {
     return firstValueFrom(this.http.patch<Zona>(`${API_URL}/admin/zonas/${id}`, payload));
+  }
+
+  cambiarEstadoZona(id: number, activa: boolean): Promise<ZonaAdmin> {
+    return firstValueFrom(
+      this.http.patch<ZonaAdmin>(`${API_URL}/admin/zonas/${id}/estado`, { activa }),
+    );
+  }
+
+  coberturaZona(id: number): Promise<CoberturaZona> {
+    return firstValueFrom(this.http.get<CoberturaZona>(`${API_URL}/admin/zonas/${id}/cobertura`));
   }
 
   eliminarZona(id: number): Promise<void> {

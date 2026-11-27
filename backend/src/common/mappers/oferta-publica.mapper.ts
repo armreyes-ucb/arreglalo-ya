@@ -11,6 +11,9 @@ export function toOfertaPublica(oferta: Oferta): OfertaPublica {
     fecha_propuesta: oferta.fechaPropuesta,
     mensaje: oferta.mensaje,
     estado: oferta.estado,
+    fuera_de_zona: oferta.fueraDeZona,
+    distancia_zona: oferta.distanciaZona,
+    justificacion_fuera_zona: oferta.justificacionFueraZona,
     creada_en: oferta.creadaEn,
   };
 }

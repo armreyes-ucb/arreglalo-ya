@@ -19,6 +19,7 @@ function crearZona(): Zona {
     otb: 'OTB Centro',
     municipio: 'Cercado',
     zonasVecinas: ['Norte'],
+    activa: true,
   };
 }
 
@@ -86,6 +87,7 @@ describe('CP14/CP17 - datos públicos y privados', () => {
       crearSolicitud(),
       crearZona(),
       true,
+      { distancia: 0, fueraDeZona: false },
     );
     expect(resultado).not.toHaveProperty('direccion_oculta');
     expect(JSON.stringify(resultado)).not.toContain(DIRECCION);

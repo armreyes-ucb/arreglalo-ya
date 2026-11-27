@@ -62,6 +62,33 @@ export interface Zona {
   otb: string;
   municipio: string;
   zonas_vecinas: string[];
+  activa: boolean;
+}
+
+export type MotivoCobertura = 'ZONA_EXACTA' | 'MISMA_OTB' | 'MISMO_NOMBRE' | 'ZONA_VECINA';
+
+export interface ZonaAdmin extends Zona {
+  trabajadores_asignados: number;
+  solicitudes_abiertas: number;
+}
+
+export interface TrabajadorCobertura {
+  id: string;
+  nombre_completo: string;
+  estado: EstadoTrabajador;
+  nivel_verificacion: number;
+  promedio: number;
+  trabajos_completados: number;
+  especialidades: Especialidad[];
+  distancia: number;
+  motivo: MotivoCobertura;
+}
+
+export interface CoberturaZona {
+  zona: Zona;
+  asignados: number;
+  total_cubren: number;
+  trabajadores: TrabajadorCobertura[];
 }
 
 export interface Solicitud {
@@ -113,6 +140,8 @@ export interface SolicitudDisponible {
   creada_en: string;
   vence_en: string;
   advertir_cliente_conflictivo: boolean;
+  distancia: number | null;
+  fuera_de_zona: boolean;
 }
 
 export interface Oferta {
@@ -124,6 +153,9 @@ export interface Oferta {
   fecha_propuesta: string;
   mensaje: string | null;
   estado: EstadoOferta;
+  fuera_de_zona: boolean;
+  distancia_zona: number | null;
+  justificacion_fuera_zona: string | null;
   creada_en: string;
 }
 
@@ -282,6 +314,7 @@ export interface NuevaOferta {
   costo_transporte: number;
   fecha_propuesta: string;
   mensaje?: string;
+  justificacion_fuera_de_zona?: string;
 }
 
 export interface TrabajadorResumenOferta {

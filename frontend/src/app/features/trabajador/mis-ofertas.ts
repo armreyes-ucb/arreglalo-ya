@@ -69,6 +69,9 @@ import { FechaHoraPipe, MonedaPipe } from '../../shared/pipes';
                       @if (oferta.solicitud.urgente) {
                         <span class="insignia insignia--rojo">Urgente</span>
                       }
+                      @if (oferta.fuera_de_zona) {
+                        <span class="insignia insignia--ambar">Fuera de cobertura</span>
+                      }
                     </div>
                     <p class="small muted" style="margin: 0.2rem 0 0">
                       {{ etiquetaEspecialidad(oferta.solicitud.especialidad) }}
