@@ -14,6 +14,7 @@ const ZONA: Zona = {
   otb: 'OTB Centro',
   municipio: 'Cercado',
   zonas_vecinas: [],
+  activa: true,
 };
 
 const DETALLE: SolicitudDetalle = {
@@ -74,6 +75,9 @@ function crearOferta(
     fecha_propuesta: '2030-01-01T10:00:00.000Z',
     mensaje: null,
     estado: 'ENVIADA',
+    fuera_de_zona: false,
+    distancia_zona: 0,
+    justificacion_fuera_zona: null,
     creada_en: '2026-11-10T10:00:00.000Z',
     trabajador: {
       id: `trabajador-${id}`,

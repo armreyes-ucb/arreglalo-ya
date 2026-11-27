@@ -469,7 +469,8 @@ export class PublicarSolicitud implements OnInit {
 
   private async cargarZonas(): Promise<void> {
     try {
-      this.zonas.set(await this.zonasService.listar());
+      const zonas = await this.zonasService.listar();
+      this.zonas.set(zonas.filter((zona) => zona.activa));
     } catch (error) {
       this.error.set(mensajeDeError(error));
     }

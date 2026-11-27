@@ -64,13 +64,14 @@ function crearPerfil(
   };
 }
 
-function crearZona(id: number): Zona {
+function crearZona(id: number, activa = true): Zona {
   return {
     id,
     nombre: 'Norte',
     otb: `OTB ${id}`,
     municipio: 'Cercado',
     zonasVecinas: [],
+    activa,
   };
 }
 
@@ -217,6 +218,25 @@ describe('UsuariosService', () => {
     await expect(
       service.activarTrabajador(USUARIO_ID, dto),
     ).rejects.toThrow('Zonas no encontradas: 99');
+  });
+
+  it('rechaza zonas desactivadas al activar el rol de trabajador', async () => {
+    usuarioRepo.findOne.mockResolvedValue(crearUsuario());
+    perfilRepo.findOne.mockResolvedValue(null);
+    zonaRepo.findBy.mockResolvedValue([
+      crearZona(1),
+      crearZona(2, false),
+    ]);
+    const dto: ActivarTrabajadorDto = {
+      acepto_contrato_digital: true,
+      especialidades: [EspecialidadTipo.PLOMERIA],
+      zonas: [1, 2],
+    };
+
+    await expect(
+      service.activarTrabajador(USUARIO_ID, dto),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(dataSource.transaction).not.toHaveBeenCalled();
   });
 
   it('activa el rol de trabajador en una transacción', async () => {

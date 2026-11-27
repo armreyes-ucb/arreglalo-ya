@@ -17,7 +17,12 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import type { ZonaPublica } from '../common/interfaces/zona-publica.interface.js';
 import { ActualizarZonaDto } from './dto/actualizar-zona.dto.js';
+import { CambiarEstadoZonaDto } from './dto/cambiar-estado-zona.dto.js';
 import { CrearZonaDto } from './dto/crear-zona.dto.js';
+import type {
+  CoberturaZona,
+  ZonaAdminResumen,
+} from './interfaces/cobertura-zona.interface.js';
 import { ZonasAdminService } from './zonas-admin.service.js';
 
 /** RF34: configuración de zonas exclusiva del SUPERADMIN. */
@@ -28,7 +33,7 @@ export class ZonasAdminController {
   constructor(private readonly zonasAdminService: ZonasAdminService) {}
 
   @Get()
-  listar(): Promise<ZonaPublica[]> {
+  listar(): Promise<ZonaAdminResumen[]> {
     return this.zonasAdminService.listar();
   }
 
@@ -43,6 +48,21 @@ export class ZonasAdminController {
     @Body() dto: ActualizarZonaDto,
   ): Promise<ZonaPublica> {
     return this.zonasAdminService.actualizar(id, dto);
+  }
+
+  @Patch(':id/estado')
+  cambiarEstado(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CambiarEstadoZonaDto,
+  ): Promise<ZonaAdminResumen> {
+    return this.zonasAdminService.cambiarEstado(id, dto.activa);
+  }
+
+  @Get(':id/cobertura')
+  cobertura(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<CoberturaZona> {
+    return this.zonasAdminService.cobertura(id);
   }
 
   @Delete(':id')

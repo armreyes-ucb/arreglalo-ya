@@ -208,6 +208,15 @@ import { FechaHoraPipe, FechaPipe, ImagenUrlPipe, MonedaPipe } from '../../share
                         {{ nombresZonas(oferta.trabajador.zonas) }}
                       </p>
 
+                      @if (oferta.fuera_de_zona) {
+                        <div class="alerta alerta--aviso mt-1">
+                          <span>
+                            <strong>Oferta fuera de cobertura.</strong>
+                            El técnico justificó: {{ oferta.justificacion_fuera_zona }}
+                          </span>
+                        </div>
+                      }
+
                       <div class="rejilla rejilla--3 mt-2">
                         <div class="estadistica">
                           <span class="estadistica__texto">Precio</span>

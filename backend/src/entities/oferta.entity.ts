@@ -61,6 +61,19 @@ export class Oferta {
   })
   estado: EstadoOferta;
 
+  @Column({ name: 'fuera_de_zona', type: 'boolean', default: false })
+  fueraDeZona: boolean;
+
+  @Column({ name: 'distancia_zona', type: 'smallint', nullable: true })
+  distanciaZona: number | null;
+
+  @Column({
+    name: 'justificacion_fuera_zona',
+    type: 'text',
+    nullable: true,
+  })
+  justificacionFueraZona: string | null;
+
   @CreateDateColumn({ name: 'creada_en', type: 'timestamp' })
   creadaEn: Date;
 

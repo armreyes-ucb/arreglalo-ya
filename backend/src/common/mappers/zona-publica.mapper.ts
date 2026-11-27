@@ -8,5 +8,6 @@ export function toPublicZona(zona: Zona): ZonaPublica {
     otb: zona.otb,
     municipio: zona.municipio,
     zonas_vecinas: zona.zonasVecinas,
+    activa: zona.activa,
   };
 }

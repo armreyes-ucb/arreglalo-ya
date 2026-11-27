@@ -9,5 +9,8 @@ export interface OfertaPublica {
   fecha_propuesta: Date;
   mensaje: string | null;
   estado: EstadoOferta;
+  fuera_de_zona: boolean;
+  distancia_zona: number | null;
+  justificacion_fuera_zona: string | null;
   creada_en: Date;
 }

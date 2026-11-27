@@ -5,6 +5,7 @@ import {
   IsString,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 
 export class CrearOfertaDto {
@@ -23,4 +24,10 @@ export class CrearOfertaDto {
   @IsString()
   @MaxLength(500)
   mensaje?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(15)
+  @MaxLength(500)
+  justificacion_fuera_de_zona?: string;
 }

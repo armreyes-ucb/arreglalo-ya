@@ -65,6 +65,13 @@ import { FechaHoraPipe, ImagenUrlPipe } from '../../shared/pipes';
               </select>
             </div>
           </div>
+          <label class="check mt-2">
+            <input type="checkbox" formControlName="incluir_fuera_de_zona" />
+            <span>
+              Ver también trabajos fuera de mi cobertura
+              <small>(al ofertar deberás justificarlo)</small>
+            </span>
+          </label>
           <button type="submit" class="btn btn--primario mt-2" [disabled]="cargando()">
             {{ cargando() ? 'Buscando…' : 'Actualizar lista' }}
           </button>
@@ -105,6 +112,13 @@ import { FechaHoraPipe, ImagenUrlPipe } from '../../shared/pipes';
                       @if (solicitud.advertir_cliente_conflictivo) {
                         <span class="insignia insignia--ambar">Cliente con antecedentes</span>
                       }
+                      <span
+                        class="insignia"
+                        [class.insignia--rojo]="solicitud.fuera_de_zona"
+                        [class.insignia--verde]="!solicitud.fuera_de_zona"
+                      >
+                        {{ etiquetaCobertura(solicitud) }}
+                      </span>
                     </div>
                     <p class="small muted" style="margin: 0.25rem 0 0">
                       {{ etiquetaEspecialidad(solicitud.especialidad) }}
@@ -177,6 +191,15 @@ import { FechaHoraPipe, ImagenUrlPipe } from '../../shared/pipes';
             </div>
           }
 
+          @if (solicitud.fuera_de_zona) {
+            <div class="alerta alerta--aviso">
+              <span>
+                Este trabajo está fuera de tu cobertura. Puedes ofertar, pero la plataforma
+                registrará la justificación que indiques (entre 15 y 500 caracteres).
+              </span>
+            </div>
+          }
+
           <form class="formulario" [formGroup]="oferta" (ngSubmit)="enviarOferta()">
             <div class="formulario--rejilla">
               <div class="campo">
@@ -224,6 +247,22 @@ import { FechaHoraPipe, ImagenUrlPipe } from '../../shared/pipes';
                 placeholder="Cuéntale al cliente cómo resolverás el problema."
               ></textarea>
             </div>
+
+            @if (solicitud.fuera_de_zona) {
+              <div class="campo">
+                <label class="etiqueta" for="justificacion">
+                  ¿Por qué puedes atender fuera de tu cobertura? *
+                </label>
+                <textarea
+                  id="justificacion"
+                  class="textarea"
+                  formControlName="justificacion_fuera_de_zona"
+                  minlength="15"
+                  maxlength="500"
+                  placeholder="Explica brevemente por qué aceptas este trabajo (mínimo 15 caracteres)."
+                ></textarea>
+              </div>
+            }
 
             @if (total() > 0) {
               <div class="alerta alerta--info">
@@ -273,6 +312,7 @@ export class TrabajosDisponibles implements OnInit {
   protected readonly filtros = this.fb.group({
     zona_id: [0],
     especialidad: [''],
+    incluir_fuera_de_zona: [false],
   });
 
   protected readonly oferta = this.fb.group({
@@ -280,6 +320,7 @@ export class TrabajosDisponibles implements OnInit {
     costo_transporte: [0, [Validators.required, Validators.min(0)]],
     fecha_propuesta: ['', [Validators.required]],
     mensaje: [''],
+    justificacion_fuera_de_zona: [''],
   });
 
   protected readonly total = computed(() => {
@@ -303,7 +344,21 @@ export class TrabajosDisponibles implements OnInit {
       costo_transporte: 0,
       fecha_propuesta: this.fechaMinima,
       mensaje: '',
+      justificacion_fuera_de_zona: '',
     });
+  }
+
+  protected etiquetaCobertura(solicitud: SolicitudDisponible): string {
+    if (solicitud.fuera_de_zona) {
+      return 'Fuera de cobertura';
+    }
+    if (solicitud.distancia === 1) {
+      return 'Mismo nombre de zona';
+    }
+    if (solicitud.distancia === 2) {
+      return 'Zona vecina';
+    }
+    return 'En tu cobertura';
   }
 
   protected cerrarOferta(): void {
@@ -322,6 +377,13 @@ export class TrabajosDisponibles implements OnInit {
       return;
     }
     const valores = this.oferta.getRawValue();
+    const justificacion = valores.justificacion_fuera_de_zona.trim();
+    if (solicitud.fuera_de_zona && (justificacion.length < 15 || justificacion.length > 500)) {
+      this.errorOferta.set(
+        'Justifica por qué atenderás fuera de tu cobertura (entre 15 y 500 caracteres).',
+      );
+      return;
+    }
     this.enviandoOferta.set(true);
     try {
       await this.solicitudesService.ofertar(solicitud.id, {
@@ -329,6 +391,7 @@ export class TrabajosDisponibles implements OnInit {
         costo_transporte: Number(valores.costo_transporte),
         fecha_propuesta: new Date(valores.fecha_propuesta).toISOString(),
         mensaje: valores.mensaje.trim() || undefined,
+        ...(solicitud.fuera_de_zona ? { justificacion_fuera_de_zona: justificacion } : {}),
       });
       this.ofertadas.update((ids) => [...ids, solicitud.id]);
       this.toast.exito('Oferta enviada al cliente.');
@@ -355,13 +418,14 @@ export class TrabajosDisponibles implements OnInit {
   }
 
   private async cargarSolicitudes(): Promise<void> {
-    const { zona_id, especialidad } = this.filtros.getRawValue();
+    const { zona_id, especialidad, incluir_fuera_de_zona } = this.filtros.getRawValue();
     try {
       this.cargando.set(true);
       this.solicitudes.set(
         await this.solicitudesService.disponibles({
           zona_id: Number(zona_id) || null,
           especialidad: especialidad || null,
+          incluir_fuera_de_zona,
         }),
       );
     } catch (error) {

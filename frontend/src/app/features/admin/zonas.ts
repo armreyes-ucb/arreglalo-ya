@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { mensajeDeError } from '../../core/errores';
-import type { Zona } from '../../core/models';
+import type { CoberturaZona, ZonaAdmin } from '../../core/models';
 import { AdminService } from '../../core/admin.service';
 import { ToastService } from '../../core/toast.service';
 
@@ -105,6 +105,9 @@ import { ToastService } from '../../core/toast.service';
                       <th>Nombre</th>
                       <th>OTB</th>
                       <th>Municipio</th>
+                      <th>Estado</th>
+                      <th>Trabajadores</th>
+                      <th>Solicitudes abiertas</th>
                       <th>Zonas vecinas</th>
                       <th>Acciones</th>
                     </tr>
@@ -116,6 +119,17 @@ import { ToastService } from '../../core/toast.service';
                         <td>{{ z.nombre }}</td>
                         <td>{{ z.otb }}</td>
                         <td>{{ z.municipio }}</td>
+                        <td>
+                          <span
+                            class="insignia"
+                            [class.insignia--verde]="z.activa"
+                            [class.insignia--neutro]="!z.activa"
+                          >
+                            {{ z.activa ? 'Activa' : 'Desactivada' }}
+                          </span>
+                        </td>
+                        <td>{{ z.trabajadores_asignados }}</td>
+                        <td>{{ z.solicitudes_abiertas }}</td>
                         <td class="small">
                           {{ z.zonas_vecinas.length ? z.zonas_vecinas.join(', ') : '—' }}
                         </td>
@@ -131,8 +145,29 @@ import { ToastService } from '../../core/toast.service';
                             </button>
                             <button
                               type="button"
-                              class="btn btn--peligro btn--sm"
+                              class="btn btn--contorno btn--sm"
                               [disabled]="accionEnCurso() === z.id"
+                              (click)="verCobertura(z)"
+                            >
+                              Ver cobertura
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn--contorno btn--sm"
+                              [disabled]="accionEnCurso() === z.id"
+                              (click)="cambiarEstado(z)"
+                            >
+                              {{ z.activa ? 'Desactivar' : 'Activar' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn--peligro btn--sm"
+                              [disabled]="accionEnCurso() === z.id || z.trabajadores_asignados > 0"
+                              [title]="
+                                z.trabajadores_asignados > 0
+                                  ? 'Desactiva la zona para conservar el historial de los trabajadores asignados'
+                                  : ''
+                              "
                               (click)="eliminar(z)"
                             >
                               Eliminar
@@ -199,6 +234,72 @@ import { ToastService } from '../../core/toast.service';
             </div>
           </div>
         }
+
+        @if (cobertura(); as cobertura) {
+          <div class="modal-fondo" (click)="cerrarCobertura()">
+            <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+              <div class="fila fila--separada">
+                <h2 style="margin:0">Cobertura de {{ cobertura.zona.nombre }}</h2>
+                <button type="button" class="enlace-boton" (click)="cerrarCobertura()">
+                  Cerrar
+                </button>
+              </div>
+              <p class="small muted mt-1">
+                OTB {{ cobertura.zona.otb }} · {{ cobertura.zona.municipio }}
+              </p>
+
+              @if (cargandoCobertura()) {
+                <div class="cargando"><span class="girador"></span> Consultando cobertura…</div>
+              } @else if (errorCobertura()) {
+                <div class="alerta alerta--error">
+                  <span>{{ errorCobertura() }}</span>
+                </div>
+              } @else {
+                <div class="formulario--rejilla mt-2">
+                  <div class="tarjeta">
+                    <span class="small muted">Asignados directamente</span>
+                    <h2 style="margin:0.25rem 0 0">{{ cobertura.asignados }}</h2>
+                  </div>
+                  <div class="tarjeta">
+                    <span class="small muted">Trabajadores que cubren la zona</span>
+                    <h2 style="margin:0.25rem 0 0">{{ cobertura.total_cubren }}</h2>
+                  </div>
+                </div>
+
+                @if (cobertura.trabajadores.length === 0) {
+                  <div class="tarjeta centrado mt-2">
+                    <p class="muted">Ningún trabajador cubre esta zona actualmente.</p>
+                  </div>
+                } @else {
+                  <div class="tabla-responsive mt-2">
+                    <table class="tabla">
+                      <thead>
+                        <tr>
+                          <th>Trabajador</th>
+                          <th>Distancia</th>
+                          <th>Motivo</th>
+                          <th>Especialidades</th>
+                          <th>Promedio</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (trabajador of cobertura.trabajadores; track trabajador.id) {
+                          <tr>
+                            <td>{{ trabajador.nombre_completo }}</td>
+                            <td>{{ trabajador.distancia }}</td>
+                            <td class="small">{{ etiquetaMotivo(trabajador.motivo) }}</td>
+                            <td class="small">{{ trabajador.especialidades.join(', ') }}</td>
+                            <td>{{ trabajador.promedio.toFixed(2) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
       </div>
     </section>
   `,
@@ -207,7 +308,7 @@ export class ZonasAdmin implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly toast = inject(ToastService);
 
-  protected readonly zonas = signal<Zona[]>([]);
+  protected readonly zonas = signal<ZonaAdmin[]>([]);
   protected readonly cargando = signal(true);
   protected readonly error = signal('');
 
@@ -215,7 +316,7 @@ export class ZonasAdmin implements OnInit {
   protected readonly zonasVecinasTexto = signal('');
   protected readonly creando = signal(false);
 
-  protected readonly mostrarEditar = signal<Zona | null>(null);
+  protected readonly mostrarEditar = signal<ZonaAdmin | null>(null);
   protected readonly editNombre = signal('');
   protected readonly editOtb = signal('');
   protected readonly editMunicipio = signal('');
@@ -223,6 +324,10 @@ export class ZonasAdmin implements OnInit {
   protected readonly guardandoEdicion = signal(false);
   protected readonly errorEdicion = signal('');
   protected readonly accionEnCurso = signal<number | null>(null);
+
+  protected readonly cobertura = signal<CoberturaZona | null>(null);
+  protected readonly cargandoCobertura = signal(false);
+  protected readonly errorCobertura = signal('');
 
   ngOnInit(): void {
     void this.cargar();
@@ -267,7 +372,7 @@ export class ZonasAdmin implements OnInit {
     }
   }
 
-  protected async eliminar(z: Zona): Promise<void> {
+  protected async eliminar(z: ZonaAdmin): Promise<void> {
     if (!confirm(`¿Eliminar la zona "${z.nombre}"?`)) return;
 
     this.accionEnCurso.set(z.id);
@@ -282,7 +387,7 @@ export class ZonasAdmin implements OnInit {
     }
   }
 
-  protected editar(z: Zona): void {
+  protected editar(z: ZonaAdmin): void {
     this.editNombre.set(z.nombre);
     this.editOtb.set(z.otb);
     this.editMunicipio.set(z.municipio);
@@ -322,5 +427,60 @@ export class ZonasAdmin implements OnInit {
     } finally {
       this.guardandoEdicion.set(false);
     }
+  }
+
+  protected async cambiarEstado(z: ZonaAdmin): Promise<void> {
+    const mensaje = z.activa
+      ? `¿Desactivar la zona "${z.nombre}"? Ya no aceptará nuevas solicitudes ni ofertas.`
+      : `¿Activar la zona "${z.nombre}"?`;
+    if (!confirm(mensaje)) return;
+
+    this.accionEnCurso.set(z.id);
+    try {
+      const actualizada = await this.adminService.cambiarEstadoZona(z.id, !z.activa);
+      this.zonas.update((zonas) =>
+        zonas.map((item) => (item.id === actualizada.id ? actualizada : item)),
+      );
+      this.toast.exito(actualizada.activa ? 'Zona activada.' : 'Zona desactivada.');
+    } catch (error) {
+      this.error.set(mensajeDeError(error));
+    } finally {
+      this.accionEnCurso.set(null);
+    }
+  }
+
+  protected async verCobertura(z: ZonaAdmin): Promise<void> {
+    this.cobertura.set({
+      zona: z,
+      asignados: z.trabajadores_asignados,
+      total_cubren: 0,
+      trabajadores: [],
+    });
+    this.cargandoCobertura.set(true);
+    this.errorCobertura.set('');
+    try {
+      this.cobertura.set(await this.adminService.coberturaZona(z.id));
+    } catch (error) {
+      this.errorCobertura.set(mensajeDeError(error));
+    } finally {
+      this.cargandoCobertura.set(false);
+    }
+  }
+
+  protected cerrarCobertura(): void {
+    if (!this.cargandoCobertura()) {
+      this.cobertura.set(null);
+      this.errorCobertura.set('');
+    }
+  }
+
+  protected etiquetaMotivo(motivo: string): string {
+    const etiquetas: Record<string, string> = {
+      ZONA_EXACTA: 'Zona exacta',
+      MISMA_OTB: 'Misma OTB',
+      MISMO_NOMBRE: 'Mismo nombre',
+      ZONA_VECINA: 'Zona vecina',
+    };
+    return etiquetas[motivo] ?? motivo;
   }
 }

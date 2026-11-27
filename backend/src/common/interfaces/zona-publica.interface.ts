@@ -4,4 +4,5 @@ export interface ZonaPublica {
   otb: string;
   municipio: string;
   zonas_vecinas: string[];
+  activa: boolean;
 }

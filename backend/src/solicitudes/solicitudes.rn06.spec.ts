@@ -89,7 +89,6 @@ function crearServicio(
     {} as never,
     {} as never,
     {} as never,
-    {} as never,
     new BusinessRulesService(),
     new SancionesService(new BusinessRulesService()),
     dataSource as unknown as DataSource,

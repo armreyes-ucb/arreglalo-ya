@@ -71,6 +71,7 @@ export class SolicitudesService {
   disponibles(filtros: {
     zona_id?: number | null;
     especialidad?: string | null;
+    incluir_fuera_de_zona?: boolean;
   }): Promise<SolicitudDisponible[]> {
     let params = new HttpParams();
     if (filtros.zona_id) {
@@ -78,6 +79,9 @@ export class SolicitudesService {
     }
     if (filtros.especialidad) {
       params = params.set('especialidad', filtros.especialidad);
+    }
+    if (filtros.incluir_fuera_de_zona) {
+      params = params.set('incluir_fuera_de_zona', 'true');
     }
     return firstValueFrom(
       this.http.get<SolicitudDisponible[]>(`${API_URL}/solicitudes/disponibles`, { params }),

@@ -131,6 +131,14 @@ export class UsuariosService {
         `Zonas no encontradas: ${faltantes.join(', ')}`,
       );
     }
+    const zonasInactivas = zonas.filter((zona) => !zona.activa);
+    if (zonasInactivas.length > 0) {
+      throw new BadRequestException(
+        `Zonas desactivadas: ${zonasInactivas
+          .map((zona) => zona.nombre)
+          .join(', ')}`,
+      );
+    }
     try {
       const resultado = await this.dataSource.transaction(
         async (manager) => {
