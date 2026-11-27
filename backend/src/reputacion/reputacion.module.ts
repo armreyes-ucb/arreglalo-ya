@@ -6,6 +6,7 @@ import { SancionesService } from '../common/services/sanciones.service.js';
 import { Calificacion } from '../entities/calificacion.entity.js';
 import { ClienteConflictivo } from '../entities/cliente-conflictivo.entity.js';
 import { Devolucion } from '../entities/devolucion.entity.js';
+import { Pago } from '../entities/pago.entity.js';
 import { PerfilTrabajador } from '../entities/perfil-trabajador.entity.js';
 import { Reclamo } from '../entities/reclamo.entity.js';
 import { Solicitud } from '../entities/solicitud.entity.js';
@@ -32,6 +33,7 @@ import { SuspensionesService } from './suspensiones.service.js';
       Suspension,
       ClienteConflictivo,
       Devolucion,
+      Pago,
       Solicitud,
       PerfilTrabajador,
       Usuario,

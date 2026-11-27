@@ -463,6 +463,22 @@ textarea {
   color: var(--rojo-700);
 }
 
+.resumen-saldo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--superficie-2);
+}
+
+.resumen-saldo__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .check {
   display: flex;
   align-items: flex-start;
