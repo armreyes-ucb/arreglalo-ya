@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -14,8 +15,10 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import { Rol } from '../common/enums/rol.enum.js';
 import type { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface.js';
 import { ConflictivosService } from './conflictivos.service.js';
+import { ListarConflictivosQueryDto } from './dto/listar-conflictivos-query.dto.js';
 import { RegistrarConflictivoDto } from './dto/registrar-conflictivo.dto.js';
 import type { ClienteConflictivoPublico } from './interfaces/cliente-conflictivo-publico.interface.js';
+import type { ResumenDeteccion } from './interfaces/resumen-deteccion.interface.js';
 
 /**
  * RF32 + CP27: solo supervisión ve el listado completo. Los trabajadores
@@ -31,8 +34,16 @@ export class SupervisionConflictivosController {
 
   @Get()
   @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
-  listar(): Promise<ClienteConflictivoPublico[]> {
-    return this.conflictivosService.listar();
+  listar(
+    @Query() query: ListarConflictivosQueryDto,
+  ): Promise<ClienteConflictivoPublico[]> {
+    return this.conflictivosService.listar(query);
+  }
+
+  @Post('detectar')
+  @Roles(Rol.SUPERVISOR, Rol.SUPERADMIN)
+  detectar(): Promise<ResumenDeteccion> {
+    return this.conflictivosService.detectar();
   }
 
   @Get(':clienteId')

@@ -8,6 +8,7 @@ import {
   type Relation,
 } from 'typeorm';
 import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
+import { OrigenReclamo } from '../common/enums/origen-reclamo.enum.js';
 import { Solicitud } from './solicitud.entity.js';
 
 @Entity('reclamo')
@@ -45,6 +46,15 @@ export class Reclamo {
     nullable: true,
   })
   resolucionSupervisor: string | null;
+
+  @Column({
+    name: 'origen',
+    type: 'enum',
+    enum: OrigenReclamo,
+    enumName: 'origen_reclamo',
+    default: OrigenReclamo.CLIENTE,
+  })
+  origen: OrigenReclamo;
 
   @CreateDateColumn({ name: 'fecha_apertura', type: 'timestamp' })
   fechaApertura: Date;

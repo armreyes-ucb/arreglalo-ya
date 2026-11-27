@@ -8,10 +8,12 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import QRCode from 'qrcode';
 import { DataSource, In, type EntityManager } from 'typeorm';
 import { EstadoDevolucion } from '../common/enums/estado-devolucion.enum.js';
+import { EstadoClienteConflictivo } from '../common/enums/estado-cliente-conflictivo.enum.js';
 import { EstadoOferta } from '../common/enums/estado-oferta.enum.js';
 import { EstadoQr } from '../common/enums/estado-qr.enum.js';
 import { EstadoReclamo } from '../common/enums/estado-reclamo.enum.js';
 import { EstadoSolicitud } from '../common/enums/estado-solicitud.enum.js';
+import { OrigenReclamo } from '../common/enums/origen-reclamo.enum.js';
 import { toPagoPublico } from '../common/mappers/pago-publico.mapper.js';
 import { BusinessRulesService } from '../common/services/business-rules.service.js';
 import { hoyISO } from '../common/utils/fechas.js';
@@ -670,6 +672,7 @@ export class PagosService {
       respuestaTrabajador: null,
       estado: EstadoReclamo.EN_REVISION_SUPERVISOR,
       resolucionSupervisor: null,
+      origen: OrigenReclamo.TRABAJADOR,
     });
     await manager.save(Reclamo, reclamo);
 
@@ -683,6 +686,10 @@ export class PagosService {
     return reclamo;
   }
 
+  /**
+   * RF32: un reporte automático de pagos queda como pendiente de revisión.
+   * No cuenta como reporte comprobado ni advierte por sí solo al trabajador.
+   */
   private async incrementarClienteConflictivo(
     manager: EntityManager,
     clienteId: string,
@@ -694,6 +701,7 @@ export class PagosService {
     });
     if (conflictivo) {
       conflictivo.reportesAcumulados += 1;
+      conflictivo.reportesPendientes += 1;
       await manager.save(ClienteConflictivo, conflictivo);
       return;
     }
@@ -701,8 +709,11 @@ export class PagosService {
     const nuevo = manager.create(ClienteConflictivo, {
       clienteId,
       reportesAcumulados: 1,
+      reportesComprobados: 0,
+      reportesPendientes: 1,
       motivo,
       registradoPorId,
+      estado: EstadoClienteConflictivo.POTENCIAL,
     });
     await manager.save(ClienteConflictivo, nuevo);
   }
